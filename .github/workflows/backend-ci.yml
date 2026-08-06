@@ -1,0 +1,34 @@
+name: ASP.NET Core CI
+
+# This triggers the workflow on pushes or pull requests to the main branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Download the code onto the GitHub server
+      - uses: actions/checkout@v4
+      
+      # Step 2: Install the .NET SDK (matches Rider's default)
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      # Step 3: Restore NuGet packages for your backend solution
+      - name: Restore dependencies
+        run: dotnet restore backend/VSenseBackend.sln
+      
+      # Step 4: Compile the backend code
+      - name: Build
+        run: dotnet build backend/VSenseBackend.sln --no-restore
+      
+      # Step 5: Run all backend automated tests
+      - name: Test
+        run: dotnet test backend/VSenseBackend.sln --no-build --verbosity normal
