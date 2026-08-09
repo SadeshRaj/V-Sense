@@ -1,0 +1,6 @@
+@VSense.API_HostAddress = http://localhost:5183
+
+GET {{VSense.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
