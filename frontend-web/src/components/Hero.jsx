@@ -1,9 +1,9 @@
 ﻿import React from 'react';
 
-export default function Hero() {
+export default function Hero({ onOpenLogin }) {
     return (
         <section className="relative min-h-[550px] lg:min-h-[620px] flex items-center overflow-hidden bg-slate-900 text-slate-900">
-            {/* Single Hero Background Banner Image */}
+            {/* Hero Background Banner Image */}
             <div
                 className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
                 style={{
@@ -11,7 +11,7 @@ export default function Hero() {
                 }}
             />
 
-            {/* Softened Gradient Overlay - lets the background show through while maintaining contrast */}
+            {/* Softened Gradient Overlay */}
             <div className="absolute inset-0 z-10 bg-gradient-to-r from-white/90 via-white/60 to-transparent" />
 
             {/* Hero Content */}
@@ -30,12 +30,12 @@ export default function Hero() {
                     </p>
 
                     <div className="pt-4 flex flex-wrap items-center gap-4">
-                        <a
-                            href="/login"
+                        <button
+                            onClick={onOpenLogin}
                             className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-all duration-300 shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0"
                         >
                             Staff Portal Sign In →
-                        </a>
+                        </button>
                         <a
                             href="#features"
                             className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg border border-slate-300/80 bg-white/90 hover:bg-white text-slate-800 font-semibold text-sm transition-all duration-300 shadow-sm hover:border-slate-400 hover:-translate-y-0.5 active:translate-y-0"
