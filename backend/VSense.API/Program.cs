@@ -15,6 +15,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// Register Memory Cache & Http Client for OTP and SMS
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
+
 // 2. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
