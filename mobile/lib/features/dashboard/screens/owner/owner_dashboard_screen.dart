@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'add_vehicle_screen.dart';
 import '../../../auth/screens/login_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
@@ -152,7 +153,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               // 3. Primary Action Card: Add Vehicle
               InkWell(
                 onTap: () {
-                  // TODO: Navigate to AddVehicleScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
+                  );
                 },
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
