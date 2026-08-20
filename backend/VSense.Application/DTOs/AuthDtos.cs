@@ -17,12 +17,12 @@ public record RegisterRequestDto(
     string NIC,
     string PhoneNumber,
     string Email,
-    string Password
+    string Password,
+    string? Role = "Buyer" // Added Role field with "Buyer" as default fallback
 );
 
 public record SendOtpRequestDto(string PhoneNumber);
 
 public record VerifyOtpRequestDto(string PhoneNumber, string Otp);
 
-// Updated: OTP is no longer needed here since it's verified in a separate step beforehand
 public record ResetPasswordRequestDto(string PhoneNumber, string NewPassword);
