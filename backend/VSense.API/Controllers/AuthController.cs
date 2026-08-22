@@ -23,7 +23,7 @@ public class AuthController : ControllerBase
     private readonly IHttpClientFactory _httpClientFactory;
 
     // Allowed self-registration roles
-    private static readonly string[] AllowedRoles = { "Owner", "Buyer" };
+    private static readonly string[] AllowedRoles = { "Client" };
 
     public AuthController(
         ApplicationDbContext context,
@@ -80,15 +80,15 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.NIC.ToLower() == request.NIC.ToLower()))
             return BadRequest(new { message = "NIC is already registered." });
 
-        // Normalize role and validate against allowed registration roles
-        var requestedRole = string.IsNullOrWhiteSpace(request.Role) ? "Buyer" : request.Role.Trim();
+        // Normalize role and default to Client
+        var requestedRole = string.IsNullOrWhiteSpace(request.Role) ? "Client" : request.Role.Trim();
         
-        // Format to title case (e.g., "owner" -> "Owner")
+        // Format to title case (e.g., "client" -> "Client")
         requestedRole = char.ToUpper(requestedRole[0]) + requestedRole.Substring(1).ToLower();
 
         if (!AllowedRoles.Contains(requestedRole))
         {
-            return BadRequest(new { message = "Invalid role selected. Allowed roles are 'Owner' or 'Buyer'." });
+            return BadRequest(new { message = "Invalid role selected. Allowed role is 'Client'." });
         }
 
         var user = new User
@@ -98,14 +98,14 @@ public class AuthController : ControllerBase
             NIC = request.NIC,
             PhoneNumber = request.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = requestedRole // Assigns "Owner" or "Buyer"
+            Role = requestedRole // Assigns "Client"
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
         _cache.Remove($"VERIFIED_{request.PhoneNumber}");
 
-        return Ok(new { message = $"Registration successful as {requestedRole}. Please log in." });
+        return Ok(new { message = "Registration successful. Please log in." });
     }
 
     // --- FORGOT PASSWORD OTP FLOW ---

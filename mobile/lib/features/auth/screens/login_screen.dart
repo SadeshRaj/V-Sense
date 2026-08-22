@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/config/env_config.dart';
-import '../../dashboard/screens/buyer/dashboard_screen.dart';       // Buyer Dashboard
-import '../../dashboard/screens/owner/owner_dashboard_screen.dart'; // Owner Dashboard
+import '../../dashboard/screens/dashboard_screen.dart'; // Unified Client Dashboard
 import 'register_screen.dart';
 import 'ForgotPasswordScreen.dart';
 
@@ -35,26 +34,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Save JWT, Name, and Role securely
+        // Save JWT and User Name securely
         await _storage.write(key: 'jwt_token', value: data['token']);
         await _storage.write(key: 'user_name', value: data['fullName']);
-        await _storage.write(key: 'user_role', value: data['role']);
 
         if (mounted) {
-          final String role = data['role'] ?? 'Buyer';
-
-          // Dynamic Role-Based Routing
-          if (role.toLowerCase() == 'owner') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const OwnerDashboardScreen()),
-            );
-          } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          }
+          // Direct navigation to the unified Dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
         }
       } else {
         final error = jsonDecode(response.body)['message'] ?? 'Login failed';
@@ -149,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     MaterialPageRoute(builder: (_) => const RegisterScreen()),
                   ),
                   child: const Text(
-                    'Create a Premium Account',
+                    'Create an Account',
                     style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold),
                   ),
                 ),
