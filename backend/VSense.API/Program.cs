@@ -3,8 +3,12 @@ using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using VSense.Application.Common;
+using VSense.Application.Interfaces;
 using VSense.Domain.Entities;
 using VSense.Infrastructure.Persistence;
+using VSense.Infrastructure.Services;
 
 Env.TraversePath().Load();
 
@@ -18,6 +22,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register Memory Cache & Http Client for OTP and SMS
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
+
+// Bind Cloudinary Settings & Register PhotoService
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddScoped<IPhotoService, PhotoService>();
 
 // 2. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
@@ -38,7 +47,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Configure Swagger to include the Bearer Authorize Button
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VSense API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: \"Bearer eyJhbGciOiJIUzI1...\""
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // 3. Dynamic CORS
 var allowedOriginsSetting = builder.Configuration["AllowedOrigins"];
