@@ -80,6 +80,7 @@ public class VehiclesController : ControllerBase
             FuelType = dto.FuelType?.Trim(),
             Transmission = dto.Transmission?.Trim(),
             Color = dto.Color?.Trim(),
+            ImageUrl = dto.ImageUrl?.Trim(),
             CreatedBy = userId,
             CreatedAt = DateTime.UtcNow
         };
@@ -135,6 +136,7 @@ public class VehiclesController : ControllerBase
             vehicle.FuelType,
             vehicle.Transmission,
             vehicle.Color,
+            vehicle.ImageUrl,
             vehicle.CreatedBy,
             vehicle.CreatedAt
         );

@@ -12,7 +12,8 @@ public record CreateVehicleDto(
     string? ChassisNumber,
     string? FuelType,
     string? Transmission,
-    string? Color
+    string? Color,
+    string? ImageUrl
 );
 
 public record VehicleResponseDto(
@@ -27,6 +28,7 @@ public record VehicleResponseDto(
     string? FuelType,
     string? Transmission,
     string? Color,
+    string? ImageUrl,
     Guid CreatedBy,
     DateTime CreatedAt
 );
