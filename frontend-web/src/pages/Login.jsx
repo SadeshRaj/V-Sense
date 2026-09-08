@@ -75,7 +75,7 @@ export default function Login({ isOpen, onClose }) {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@v-sense.com"
+                            placeholder="someone@v-sense.com"
                             className="w-full px-4 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition placeholder:text-slate-400"
                         />
                     </div>
