@@ -18,7 +18,7 @@ public record RegisterRequestDto(
     string PhoneNumber,
     string Email,
     string Password,
-    string? Role = "Buyer" // Added Role field with "Buyer" as default fallback
+    string? Role = "Client"
 );
 
 public record SendOtpRequestDto(string PhoneNumber);

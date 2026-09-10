@@ -1,29 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/config/env_config.dart';
 import 'add_vehicle_screen.dart';
-import '../../../auth/screens/login_screen.dart';
+import '../../auth/screens/login_screen.dart';
 
-class OwnerDashboardScreen extends StatefulWidget {
-  const OwnerDashboardScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<OwnerDashboardScreen> createState() => _OwnerDashboardScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = '';
+  int _vehicleCount = 0;
+  bool _isLoadingVehicles = true;
   final _storage = const FlutterSecureStorage();
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    await _loadUserData();
+    await _fetchVehicleCount();
   }
 
   Future<void> _loadUserData() async {
     final name = await _storage.read(key: 'user_name');
-    setState(() => _userName = name ?? 'Vehicle Owner');
+    if (mounted) {
+      setState(() => _userName = name ?? 'Client');
+    }
+  }
+
+  Future<void> _fetchVehicleCount() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${EnvConfig.apiUrl}/vehicles/my-vehicles'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> vehicles = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _vehicleCount = vehicles.length;
+            _isLoadingVehicles = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingVehicles = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingVehicles = false);
+    }
   }
 
   Future<void> _logout() async {
@@ -59,7 +100,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Header (Logo & Logout)
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -78,7 +119,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.garage_outlined, size: 22, color: accentBlue),
+                        child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
                       ),
                       const SizedBox(width: 12),
                       const Text(
@@ -99,9 +140,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-              // 2. Greeting & Date
+              // Greeting & Location
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -117,7 +158,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                       Text(
                         _userName,
                         style: const TextStyle(
-                          fontSize: 32,
+                          fontSize: 30,
                           fontWeight: FontWeight.w800,
                           color: navyDeep,
                           letterSpacing: -0.5,
@@ -125,42 +166,55 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: accentBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'OWNER PORTAL',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentBlue),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: accentBlue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'CLIENT PORTAL',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentBlue),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text('Colombo, LK', style: TextStyle(fontSize: 12, color: textGrey, fontWeight: FontWeight.w500)),
+                    ],
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // Status Chips
+              // Status Chips (Dynamic Vehicle Count)
               Row(
                 children: [
-                  _buildStatusChip(Icons.directions_car_outlined, '0 Vehicles Registered', accentBlue),
+                  _buildStatusChip(
+                    Icons.directions_car_outlined,
+                    _isLoadingVehicles
+                        ? 'Loading...'
+                        : '$_vehicleCount Active ${_vehicleCount == 1 ? 'Vehicle' : 'Vehicles'}',
+                    accentBlue,
+                  ),
                   const SizedBox(width: 12),
-                  _buildStatusChip(Icons.verified_user_outlined, 'Profile Verified', const Color(0xFF10B981)),
+                  _buildStatusChip(Icons.shield_outlined, 'Account Verified', const Color(0xFF10B981)),
                 ],
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-              // 3. Primary Action Card: Add Vehicle
+              // Primary Action: Register Vehicle Banner (Fixed Overflow)
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
-                  );
+                  ).then((_) => _fetchVehicleCount()); // Refresh vehicle count on return
                 },
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF0A1930), Color(0xFF1E3A8A)],
@@ -170,59 +224,106 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: navyDeep.withOpacity(0.3),
-                        blurRadius: 20,
+                        color: navyDeep.withOpacity(0.25),
+                        blurRadius: 18,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Register a Vehicle',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
+                      // Expanded prevents horizontal overflow
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Register a Vehicle',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Add VIN & chassis to get verified',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(height: 4),
+                            Text(
+                              'Add VIN & Chassis to request certification',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 12),
                       Container(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.white.withOpacity(0.2)),
                         ),
-                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 36),
+                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
                       ),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Workflow Alert Tile
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEF4444).withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Verification Status', style: TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.bold, fontSize: 14)),
+                          SizedBox(height: 2),
+                          Text('1 report pending inspector validation', style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Color(0xFFEF4444)),
+                  ],
+                ),
+              ),
               const SizedBox(height: 28),
 
-              // 4. Portal Tools Grid for Owners
+              // Portal Tools Grid
               const Text(
-                'My Garage & Tools',
+                'V-Sense Portal',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: navyDeep, letterSpacing: 0.5),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -231,15 +332,15 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.directions_car_rounded, 'My Garage', accentBlue),
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue),
+                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold),
+                  _buildToolCard(Icons.timeline_outlined, 'History Timeline', accentBlue),
                   _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue),
-                  _buildToolCard(Icons.speed_outlined, 'Odometer Entry', accentBlue),
-                  _buildToolCard(Icons.verified_outlined, 'Digital Certs', accentGold),
-                  _buildToolCard(Icons.history_outlined, 'Vehicle Logs', textGrey),
+                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold),
                   _buildToolCard(Icons.settings_outlined, 'Settings', textGrey),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -281,8 +382,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 label: 'Garage',
               ),
               BottomNavigationBarItem(
-                icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.notifications_outlined)),
-                label: 'Alerts',
+                icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.qr_code_scanner)),
+                label: 'Scan',
               ),
               BottomNavigationBarItem(
                 icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)),
@@ -307,6 +408,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         ],
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
@@ -345,15 +447,15 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 color: iconColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 30, color: iconColor),
+              child: Icon(icon, size: 28, color: iconColor),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Text(
               title,
               style: const TextStyle(
                 color: Color(0xFF0A1930),
                 fontWeight: FontWeight.w800,
-                fontSize: 14,
+                fontSize: 13,
                 letterSpacing: 0.3,
               ),
             ),

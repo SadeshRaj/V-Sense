@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 
-enum UserRole { owner, buyer }
-
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -21,7 +19,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  UserRole _selectedRole = UserRole.owner;
   bool _isLoading = false;
   bool _isOtpLoading = false;
   bool _isOtpSent = false;
@@ -73,7 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (response.statusCode == 200) {
         setState(() {
           _isPhoneVerified = true;
-          _isOtpSent = false; // Hide OTP field
+          _isOtpSent = false;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -111,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'phoneNumber': _phoneController.text,
           'email': _emailController.text,
           'password': _passwordController.text,
-          'role': _selectedRole == UserRole.owner ? 'Owner' : 'Buyer',
+          'role': 'Client', // Set to unified Client role
         }),
       );
 
@@ -172,76 +169,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Register for your verified digital certificates.',
+                  'Register for your verified digital certificates and search vehicles.',
                   style: TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 24),
-
-                // --- ROLE SELECTOR ---
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedRole = UserRole.owner),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: _selectedRole == UserRole.owner
-                                  ? const Color(0xFF0A1930)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Vehicle Owner',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: _selectedRole == UserRole.owner
-                                      ? Colors.white
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedRole = UserRole.buyer),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: _selectedRole == UserRole.buyer
-                                  ? const Color(0xFF0A1930)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Vehicle Buyer',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: _selectedRole == UserRole.buyer
-                                      ? Colors.white
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -316,9 +245,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A1930)))
                     : ElevatedButton(
                   onPressed: _isPhoneVerified ? _register : null,
-                  child: Text(
-                    'REGISTER AS ${_selectedRole == UserRole.owner ? "OWNER" : "BUYER"}',
-                  ),
+                  child: const Text('CREATE ACCOUNT'),
                 ),
                 const SizedBox(height: 24),
               ],
