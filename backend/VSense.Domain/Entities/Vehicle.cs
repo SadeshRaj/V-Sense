@@ -40,6 +40,8 @@ public class Vehicle
     [MaxLength(50)]
     public string? Color { get; set; }
 
+    public string? ImageUrl { get; set; }
+
     public Guid CreatedBy { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
