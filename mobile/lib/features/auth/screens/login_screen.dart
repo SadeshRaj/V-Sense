@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/config/env_config.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import 'register_screen.dart';
+import 'ForgotPasswordScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -93,7 +94,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock_outline))
                 ),
-                const SizedBox(height: 32),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                    child: const Text('Forgot Password?', style: TextStyle(color: Colors.grey)),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 _isLoading
                     ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A1930)))
                     : ElevatedButton(onPressed: _login, child: const Text('SIGN IN')),
