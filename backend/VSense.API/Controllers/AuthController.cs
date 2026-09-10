@@ -22,6 +22,9 @@ public class AuthController : ControllerBase
     private readonly IMemoryCache _cache;
     private readonly IHttpClientFactory _httpClientFactory;
 
+    // Allowed self-registration roles
+    private static readonly string[] AllowedRoles = { "Owner", "Buyer" };
+
     public AuthController(
         ApplicationDbContext context,
         IConfiguration config,
@@ -77,6 +80,17 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.NIC.ToLower() == request.NIC.ToLower()))
             return BadRequest(new { message = "NIC is already registered." });
 
+        // Normalize role and validate against allowed registration roles
+        var requestedRole = string.IsNullOrWhiteSpace(request.Role) ? "Buyer" : request.Role.Trim();
+        
+        // Format to title case (e.g., "owner" -> "Owner")
+        requestedRole = char.ToUpper(requestedRole[0]) + requestedRole.Substring(1).ToLower();
+
+        if (!AllowedRoles.Contains(requestedRole))
+        {
+            return BadRequest(new { message = "Invalid role selected. Allowed roles are 'Owner' or 'Buyer'." });
+        }
+
         var user = new User
         {
             FullName = request.FullName,
@@ -84,14 +98,14 @@ public class AuthController : ControllerBase
             NIC = request.NIC,
             PhoneNumber = request.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = "Buyer"
+            Role = requestedRole // Assigns "Owner" or "Buyer"
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
         _cache.Remove($"VERIFIED_{request.PhoneNumber}");
 
-        return Ok(new { message = "Registration successful. Please log in." });
+        return Ok(new { message = $"Registration successful as {requestedRole}. Please log in." });
     }
 
     // --- FORGOT PASSWORD OTP FLOW ---
@@ -115,8 +129,8 @@ public class AuthController : ControllerBase
     {
         if (_cache.TryGetValue($"PWD_OTP_{request.PhoneNumber}", out string? savedOtp) && savedOtp == request.Otp)
         {
-            _cache.Remove($"PWD_OTP_{request.PhoneNumber}"); // Clean up OTP
-            _cache.Set($"PWD_VERIFIED_{request.PhoneNumber}", true, TimeSpan.FromMinutes(15)); // Issue verify token
+            _cache.Remove($"PWD_OTP_{request.PhoneNumber}");
+            _cache.Set($"PWD_VERIFIED_{request.PhoneNumber}", true, TimeSpan.FromMinutes(15));
             return Ok(new { message = "OTP verified successfully." });
         }
         return BadRequest(new { message = "Invalid or expired OTP." });

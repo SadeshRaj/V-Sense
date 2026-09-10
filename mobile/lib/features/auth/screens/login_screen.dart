@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/config/env_config.dart';
-import '../../dashboard/screens/dashboard_screen.dart';
+import '../../dashboard/screens/buyer/dashboard_screen.dart';       // Buyer Dashboard
+import '../../dashboard/screens/owner/owner_dashboard_screen.dart'; // Owner Dashboard
 import 'register_screen.dart';
 import 'ForgotPasswordScreen.dart';
 
@@ -33,11 +34,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        // Save JWT, Name, and Role securely
         await _storage.write(key: 'jwt_token', value: data['token']);
         await _storage.write(key: 'user_name', value: data['fullName']);
+        await _storage.write(key: 'user_role', value: data['role']);
 
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardScreen()));
+          final String role = data['role'] ?? 'Buyer';
+
+          // Dynamic Role-Based Routing
+          if (role.toLowerCase() == 'owner') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const OwnerDashboardScreen()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            );
+          }
         }
       } else {
         final error = jsonDecode(response.body)['message'] ?? 'Login failed';
@@ -51,7 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -75,29 +98,43 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'V-SENSE',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 4, color: Color(0xFF0A1930))
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 4,
+                    color: Color(0xFF0A1930),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
                   'Premium Vehicle Authority',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey, letterSpacing: 1)
+                  style: TextStyle(fontSize: 14, color: Colors.grey, letterSpacing: 1),
                 ),
                 const SizedBox(height: 48),
                 TextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email Address', prefixIcon: Icon(Icons.email_outlined))
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock_outline))
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
                 ),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                    ),
                     child: const Text('Forgot Password?', style: TextStyle(color: Colors.grey)),
                   ),
                 ),
@@ -107,9 +144,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     : ElevatedButton(onPressed: _login, child: const Text('SIGN IN')),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                  child: const Text('Create a Premium Account', style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold)),
-                )
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  ),
+                  child: const Text(
+                    'Create a Premium Account',
+                    style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold),
+                  ),
+                ),
               ],
             ),
           ),
