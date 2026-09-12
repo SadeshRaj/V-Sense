@@ -1,40 +1,41 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Example Dashboard Component (Replace with your actual Dashboard page)
-function Dashboard() {
-  const user = JSON.parse(localStorage.getItem('user'));
-  return (
-      <div className="min-h-screen bg-slate-950 text-white p-8">
-        <h1 className="text-3xl font-bold">Welcome, {user?.fullName}!</h1>
-        <p className="text-slate-400 mt-2">Role: {user?.role}</p>
-      </div>
-  );
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+
+const ReviewsQueue = () => <div className="text-slate-800">HITL Review Queue implementation goes here.</div>;
+const AiLogs = () => <div className="text-slate-800">AI Execution Logs view goes here.</div>;
+const ValuationRules = () => <div className="text-slate-800">Valuation Rules CRUD goes here.</div>;
+
+export default function App() {
+    return (
+        <Router>
+            <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
+
+                {/* Protected Admin Routes */}
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="reviews" element={<ReviewsQueue />} />
+                    <Route path="logs" element={<AiLogs />} />
+                    <Route path="rules" element={<ValuationRules />} />
+                </Route>
+
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </Router>
+    );
 }
-
-function App() {
-  return (
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-
-          {/* Protected Dashboard Route */}
-          <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-          />
-        </Routes>
-      </Router>
-  );
-}
-
-export default App;

@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../api/auth';
 
-export default function Login({ isOpen, onClose }) {
+export default function Login({ isOpen = true, onClose }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -11,6 +11,14 @@ export default function Login({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+        } else {
+            navigate('/');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -18,7 +26,7 @@ export default function Login({ isOpen, onClose }) {
 
         try {
             await loginUser(email, password);
-            navigate('/dashboard');
+            navigate('/admin/dashboard');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -31,7 +39,7 @@ export default function Login({ isOpen, onClose }) {
             {/* Blurred Backdrop */}
             <div
                 className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity"
-                onClick={onClose}
+                onClick={handleClose}
             />
 
             {/* White Modal Box */}
@@ -39,7 +47,7 @@ export default function Login({ isOpen, onClose }) {
 
                 {/* Close Button */}
                 <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition"
                     aria-label="Close modal"
                 >
