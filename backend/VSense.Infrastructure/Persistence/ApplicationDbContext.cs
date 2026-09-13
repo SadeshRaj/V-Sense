@@ -28,11 +28,8 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(v => v.VIN)
                 .IsUnique();
 
-            // Foreign Key Relationship with User
-            entity.HasOne(v => v.Creator)
-                .WithMany()
-                .HasForeignKey(v => v.CreatedBy)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(v => v.LicenseNumber)
+                .IsUnique();
         });
     }
 }
