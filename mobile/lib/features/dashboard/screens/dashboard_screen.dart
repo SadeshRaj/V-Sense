@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
-import 'add_vehicle_screen.dart';
+import 'search_vehicle_screen.dart';
 import '../../auth/screens/login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -204,13 +204,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Primary Action: Register Vehicle Banner (Fixed Overflow)
+              // Primary Action: Search & Link Vehicle Banner
               InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
-                  ).then((_) => _fetchVehicleCount()); // Refresh vehicle count on return
+                    MaterialPageRoute(builder: (_) => const SearchVehicleScreen()),
+                  ).then((_) => _fetchVehicleCount()); // Refresh count on return
                 },
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
@@ -232,13 +232,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Expanded prevents horizontal overflow
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Register a Vehicle',
+                              'Link Your Vehicle',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 19,
@@ -248,7 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Add VIN & Chassis to request certification',
+                              'Find your vehicle in the government registry',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.8),
                                 fontSize: 13,
@@ -268,7 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.white.withOpacity(0.2)),
                         ),
-                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                        child: const Icon(Icons.search_rounded, color: Colors.white, size: 28),
                       ),
                     ],
                   ),
