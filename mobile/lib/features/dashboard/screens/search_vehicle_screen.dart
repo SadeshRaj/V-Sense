@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
@@ -76,6 +77,200 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
     }
   }
 
+  void _showTermsAndPaymentModal(String vehicleId) {
+    bool isAgreed = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            const Color navyDeep = Color(0xFF0A1930);
+            const Color accentBlue = Color(0xFF2563EB);
+            const Color textGrey = Color(0xFF64748B);
+
+            return BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
+                backgroundColor: Colors.white,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.gavel_rounded, color: accentBlue, size: 24),
+                              SizedBox(width: 8),
+                              Text(
+                                'Verification Policy',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: navyDeep,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            icon: const Icon(Icons.close_rounded, color: textGrey),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+
+                      // Terms & Info Content
+                      const Text(
+                        'Please review the terms before linking your vehicle:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textGrey),
+                      ),
+                      const SizedBox(height: 12),
+
+                      _buildPolicyPoint(
+                        icon: Icons.all_inclusive_rounded,
+                        title: 'One-Time Payment & Lifetime Access',
+                        description: 'Paying LKR 1,500 grants lifetime digital verification and monitoring access for this vehicle on your account.',
+                      ),
+                      const SizedBox(height: 10),
+
+                      _buildPolicyPoint(
+                        icon: Icons.warning_amber_rounded,
+                        title: 'Removal & Re-linking Policy',
+                        description: 'If you un-link or remove this vehicle intentionally or accidentally, you will need to pay the verification fee again to re-link it.',
+                      ),
+                      const SizedBox(height: 10),
+
+                      _buildPolicyPoint(
+                        icon: Icons.support_agent_rounded,
+                        title: 'Need Help?',
+                        description: 'If you have questions or concerns, reach out to our support team at support@vsense.com.',
+                      ),
+
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+
+                      // Checkbox Agreement
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: isAgreed,
+                            activeColor: accentBlue,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            onChanged: (bool? value) {
+                              setModalState(() {
+                                isAgreed = value ?? false;
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  isAgreed = !isAgreed;
+                                });
+                              },
+                              child: const Text(
+                                'I understand and agree to the verification policy and terms.',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: navyDeep),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Final Pay Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: isAgreed
+                              ? () {
+                            Navigator.of(dialogContext).pop();
+                            _initiatePayment(vehicleId);
+                          }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            disabledBackgroundColor: const Color(0xFFCBD5E1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.payment_rounded, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Proceed to Pay (LKR 1,500)',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPolicyPoint({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2563EB).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFF2563EB), size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0A1930)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.3),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _initiatePayment(String vehicleId) async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Initiating PayHere checkout for Vehicle ID: $vehicleId')),
@@ -88,7 +283,7 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
     const Color accentBlue = Color(0xFF2563EB);
     const Color backgroundLight = Color(0xFFF8FAFC);
     const Color textGrey = Color(0xFF64748B);
-    const Color hintGrey = Color(0xFF94A3B8); // Standard soft grey for hints
+    const Color hintGrey = Color(0xFF94A3B8);
 
     return Scaffold(
       backgroundColor: backgroundLight,
@@ -315,12 +510,23 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () => _initiatePayment(_vehicleData!['id']),
+                            onPressed: () => _showTermsAndPaymentModal(_vehicleData!['id']),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF10B981),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                             ),
-                            child: const Text('Proceed to Verify & Pay (LKR 1,500)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                            child: const Center(
+                              child: Text(
+                                'Proceed to Verify & Pay (LKR 1,500)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
