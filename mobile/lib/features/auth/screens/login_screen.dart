@@ -82,24 +82,18 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.verified_user_outlined, size: 72, color: Color(0xFF1E3A8A)),
-                const SizedBox(height: 16),
-                const Text(
-                  'V-SENSE',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 4,
-                    color: Color(0xFF0A1930),
-                  ),
+
+                // Replaced the Icon with the Logo Image Asset
+                Image.asset(
+                  'assets/logo_L2.png',
+                  height: 300,
+                  // Fallback to the original icon if the image path is incorrect or missing from pubspec.yaml
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.verified_user_outlined, size: 72, color: Color(0xFF1E3A8A));
+                  },
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Premium Vehicle Authority',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey, letterSpacing: 1),
-                ),
+
+                // r
                 const SizedBox(height: 48),
                 TextField(
                   controller: _emailController,
