@@ -84,18 +84,20 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
   Future<void> _pickAndUploadDocument() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      // v13 API: FilePicker.pickFile() is a static call (no `.platform`)
+      // for single-file selection and returns PlatformFile? directly
+      // (null means the user cancelled).
+      final PlatformFile? pickedFile = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
-        withData: kIsWeb,
       );
 
-      if (result == null) return;
+      if (pickedFile == null) return;
 
       setState(() => _isUploadingAttachment = true);
 
       final token = await _storage.read(key: 'jwt_token');
-      final fileName = result.files.single.name;
+      final fileName = pickedFile.name;
 
       final request = http.MultipartRequest(
         'POST',
@@ -104,12 +106,13 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       request.headers['Authorization'] = 'Bearer $token';
 
       if (kIsWeb) {
-        final fileBytes = result.files.single.bytes!;
+        // .bytes was removed in v13 — read lazily via readAsBytes() instead.
+        final fileBytes = await pickedFile.readAsBytes();
         request.files.add(
           http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
         );
       } else {
-        final filePath = result.files.single.path;
+        final filePath = pickedFile.path;
         if (filePath == null) throw Exception('File path is not available.');
         request.files.add(
           await http.MultipartFile.fromPath('file', filePath),
