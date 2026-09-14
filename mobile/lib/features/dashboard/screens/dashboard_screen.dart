@@ -105,34 +105,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: navyDeep.withOpacity(0.06),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                  // Replaced Icon and Text with the Logo Image Asset
+                  Image.asset(
+                    'assets/logo_S.png',
+                    height: 40,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback if the image fails to load
+                      return Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: navyDeep.withOpacity(0.06),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'V-SENSE',
-                        style: TextStyle(
-                          color: navyDeep,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.5,
-                        ),
-                      ),
-                    ],
+                            child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'V-SENSE',
+                            style: TextStyle(
+                              color: navyDeep,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.5,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   Row(
                     children: [
