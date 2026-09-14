@@ -22,6 +22,14 @@ export default function CustomerSupport() {
         Authorization: `Bearer ${token}`
     };
 
+    // Safely parse DB time to User's Local Timezone
+    const formatLocalTime = (dateString) => {
+        if (!dateString) return '';
+        // Explicitly append 'Z' if missing to ensure JavaScript treats it as UTC, then converts to Local
+        const safeString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+        return new Date(safeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     const fetchConversations = async () => {
         try {
             const res = await fetch(`${API_BASE}/support/admin/conversations`, { headers: authHeaders });
@@ -195,7 +203,8 @@ export default function CustomerSupport() {
                                         <div className="flex items-center justify-between">
                                             <h4 className="text-sm font-semibold text-slate-900 truncate">{conv.fullName}</h4>
                                             <span className="text-[11px] text-slate-400 ml-2 whitespace-nowrap">
-                                                {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {/* TIME FIX APPLIED HERE */}
+                                                {formatLocalTime(conv.lastMessageAt)}
                                             </span>
                                         </div>
                                         <p className="text-xs text-slate-500 truncate mt-0.5">{conv.email}</p>
@@ -289,7 +298,8 @@ export default function CustomerSupport() {
                                         {msg.message && <p className="whitespace-pre-wrap break-words">{msg.message}</p>}
 
                                         <div className={`text-[10px] mt-1 text-right ${isAdmin ? 'text-blue-100' : 'text-slate-400'}`}>
-                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {/* TIME FIX APPLIED HERE */}
+                                            {formatLocalTime(msg.createdAt)}
                                         </div>
                                     </div>
                                 </div>
