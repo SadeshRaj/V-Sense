@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import CustomerSupport from './pages/admin/CustomerSupport';
 
 const ReviewsQueue = () => <div className="text-slate-800">HITL Review Queue implementation goes here.</div>;
 const AiLogs = () => <div className="text-slate-800">AI Execution Logs view goes here.</div>;
@@ -29,6 +30,7 @@ export default function App() {
                 >
                     <Route index element={<Navigate to="dashboard" replace />} />
                     <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="support" element={<CustomerSupport />} />
                     <Route path="reviews" element={<ReviewsQueue />} />
                     <Route path="logs" element={<AiLogs />} />
                     <Route path="rules" element={<ValuationRules />} />

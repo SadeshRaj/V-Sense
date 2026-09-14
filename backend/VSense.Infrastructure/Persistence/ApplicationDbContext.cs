@@ -10,6 +10,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
 
+    // Added the SupportMessages DbSet here
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

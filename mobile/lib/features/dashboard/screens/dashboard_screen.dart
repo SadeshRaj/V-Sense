@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../support/screens/support_chat_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -104,39 +105,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Replaced Icon and Text with the Logo Image Asset
+                  Image.asset(
+                    'assets/logo_S.png',
+                    height: 40,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback if the image fails to load
+                      return Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: navyDeep.withOpacity(0.06),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'V-SENSE',
+                            style: TextStyle(
+                              color: navyDeep,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.5,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: navyDeep.withOpacity(0.06),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      // Customer Support Headset Icon
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: accentBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.headset_mic_rounded, color: accentBlue, size: 20),
                         ),
-                        child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+                          );
+                        },
+                        tooltip: 'Support Chat',
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'V-SENSE',
-                        style: TextStyle(
-                          color: navyDeep,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.5,
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
+                        onPressed: _logout,
+                        tooltip: 'Logout',
                       ),
                     ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
-                    onPressed: _logout,
-                    tooltip: 'Logout',
                   ),
                 ],
               ),
@@ -188,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Status Chips (Dynamic Vehicle Count)
+              // Status Chips
               Row(
                 children: [
                   _buildStatusChip(
@@ -210,7 +242,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const SearchVehicleScreen()),
-                  ).then((_) => _fetchVehicleCount()); // Refresh count on return
+                  ).then((_) => _fetchVehicleCount());
                 },
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
@@ -331,12 +363,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue),
-                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold),
-                  _buildToolCard(Icons.timeline_outlined, 'History Timeline', accentBlue),
-                  _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue),
-                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold),
-                  _buildToolCard(Icons.settings_outlined, 'Settings', textGrey),
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, () {}),
+                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {}),
+                  _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+                    );
+                  }),
+                  _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue, () {}),
+                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold, () {}),
+                  _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, () {}),
                 ],
               ),
               const SizedBox(height: 24),
@@ -420,9 +457,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildToolCard(IconData icon, String title, Color iconColor) {
+  Widget _buildToolCard(IconData icon, String title, Color iconColor, VoidCallback onTap) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
