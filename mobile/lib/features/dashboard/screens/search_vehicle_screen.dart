@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:payhere_mobilesdk_flutter/payhere_mobilesdk_flutter.dart';
 import '../../../core/config/env_config.dart';
 
 class SearchVehicleScreen extends StatefulWidget {
@@ -102,7 +103,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -131,39 +131,31 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                       const SizedBox(height: 16),
                       const Divider(height: 1),
                       const SizedBox(height: 16),
-
-                      // Terms & Info Content
                       const Text(
                         'Please review the terms before linking your vehicle:',
                         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textGrey),
                       ),
                       const SizedBox(height: 12),
-
                       _buildPolicyPoint(
                         icon: Icons.all_inclusive_rounded,
                         title: 'One-Time Payment & Lifetime Access',
                         description: 'Paying LKR 1,500 grants lifetime digital verification and monitoring access for this vehicle on your account.',
                       ),
                       const SizedBox(height: 10),
-
                       _buildPolicyPoint(
                         icon: Icons.warning_amber_rounded,
                         title: 'Removal & Re-linking Policy',
                         description: 'If you un-link or remove this vehicle intentionally or accidentally, you will need to pay the verification fee again to re-link it.',
                       ),
                       const SizedBox(height: 10),
-
                       _buildPolicyPoint(
                         icon: Icons.support_agent_rounded,
                         title: 'Need Help?',
                         description: 'If you have questions or concerns, reach out to our support team at support@vsense.com.',
                       ),
-
                       const SizedBox(height: 16),
                       const Divider(height: 1),
                       const SizedBox(height: 12),
-
-                      // Checkbox Agreement
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -193,8 +185,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-
-                      // Final Pay Button
                       SizedBox(
                         width: double.infinity,
                         height: 48,
@@ -202,7 +192,7 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                           onPressed: isAgreed
                               ? () {
                             Navigator.of(dialogContext).pop();
-                            _initiatePayment(vehicleId);
+                            _startPayHereCheckout(vehicleId);
                           }
                               : null,
                           style: ElevatedButton.styleFrom(
@@ -229,6 +219,55 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  Future<void> _startPayHereCheckout(String vehicleId) async {
+    Map<String, dynamic> paymentObject = {
+      "sandbox": EnvConfig.payhereIsSandbox,
+      "merchant_id": EnvConfig.payhereMerchantId,
+      "merchant_secret": EnvConfig.payhereMerchantSecret,
+      "notify_url": "${EnvConfig.apiUrl}/payments/payhere-notify",
+      "order_id": "VSENSE_${DateTime.now().millisecondsSinceEpoch}",
+      "items": "Vehicle Verification - ${_vehicleData?['registrationNumber'] ?? ''}",
+      "amount": "1500.00",
+      "currency": "LKR",
+      "first_name": "Vehicle",
+      "last_name": "Owner",
+      "email": "owner@vsense.com",
+      "phone": "0771234567",
+      "address": "Colombo Road",
+      "city": "Colombo",
+      "country": "Sri Lanka",
+      "delivery_address": "Colombo Road",
+      "delivery_city": "Colombo",
+      "delivery_country": "Sri Lanka",
+      "custom_1": vehicleId,
+    };
+
+    PayHere.startPayment(
+      paymentObject,
+          (paymentId) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment Successful! Ref: $paymentId'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      },
+          (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment Failed: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+          () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment cancelled')),
         );
       },
     );
@@ -271,12 +310,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
     );
   }
 
-  Future<void> _initiatePayment(String vehicleId) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Initiating PayHere checkout for Vehicle ID: $vehicleId')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     const Color navyDeep = Color(0xFF0A1930);
@@ -315,7 +348,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Document Helper Guide Card
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -379,7 +411,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Registration Number Input
                 TextFormField(
                   controller: _regController,
                   textCapitalization: TextCapitalization.characters,
@@ -398,7 +429,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Chassis Number Input
                 TextFormField(
                   controller: _chassisController,
                   textCapitalization: TextCapitalization.characters,
@@ -417,7 +447,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Revenue License Number Input
                 TextFormField(
                   controller: _licenseController,
                   textCapitalization: TextCapitalization.characters,
@@ -436,7 +465,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Search Button
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -460,7 +488,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Error Banner
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -480,7 +507,6 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
                     ),
                   ),
 
-                // Found Vehicle Preview Result
                 if (_vehicleData != null) ...[
                   const Divider(height: 32),
                   const Text(
