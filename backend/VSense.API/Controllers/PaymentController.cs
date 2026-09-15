@@ -24,7 +24,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost("payhere-notify")]
-    [AllowAnonymous] // PayHere calls this directly, with no JWT
+    [AllowAnonymous]
     [Consumes("application/x-www-form-urlencoded")]
     public async Task<IActionResult> PayHereNotify([FromForm] PayHereNotifyDto request)
     {
@@ -33,27 +33,24 @@ public class PaymentsController : ControllerBase
             return StatusCode(500);
 
         var expectedSig = ComputeMd5Signature(
-            request.MerchantId, request.OrderId, request.PayhereAmount,
-            request.PayhereCurrency, request.StatusCode, merchantSecret);
+            request.merchant_id, request.order_id, request.payhere_amount,
+            request.payhere_currency, request.status_code, merchantSecret);
 
-        if (!string.Equals(expectedSig, request.Md5sig, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(expectedSig, request.md5sig, StringComparison.OrdinalIgnoreCase))
         {
-            // Signature mismatch — not a genuine PayHere callback. Reject silently.
             return BadRequest();
         }
 
-        // status_code "2" = success. Other codes = pending/cancelled/failed — ack and do nothing.
-        if (request.StatusCode != "2")
+        if (request.status_code != "2")
             return Ok();
 
-        // Idempotency: PayHere may call notify_url more than once for the same payment.
         var alreadyProcessed = await _context.Payments
-            .AnyAsync(p => p.TrasactionId == request.PaymentId);
+            .AnyAsync(p => p.TrasactionId == request.payment_id);
         if (alreadyProcessed)
             return Ok();
 
-        if (!Guid.TryParse(request.Custom1, out var vehicleId) ||
-            !Guid.TryParse(request.Custom2, out var userId))
+        if (!Guid.TryParse(request.custom_1, out var vehicleId) ||
+            !Guid.TryParse(request.custom_2, out var userId))
         {
             return BadRequest();
         }
@@ -62,8 +59,8 @@ public class PaymentsController : ControllerBase
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            TrasactionId = request.PaymentId,
-            Amount = decimal.Parse(request.PayhereAmount, CultureInfo.InvariantCulture),
+            TrasactionId = request.payment_id,
+            Amount = decimal.Parse(request.payhere_amount, CultureInfo.InvariantCulture),
             Status = "Completed",
             PaidAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
@@ -111,6 +108,6 @@ public class PaymentsController : ControllerBase
     private static string ToMd5Upper(string input)
     {
         var bytes = MD5.HashData(Encoding.UTF8.GetBytes(input));
-        return Convert.ToHexString(bytes); // Convert.ToHexString already returns uppercase
+        return Convert.ToHexString(bytes);
     }
 }

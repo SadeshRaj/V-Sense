@@ -12,10 +12,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
-
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
-
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,10 +39,18 @@ public class ApplicationDbContext : DbContext
         });
 
         // Payment Configurations
-        // Prevents the same PayHere payment transaction
-        // from being processed more than once.
-        modelBuilder.Entity<Payment>()
-            .HasIndex(p => p.TrasactionId)
-            .IsUnique();
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.Property(p => p.Id).HasColumnName("id"); // Map lowercase primary key
+
+            entity.HasIndex(p => p.TrasactionId)
+                .IsUnique();
+        });
+
+        // VehicleOwnership Configurations
+        modelBuilder.Entity<VehicleOwnership>(entity =>
+        {
+            entity.Property(v => v.Id).HasColumnName("id"); // Map lowercase primary key
+        });
     }
 }
