@@ -1,4 +1,5 @@
-﻿// VSense.Domain/Entities/VehicleOwnership.cs
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
 namespace VSense.Domain.Entities;
 
 public class VehicleOwnership
@@ -11,7 +12,12 @@ public class VehicleOwnership
     public Guid? PaymentId { get; set; }
     public DateTime? CreatedAt { get; set; }
 
+    [ForeignKey("UserId")]
     public User? User { get; set; }
+
+    [ForeignKey("VehicleId")]
     public Vehicle? Vehicle { get; set; }
+
+    [ForeignKey("PaymentId")]
     public Payment? Payment { get; set; }
 }
