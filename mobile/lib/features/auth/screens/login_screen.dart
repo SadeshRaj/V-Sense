@@ -37,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save JWT and User Name securely
         await _storage.write(key: 'jwt_token', value: data['token']);
         await _storage.write(key: 'user_name', value: data['fullName']);
+        await _storage.write(key: 'user_id', value: data['id'].toString());
 
         if (mounted) {
           // Direct navigation to the unified Dashboard

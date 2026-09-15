@@ -225,6 +225,16 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
   }
 
   Future<void> _startPayHereCheckout(String vehicleId) async {
+    final userId = await _storage.read(key: 'user_id');
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session error. Please log in again.')),
+        );
+      }
+      return;
+    }
+
     Map<String, dynamic> paymentObject = {
       "sandbox": EnvConfig.payhereIsSandbox,
       "merchant_id": EnvConfig.payhereMerchantId,
@@ -245,6 +255,7 @@ class _SearchVehicleScreenState extends State<SearchVehicleScreen> {
       "delivery_city": "Colombo",
       "delivery_country": "Sri Lanka",
       "custom_1": vehicleId,
+      "custom_2": userId,
     };
 
     PayHere.startPayment(
