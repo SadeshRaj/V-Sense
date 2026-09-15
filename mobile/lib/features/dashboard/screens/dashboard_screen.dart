@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
+import 'my_garage_screen.dart'; // <--- Added Import
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
 
@@ -85,6 +86,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Good Evening,';
   }
 
+  void _navigateToGarage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MyGarageScreen()),
+    ).then((_) => _fetchVehicleCount());
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color backgroundLight = Color(0xFFF8FAFC);
@@ -105,13 +113,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Replaced Icon and Text with the Logo Image Asset
                   Image.asset(
                     'assets/logo_S.png',
                     height: 40,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      // Fallback if the image fails to load
                       return Row(
                         children: [
                           Container(
@@ -145,7 +151,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
-                      // Customer Support Headset Icon
                       IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(6),
@@ -223,12 +228,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Status Chips
               Row(
                 children: [
-                  _buildStatusChip(
-                    Icons.directions_car_outlined,
-                    _isLoadingVehicles
-                        ? 'Loading...'
-                        : '$_vehicleCount Active ${_vehicleCount == 1 ? 'Vehicle' : 'Vehicles'}',
-                    accentBlue,
+                  GestureDetector(
+                    onTap: _navigateToGarage,
+                    child: _buildStatusChip(
+                      Icons.directions_car_outlined,
+                      _isLoadingVehicles
+                          ? 'Loading...'
+                          : '$_vehicleCount Active ${_vehicleCount == 1 ? 'Vehicle' : 'Vehicles'}',
+                      accentBlue,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   _buildStatusChip(Icons.shield_outlined, 'Account Verified', const Color(0xFF10B981)),
@@ -363,7 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, () {}),
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage), // <--- Linked here
                   _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {}),
                   _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
                     Navigator.push(
@@ -399,7 +407,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
+            onTap: (index) {
+              setState(() => _currentIndex = index);
+              if (index == 1) {
+                _navigateToGarage(); // <--- Linked to Garage bottom bar tab
+              }
+            },
             backgroundColor: Colors.white,
             selectedItemColor: accentBlue,
             unselectedItemColor: textGrey.withOpacity(0.6),
