@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using VSense.Domain.Entities;
 using VSense.Infrastructure.Persistence;
+using VSense.Infrastructure.Services;
 
 Env.TraversePath().Load();
 
@@ -15,7 +16,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// 2. Configure JWT Authentication
+// 2. Register Infrastructure Services
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// 3. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -36,7 +41,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 3. Dynamic CORS
+// 4. Dynamic CORS
 var allowedOriginsSetting = builder.Configuration["AllowedOrigins"];
 var allowedOrigins = string.IsNullOrWhiteSpace(allowedOriginsSetting)
     ? Array.Empty<string>()
@@ -72,12 +77,15 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// 4. Seed Admin User on startup
+// 5. Apply pending EF Core migrations and seed data on startup
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    // Seed default Admin if table is empty
+    // Apply any pending migrations automatically
+    dbContext.Database.Migrate();
+
+    // Seed default Admin if Users table is empty
     if (!dbContext.Users.Any())
     {
         dbContext.Users.Add(new User
@@ -88,6 +96,7 @@ using (var scope = app.Services.CreateScope())
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
             Role = "Administrator",
             IsActive = true,
+            ApprovalStatus = "Active",
             CreatedAt = DateTime.UtcNow
         });
         dbContext.SaveChanges();
@@ -95,4 +104,4 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Run();
+app.Run();
