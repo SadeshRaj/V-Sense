@@ -7,6 +7,8 @@ import 'search_vehicle_screen.dart';
 import 'my_garage_screen.dart'; // <--- Added Import
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../notifications/services/notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -21,6 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoadingVehicles = true;
   final _storage = const FlutterSecureStorage();
   int _currentIndex = 0;
+  int _unreadNotificationsCount = 0;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
@@ -31,6 +35,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardData() async {
     await _loadUserData();
     await _fetchVehicleCount();
+    await _fetchUnreadCount();
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) {
+      setState(() {
+        _unreadNotificationsCount = count;
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -151,6 +165,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
+
+
+                      // Notifications Bell Icon
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          IconButton(
+                            icon: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: accentBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.notifications_outlined, color: accentBlue, size: 20),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                              ).then((_) => _fetchUnreadCount());
+                            },
+                            tooltip: 'Notifications',
+                          ),
+                          if (_unreadNotificationsCount > 0)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  _unreadNotificationsCount > 9 ? '9+' : _unreadNotificationsCount.toString(),
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      // Customer Support Headset Icon
+
                       IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(6),

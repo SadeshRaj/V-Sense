@@ -27,6 +27,7 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddScoped<IPhotoService, PhotoService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // 2. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];

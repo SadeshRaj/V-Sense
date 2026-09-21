@@ -3,9 +3,10 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import AdminLayout from './layouts/AdminLayout';
+import AdminLayout from './Layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CustomerSupport from './pages/admin/CustomerSupport';
+import NotificationsPage from './pages/admin/NotificationsPage';
 
 const ReviewsQueue = () => <div className="text-slate-800">HITL Review Queue implementation goes here.</div>;
 const AiLogs = () => <div className="text-slate-800">AI Execution Logs view goes here.</div>;
@@ -34,6 +35,7 @@ export default function App() {
                     <Route path="reviews" element={<ReviewsQueue />} />
                     <Route path="logs" element={<AiLogs />} />
                     <Route path="rules" element={<ValuationRules />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

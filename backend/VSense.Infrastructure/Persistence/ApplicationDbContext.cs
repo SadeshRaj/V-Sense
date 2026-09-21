@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VSense.Domain.Entities;
 
 namespace VSense.Infrastructure.Persistence;
@@ -15,6 +15,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+    
+    // Notifications DbSets
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
