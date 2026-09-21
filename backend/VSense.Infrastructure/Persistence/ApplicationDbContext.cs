@@ -51,8 +51,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(v => v.LicenseNumber)
                 .IsUnique();
 
-            entity.Ignore(v => v.VehicleNumber);
-            entity.Ignore(v => v.Year);
+
         });
 
         // Payment Configurations
@@ -73,7 +72,7 @@ public class ApplicationDbContext : DbContext
         // ServiceRecord -> Vehicle (VehicleId -> Vehicles.id)
         modelBuilder.Entity<ServiceRecord>()
             .HasOne(s => s.Vehicle)
-            .WithMany(v => v.ServiceRecords)
+            .WithMany()
             .HasForeignKey(s => s.VehicleId)
             .OnDelete(DeleteBehavior.Restrict);
 
