@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerGarage } from '../api/auth';
 import Navbar from '../components/Navbar';
@@ -16,6 +16,10 @@ import {
 
 export default function Register({ isOpen = true, onClose, isModal = false }) {
     const navigate = useNavigate();
+    const mapRef = useRef(null);
+    const leafletMapInstance = useRef(null);
+    const markerRef = useRef(null);
+
     const [formData, setFormData] = useState({
         businessName: '',
         registrationNumber: '',
@@ -25,13 +29,125 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
         confirmPassword: '',
         phone: '',
         address: '',
-        role: 'Garage'
+        role: 'Garage',
+        latitude: '',
+        longitude: ''
     });
+
     const [brFile, setBrFile] = useState(null);
     const [fileName, setFileName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [submitted, setSubmitted] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
+
+    // Default map center (Sri Lanka center: Colombo ~ 6.9271, 79.8612)
+    const defaultLat = 6.9271;
+    const defaultLng = 79.8612;
+
+    // Dynamically load Leaflet CSS and JS if not already loaded
+    useEffect(() => {
+        if (isModal && !isOpen) return;
+
+        const loadLeaflet = async () => {
+            if (!document.getElementById('leaflet-css')) {
+                const link = document.createElement('link');
+                link.id = 'leaflet-css';
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(link);
+            }
+
+            if (!window.L) {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                script.onload = () => setMapLoaded(true);
+                document.body.appendChild(script);
+            } else {
+                setMapLoaded(true);
+            }
+        };
+
+        loadLeaflet();
+    }, [isOpen, isModal]);
+
+    // Initialize Leaflet Map
+    useEffect(() => {
+        if (!mapLoaded || !mapRef.current || leafletMapInstance.current || submitted) return;
+
+        const L = window.L;
+        if (!L) return;
+
+        const initialLat = formData.latitude ? parseFloat(formData.latitude) : defaultLat;
+        const initialLng = formData.longitude ? parseFloat(formData.longitude) : defaultLng;
+
+        const map = L.map(mapRef.current).setView([initialLat, initialLng], 12);
+        leafletMapInstance.current = map;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // If coordinates already exist, place initial marker
+        if (formData.latitude && formData.longitude) {
+            markerRef.current = L.marker([initialLat, initialLng]).addTo(map);
+        }
+
+        // Map click event to drop/move pin
+        map.on('click', (e) => {
+            const { lat, lng } = e.latlng;
+            updateLocation(lat, lng);
+        });
+
+        return () => {
+            if (leafletMapInstance.current) {
+                leafletMapInstance.current.remove();
+                leafletMapInstance.current = null;
+            }
+        };
+    }, [mapLoaded, submitted]);
+
+    const updateLocation = (lat, lng) => {
+        const L = window.L;
+        const formattedLat = lat.toFixed(6);
+        const formattedLng = lng.toFixed(6);
+
+        setFormData(prev => ({
+            ...prev,
+            latitude: formattedLat,
+            longitude: formattedLng
+        }));
+
+        if (leafletMapInstance.current && L) {
+            if (markerRef.current) {
+                markerRef.current.setLatLng([lat, lng]);
+            } else {
+                markerRef.current = L.marker([lat, lng]).addTo(leafletMapInstance.current);
+            }
+            leafletMapInstance.current.panTo([lat, lng]);
+        }
+    };
+
+    // Geolocation API to detect device position
+    const handleDetectLocation = () => {
+        if (!navigator.geolocation) {
+            setError('Geolocation is not supported by your browser.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                updateLocation(latitude, longitude);
+                if (leafletMapInstance.current) {
+                    leafletMapInstance.current.setZoom(15);
+                }
+            },
+            () => {
+                setError('Unable to retrieve your location. Please select it manually on the map.');
+            }
+        );
+    };
 
     if (isModal && !isOpen) return null;
 
@@ -87,6 +203,8 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
             data.append('phone', formData.phone);
             data.append('address', formData.address);
             data.append('role', formData.role);
+            if (formData.latitude) data.append('latitude', formData.latitude);
+            if (formData.longitude) data.append('longitude', formData.longitude);
             data.append('brDocument', brFile);
 
             await registerGarage(data);
@@ -178,7 +296,7 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Section 1: Partner Role */}
+                        {/* Partner Role Selection */}
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
                                 Registration Type *
@@ -329,6 +447,50 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
                             </div>
                         </div>
 
+                        {/* Workshop Location Map Picker */}
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    Pin Workshop Location on Map
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleDetectLocation}
+                                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
+                                >
+                                    🎯 Detect My Location
+                                </button>
+                            </div>
+
+                            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-inner bg-slate-100 relative">
+                                <div ref={mapRef} className="h-48 w-full z-0" />
+                                {!mapLoaded && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 text-slate-400 text-xs">
+                                        Loading map...
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                <input
+                                    type="text"
+                                    name="latitude"
+                                    readOnly
+                                    value={formData.latitude ? `Lat: ${formData.latitude}` : ''}
+                                    placeholder="Latitude (Click map)"
+                                    className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-mono text-center"
+                                />
+                                <input
+                                    type="text"
+                                    name="longitude"
+                                    readOnly
+                                    value={formData.longitude ? `Lng: ${formData.longitude}` : ''}
+                                    placeholder="Longitude (Click map)"
+                                    className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-mono text-center"
+                                />
+                            </div>
+                        </div>
+
                         {/* Password */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -436,7 +598,6 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
         </div>
     );
 
-    {/* Render as Popup Modal */}
     if (isModal) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -449,7 +610,6 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
         );
     }
 
-    {/* Render as Full Page */}
     return (
         <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
             <Navbar />

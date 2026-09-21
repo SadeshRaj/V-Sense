@@ -9,7 +9,7 @@ namespace VSense.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Administrator")]
+[Authorize(Roles = "Administrator,Admin")]
 public class AdminController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -25,22 +25,21 @@ public class AdminController : ControllerBase
     [HttpGet("registrations/pending")]
     public async Task<IActionResult> GetPendingRegistrations()
     {
-        var pending = await _context.Users
-            .Where(u => (u.Role == "Garage" || u.Role == "ServiceCenter")
-                        && u.ApprovalStatus == "Pending")
-            .OrderByDescending(u => u.CreatedAt)
-            .Select(u => new PendingRegistrationDto(
-                u.Id,
-                u.BusinessName ?? string.Empty,
-                u.RegistrationNumber ?? string.Empty,
-                u.FullName,
-                u.Email,
-                u.Phone ?? string.Empty,
-                u.Address ?? string.Empty,
-                u.Role,
-                u.ApprovalStatus,
-                u.BrDocumentUrl,
-                u.CreatedAt))
+        var pending = await _context.Organizations
+            .Where(o => o.IsVerified == false || o.IsVerified == null)
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new PendingRegistrationDto(
+                o.Id,
+                o.Name ?? string.Empty,
+                string.Empty,
+                o.ContactPersonName ?? string.Empty,
+                o.Email ?? string.Empty,
+                o.Phone ?? string.Empty,
+                o.Adress ?? string.Empty,
+                o.Type ?? "Garage",
+                "Pending",
+                o.BRDocumentUrl,
+                o.CreatedAt ?? DateTime.UtcNow))
             .ToListAsync();
 
         return Ok(pending);
@@ -50,21 +49,20 @@ public class AdminController : ControllerBase
     [HttpGet("registrations/all")]
     public async Task<IActionResult> GetAllRegistrations()
     {
-        var all = await _context.Users
-            .Where(u => u.Role == "Garage" || u.Role == "ServiceCenter")
-            .OrderByDescending(u => u.CreatedAt)
-            .Select(u => new PendingRegistrationDto(
-                u.Id,
-                u.BusinessName ?? string.Empty,
-                u.RegistrationNumber ?? string.Empty,
-                u.FullName,
-                u.Email,
-                u.Phone ?? string.Empty,
-                u.Address ?? string.Empty,
-                u.Role,
-                u.ApprovalStatus,
-                u.BrDocumentUrl,
-                u.CreatedAt))
+        var all = await _context.Organizations
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new PendingRegistrationDto(
+                o.Id,
+                o.Name ?? string.Empty,
+                string.Empty,
+                o.ContactPersonName ?? string.Empty,
+                o.Email ?? string.Empty,
+                o.Phone ?? string.Empty,
+                o.Adress ?? string.Empty,
+                o.Type ?? "Garage",
+                o.IsVerified == true ? "Active" : "Pending",
+                o.BRDocumentUrl,
+                o.CreatedAt ?? DateTime.UtcNow))
             .ToListAsync();
 
         return Ok(all);
@@ -74,43 +72,54 @@ public class AdminController : ControllerBase
     [HttpPut("registrations/{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id)
     {
-        var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound(new { message = "Registration not found." });
+        var organization = await _context.Organizations
+            .FirstOrDefaultAsync(o => o.Id == id);
 
-        if (user.Role != "Garage" && user.Role != "ServiceCenter")
-            return BadRequest(new { message = "This action is only for Garage / Service Center accounts." });
+        if (organization == null)
+            return NotFound(new { message = "Registration not found." });
 
-        if (user.ApprovalStatus != "Pending")
-            return BadRequest(new { message = $"Cannot approve an account with status '{user.ApprovalStatus}'." });
+        if (organization.IsVerified == true)
+            return BadRequest(new { message = "Organization is already approved." });
 
-        user.ApprovalStatus = "Active";
+        organization.IsVerified = true;
+        organization.UpdatedAt = DateTime.UtcNow;
+
         await _context.SaveChangesAsync();
 
-        // Send approval email (non-blocking — errors are logged internally)
-        _ = Task.Run(() => _email.SendApprovalEmailAsync(user.Email, user.BusinessName ?? user.FullName));
+        var recipientEmail = organization.Email;
+        var recipientName = organization.ContactPersonName ?? organization.Name ?? "Partner";
 
-        return Ok(new ApprovalActionResponseDto(user.Id, user.ApprovalStatus, "Registration approved. Approval email sent."));
+        if (!string.IsNullOrEmpty(recipientEmail))
+        {
+            _ = Task.Run(() => _email.SendApprovalEmailAsync(recipientEmail, recipientName));
+        }
+
+        return Ok(new ApprovalActionResponseDto(organization.Id, "Active", "Registration approved. Approval email sent."));
     }
 
     // ─── PUT /api/Admin/registrations/{id}/reject ───────────────────────────
     [HttpPut("registrations/{id:guid}/reject")]
     public async Task<IActionResult> Reject(Guid id)
     {
-        var user = await _context.Users.FindAsync(id);
-        if (user == null) return NotFound(new { message = "Registration not found." });
+        var organization = await _context.Organizations
+            .FirstOrDefaultAsync(o => o.Id == id);
 
-        if (user.Role != "Garage" && user.Role != "ServiceCenter")
-            return BadRequest(new { message = "This action is only for Garage / Service Center accounts." });
+        if (organization == null)
+            return NotFound(new { message = "Registration not found." });
 
-        if (user.ApprovalStatus != "Pending")
-            return BadRequest(new { message = $"Cannot reject an account with status '{user.ApprovalStatus}'." });
+        organization.IsVerified = false;
+        organization.UpdatedAt = DateTime.UtcNow;
 
-        user.ApprovalStatus = "Rejected";
         await _context.SaveChangesAsync();
 
-        // Send rejection email (non-blocking)
-        _ = Task.Run(() => _email.SendRejectionEmailAsync(user.Email, user.BusinessName ?? user.FullName));
+        var recipientEmail = organization.Email;
+        var recipientName = organization.ContactPersonName ?? organization.Name ?? "Partner";
 
-        return Ok(new ApprovalActionResponseDto(user.Id, user.ApprovalStatus, "Registration rejected. Rejection email sent."));
+        if (!string.IsNullOrEmpty(recipientEmail))
+        {
+            _ = Task.Run(() => _email.SendRejectionEmailAsync(recipientEmail, recipientName));
+        }
+
+        return Ok(new ApprovalActionResponseDto(organization.Id, "Rejected", "Registration rejected. Rejection email sent."));
     }
 }

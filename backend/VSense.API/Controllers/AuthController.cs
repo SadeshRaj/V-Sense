@@ -24,7 +24,6 @@ public class AuthController : ControllerBase
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ICloudinaryService _cloudinary;
 
-    // Allowed self-registration roles for client registration
     private static readonly string[] AllowedRoles = { "Client" };
 
     public AuthController(
@@ -84,10 +83,7 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.NIC.ToLower() == request.NIC.ToLower()))
             return BadRequest(new { message = "NIC is already registered." });
 
-        // Normalize role and default to Client
         var requestedRole = string.IsNullOrWhiteSpace(request.Role) ? "Client" : request.Role.Trim();
-
-        // Format to title case (e.g., "client" -> "Client")
         requestedRole = char.ToUpper(requestedRole[0]) + requestedRole.Substring(1).ToLower();
 
         if (!AllowedRoles.Contains(requestedRole))
@@ -102,7 +98,7 @@ public class AuthController : ControllerBase
             NIC = request.NIC,
             PhoneNumber = request.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = requestedRole // Assigns "Client"
+            Role = requestedRole
         };
 
         _context.Users.Add(user);
@@ -113,6 +109,7 @@ public class AuthController : ControllerBase
     }
 
     // --- GARAGE / SERVICE CENTER REGISTRATION FLOW ---
+    // Organization IS the account. No linked User row is created.
 
     [HttpPost("register-garage")]
     [Consumes("multipart/form-data")]
@@ -120,7 +117,6 @@ public class AuthController : ControllerBase
         [FromForm] GarageRegisterRequestDto request,
         IFormFile brDocument)
     {
-        // Validation
         if (brDocument == null || brDocument.Length == 0)
             return BadRequest(new { message = "Business Registration document is required." });
 
@@ -131,12 +127,12 @@ public class AuthController : ControllerBase
         if (role != "Garage" && role != "ServiceCenter")
             return BadRequest(new { message = "Role must be 'Garage' or 'ServiceCenter'." });
 
-        var emailExists = await _context.Users
-            .AnyAsync(u => u.Email.ToLower() == request.Email.ToLower());
+        var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()) ||
+                          await _context.Organizations.AnyAsync(o => o.Email != null && o.Email.ToLower() == request.Email.ToLower());
+
         if (emailExists)
             return Conflict(new { message = "An account with this email already exists." });
 
-        // Upload BR document to Cloudinary
         string brDocumentUrl;
         try
         {
@@ -148,31 +144,32 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = $"Failed to upload BR document: {ex.Message}" });
         }
 
-        var user = new User
+        var organization = new Organization
         {
             Id = Guid.NewGuid(),
-            FullName = request.FullName,
+            Name = request.BusinessName,
+            Type = role,
             Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = role,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            BusinessName = request.BusinessName,
-            RegistrationNumber = request.RegistrationNumber,
             Phone = request.Phone,
-            Address = request.Address,
-            BrDocumentUrl = brDocumentUrl,
-            ApprovalStatus = "Pending" // All new garages start as Pending
+            Adress = request.Address,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            BRDocumentUrl = brDocumentUrl,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            ContactPersonName = request.FullName,
+            IsVerified = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        _context.Users.Add(user);
+        _context.Organizations.Add(organization);
         await _context.SaveChangesAsync();
 
         return Created(string.Empty, new GarageRegisterResponseDto(
-            user.Id,
-            user.BusinessName ?? string.Empty,
-            user.Email,
-            user.ApprovalStatus
+            organization.Id,
+            organization.Name,
+            organization.Email ?? string.Empty,
+            organization.IsVerified == true ? "Active" : "Pending"
         ));
     }
 
@@ -222,6 +219,7 @@ public class AuthController : ControllerBase
     }
 
     // --- LOGIN ---
+    // Checks Users (Client/Administrator) first, then Organizations (Garage/ServiceCenter).
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
@@ -229,28 +227,47 @@ public class AuthController : ControllerBase
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            return Unauthorized(new { message = "Invalid email or password." });
-
-        if (!user.IsActive)
-            return StatusCode(403, new { message = "Account is disabled." });
-
-        // Approval status check for Garage / Service Center accounts
-        if (user.ApprovalStatus == "Pending")
+        if (user != null)
         {
-            return StatusCode(403, new { message = "Your account is awaiting admin approval." });
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                return Unauthorized(new { message = "Invalid email or password." });
+
+            if (!user.IsActive)
+                return StatusCode(403, new { message = "Account is disabled." });
+
+            var token = GenerateJwtToken(user);
+
+            return Ok(new LoginResponseDto(
+                token, user.Id, user.FullName, user.Email, user.Role, user.IsActive, user.CreatedAt
+            ));
         }
 
-        if (user.ApprovalStatus == "Rejected")
+        var organization = await _context.Organizations
+            .FirstOrDefaultAsync(o => o.Email != null && o.Email.ToLower() == request.Email.ToLower());
+
+        if (organization != null)
         {
-            return StatusCode(403, new { message = "Your account registration has been rejected. Please contact support." });
+            if (string.IsNullOrEmpty(organization.PasswordHash) ||
+                !BCrypt.Net.BCrypt.Verify(request.Password, organization.PasswordHash))
+                return Unauthorized(new { message = "Invalid email or password." });
+
+            if (organization.IsVerified != true)
+                return StatusCode(403, new { message = "Your organization application is awaiting admin approval." });
+
+            var orgToken = GenerateJwtToken(organization);
+
+            return Ok(new LoginResponseDto(
+                orgToken,
+                organization.Id,
+                organization.ContactPersonName ?? organization.Name,
+                organization.Email!,
+                organization.Type ?? "Garage",
+                true,
+                organization.CreatedAt ?? DateTime.UtcNow
+            ));
         }
 
-        var token = GenerateJwtToken(user);
-
-        return Ok(new LoginResponseDto(
-            token, user.Id, user.FullName, user.Email, user.Role, user.IsActive, user.CreatedAt
-        ));
+        return Unauthorized(new { message = "Invalid email or password." });
     }
 
     // --- HELPER METHODS ---
@@ -283,18 +300,37 @@ public class AuthController : ControllerBase
 
     private string GenerateJwtToken(User user)
     {
-        var secret = _config["JwtSettings:Secret"];
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role),
-            new Claim("fullName", user.FullName),
-            new Claim("businessName", user.BusinessName ?? string.Empty)
+            new Claim("fullName", user.FullName)
         };
+
+        return BuildToken(claims);
+    }
+
+    private string GenerateJwtToken(Organization organization)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, organization.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, organization.Email ?? string.Empty),
+            new Claim(ClaimTypes.Role, organization.Type ?? "Garage"),
+            new Claim("fullName", organization.ContactPersonName ?? organization.Name),
+            new Claim("organizationId", organization.Id.ToString()),
+            new Claim("businessName", organization.Name)
+        };
+
+        return BuildToken(claims);
+    }
+
+    private string BuildToken(List<Claim> claims)
+    {
+        var secret = _config["JwtSettings:Secret"];
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             issuer: _config["JwtSettings:Issuer"],
