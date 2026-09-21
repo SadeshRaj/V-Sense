@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VSense.Application.DTOs;
+using VSense.Domain.Entities;
 using VSense.Infrastructure.Persistence;
 using VSense.Infrastructure.Services;
 
@@ -33,7 +34,6 @@ public class ServiceRecordsController : ControllerBase
         [FromForm] CreateServiceRecordRequestDto request,
         [FromForm] List<IFormFile>? photos)
     {
-        // Validate payment method — must be InsuranceClaim or CustomerPayment only
         if (!AllowedPaymentMethods.Contains(request.PaymentMethod))
             return BadRequest(new { message = "Payment method must be 'InsuranceClaim' or 'CustomerPayment'." });
 
@@ -43,19 +43,22 @@ public class ServiceRecordsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Description))
             return BadRequest(new { message = "Service description is required." });
 
-        // Get Garage ID from the authenticated JWT — never from the request body
-        var garageIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        // Garage/ServiceCenter accounts ARE the Organization — there's no linked
+        // User row for staff, so the org id comes straight from the JWT claim
+        // set in AuthController.GenerateJwtToken(Organization organization).
+        var orgIdClaim = User.FindFirst("organizationId")?.Value;
 
-        if (string.IsNullOrEmpty(garageIdClaim) || !Guid.TryParse(garageIdClaim, out var garageId))
+        if (string.IsNullOrEmpty(orgIdClaim) || !Guid.TryParse(orgIdClaim, out var organizationId))
             return Unauthorized(new { message = "Invalid authentication token." });
 
-        // Verify vehicle exists
+        var organizationExists = await _context.Organizations.AnyAsync(o => o.Id == organizationId);
+        if (!organizationExists)
+            return Unauthorized(new { message = "Organization account not found." });
+
         var vehicle = await _context.Vehicles.FindAsync(request.VehicleId);
         if (vehicle == null)
             return NotFound(new { message = "Vehicle not found." });
 
-        // Upload service photos to Cloudinary
         var photoUrls = new List<string>();
         if (photos != null && photos.Count > 0)
         {
@@ -75,11 +78,12 @@ public class ServiceRecordsController : ControllerBase
             }
         }
 
-        var record = new Domain.Entities.ServiceRecord
+        var record = new ServiceRecord
         {
             Id = Guid.NewGuid(),
             VehicleId = request.VehicleId,
-            GarageId = garageId,
+            OrganizationId = organizationId,
+            PerformedById = null, // no individual staff User accounts exist for garages
             Title = request.Title,
             Description = request.Description,
             PaymentMethod = request.PaymentMethod,
@@ -93,7 +97,7 @@ public class ServiceRecordsController : ControllerBase
         return Created(string.Empty, new ServiceRecordResponseDto(
             record.Id,
             record.VehicleId,
-            record.GarageId,
+            record.OrganizationId, // Passed as GarageId parameter in DTO
             record.Title,
             record.Description,
             record.PaymentMethod,
@@ -107,14 +111,13 @@ public class ServiceRecordsController : ControllerBase
     {
         var records = await _context.ServiceRecords
             .Where(r => r.VehicleId == vehicleId)
-            .Include(r => r.Garage)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
         var result = records.Select(r => new ServiceRecordResponseDto(
             r.Id,
             r.VehicleId,
-            r.GarageId,
+            r.OrganizationId,
             r.Title,
             r.Description,
             r.PaymentMethod,

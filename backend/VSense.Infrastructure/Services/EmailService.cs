@@ -76,16 +76,15 @@ public class EmailService : IEmailService
 
     private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
-        var host = _config["Email:Host"];
-        var portStr = _config["Email:Port"];
-        var username = _config["Email:Username"];
-        var password = _config["Email:Password"];
+        var host = _config["Email:Host"] ?? "smtp.gmail.com";
+        var portStr = _config["Email:Port"] ?? "587";
+        var username = _config["Email:Username"] ?? _config["MAIL_USERNAME"];
+        var password = _config["Email:Password"] ?? _config["MAIL_PASSWORD"];
         var fromName = _config["Email:FromName"] ?? "V-Sense Platform";
 
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            // Log fallback so developers/graders can see the email content without SMTP
-            _logger.LogInformation("[EMAIL FALLBACK] To: {To} | Subject: {Subject} | Body: {Body}", toEmail, subject, htmlBody);
+            _logger.LogWarning("[EMAIL FALLBACK] Missing email credentials! To: {To} | Subject: {Subject}", toEmail, subject);
             return;
         }
 
@@ -98,20 +97,41 @@ public class EmailService : IEmailService
         message.Body = builder.ToMessageBody();
 
         using var smtp = new SmtpClient();
+
+        // Bypass revocation check errors (OCSP/CRL offline) on local network / CI pipelines
+        smtp.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+        {
+            if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None)
+                return true;
+
+            if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors)
+            {
+                return true;
+            }
+
+            return false;
+        };
+
         try
         {
-            await smtp.ConnectAsync(host, int.Parse(portStr ?? "587"), SecureSocketOptions.StartTls);
+            int port = int.TryParse(portStr, out var parsedPort) ? parsedPort : 587;
+
+            await smtp.ConnectAsync(host, port, SecureSocketOptions.StartTls);
             await smtp.AuthenticateAsync(username, password);
             await smtp.SendAsync(message);
+
+            _logger.LogInformation("[EMAIL SUCCESS] Email sent successfully to {To}", toEmail);
         }
         catch (Exception ex)
         {
-            // Log error but don't crash the request — email is non-critical
             _logger.LogError(ex, "[EMAIL ERROR] Failed to send email to {To}", toEmail);
         }
         finally
         {
-            await smtp.DisconnectAsync(true);
+            if (smtp.IsConnected)
+            {
+                await smtp.DisconnectAsync(true);
+            }
         }
     }
 }

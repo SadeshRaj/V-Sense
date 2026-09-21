@@ -135,7 +135,6 @@ using (var scope = app.Services.CreateScope())
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
             Role = "Administrator",
             IsActive = true,
-            ApprovalStatus = "Active",
             CreatedAt = DateTime.UtcNow
         });
         dbContext.SaveChanges();
