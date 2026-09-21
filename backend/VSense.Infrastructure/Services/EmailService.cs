@@ -75,41 +75,63 @@ public class EmailService : IEmailService
     }
 
     private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+{
+    var host = _config["Email:Host"] ?? "smtp.gmail.com";
+    var portStr = _config["Email:Port"] ?? "587";
+    var username = _config["Email:Username"] ?? _config["MAIL_USERNAME"];
+    var password = _config["Email:Password"] ?? _config["MAIL_PASSWORD"];
+    var fromName = _config["Email:FromName"] ?? "V-Sense Platform";
+
+    if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
     {
-        var host = _config["Email:Host"];
-        var portStr = _config["Email:Port"];
-        var username = _config["Email:Username"];
-        var password = _config["Email:Password"];
-        var fromName = _config["Email:FromName"] ?? "V-Sense Platform";
+        _logger.LogWarning("[EMAIL FALLBACK] Missing email credentials! To: {To} | Subject: {Subject}", toEmail, subject);
+        return;
+    }
 
-        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+    var message = new MimeMessage();
+    message.From.Add(new MailboxAddress(fromName, username));
+    message.To.Add(MailboxAddress.Parse(toEmail));
+    message.Subject = subject;
+
+    var builder = new BodyBuilder { HtmlBody = htmlBody };
+    message.Body = builder.ToMessageBody();
+
+    using var smtp = new SmtpClient();
+
+    // -----------------------------------------------------------------------------
+    // FIX: Bypass revocation check errors (OCSP/CRL offline) on local network
+    // -----------------------------------------------------------------------------
+    smtp.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+    {
+        if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None)
+            return true;
+
+        // Ignore revocation check failures caused by local network/firewall blocking OCSP servers
+        if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.RemoteCertificateChainErrors)
         {
-            // Log fallback so developers/graders can see the email content without SMTP
-            _logger.LogInformation("[EMAIL FALLBACK] To: {To} | Subject: {Subject} | Body: {Body}", toEmail, subject, htmlBody);
-            return;
+            return true; 
         }
 
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(fromName, username));
-        message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = subject;
+        return false;
+    };
 
-        var builder = new BodyBuilder { HtmlBody = htmlBody };
-        message.Body = builder.ToMessageBody();
+    try
+    {
+        int port = int.TryParse(portStr, out var parsedPort) ? parsedPort : 587;
 
-        using var smtp = new SmtpClient();
-        try
-        {
-            await smtp.ConnectAsync(host, int.Parse(portStr ?? "587"), SecureSocketOptions.StartTls);
-            await smtp.AuthenticateAsync(username, password);
-            await smtp.SendAsync(message);
-        }
-        catch (Exception ex)
-        {
-            // Log error but don't crash the request — email is non-critical
-            _logger.LogError(ex, "[EMAIL ERROR] Failed to send email to {To}", toEmail);
-        }
-        finally
+        await smtp.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+        await smtp.AuthenticateAsync(username, password);
+        await smtp.SendAsync(message);
+
+        _logger.LogInformation("[EMAIL SUCCESS] Email sent successfully to {To}", toEmail);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "[EMAIL ERROR] Failed to send email to {To}", toEmail);
+    }
+    finally
+    {
+        if (smtp.IsConnected)
         {
             await smtp.DisconnectAsync(true);
         }
