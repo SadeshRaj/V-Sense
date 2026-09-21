@@ -14,7 +14,7 @@ import {
     IconShield
 } from '../components/Icons';
 
-export default function Register() {
+export default function Register({ isOpen = true, onClose, isModal = false }) {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         businessName: '',
@@ -33,6 +33,8 @@ export default function Register() {
     const [error, setError] = useState('');
     const [submitted, setSubmitted] = useState(false);
 
+    if (isModal && !isOpen) return null;
+
     const handleChange = (e) => {
         setFormData(prev => ({
             ...prev,
@@ -43,7 +45,6 @@ export default function Register() {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validate file size (10MB max)
             if (file.size > 10 * 1024 * 1024) {
                 setError('BR Document must be smaller than 10MB.');
                 return;
@@ -97,334 +98,364 @@ export default function Register() {
         }
     };
 
-    return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-            <Navbar />
+    const content = (
+        <div className="relative w-full max-w-2xl bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
 
-            <div className="flex-grow py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full">
-                {submitted ? (
-                    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 sm:p-12 text-center shadow-2xl backdrop-blur-md space-y-6 animate-fade-in">
-                        <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto text-emerald-400">
-                            <IconCheckCircle className="w-10 h-10" />
+            {/* Close Button if Modal */}
+            {isModal && onClose && (
+                <button
+                    onClick={onClose}
+                    className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition"
+                    aria-label="Close modal"
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            )}
+
+            {submitted ? (
+                <div className="text-center space-y-6 py-4">
+                    <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center mx-auto text-emerald-600 shadow-sm">
+                        <IconCheckCircle className="w-8 h-8" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                            <IconClock className="w-3.5 h-3.5" />
+                            Pending Admin Approval
+                        </span>
+                        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                            Application Submitted!
+                        </h2>
+                        <p className="text-slate-600 max-w-md mx-auto text-xs sm:text-sm leading-relaxed">
+                            Thank you for registering <strong className="text-slate-900">{formData.businessName}</strong> on the V-Sense Verified Vehicle Network.
+                        </p>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-left text-xs space-y-2 text-slate-600">
+                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                            <IconShield className="w-4 h-4 text-blue-600" />
+                            What happens next?
                         </div>
+                        <p>1. Our compliance team will inspect your uploaded Business Registration (BR) document.</p>
+                        <p>2. Once verified, your account status will be set to <strong className="text-emerald-600 font-semibold">Active</strong>.</p>
+                        <p>3. An official confirmation email will be sent to <strong className="text-blue-600 font-semibold">{formData.email}</strong>.</p>
+                    </div>
 
-                        <div className="space-y-2">
-                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                                <IconClock className="w-3.5 h-3.5" />
-                                Pending Admin Approval
-                            </span>
-                            <h2 className="text-3xl font-bold text-white tracking-tight">
-                                Registration Successfully Submitted!
-                            </h2>
-                            <p className="text-slate-400 max-w-lg mx-auto text-sm leading-relaxed">
-                                Thank you for registering <strong className="text-white">{formData.businessName}</strong> on the V-Sense Verified Vehicle Network.
-                            </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                        <Link
+                            to="/login"
+                            onClick={() => { if (isModal && onClose) onClose(); }}
+                            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-blue-600/20 transition active:scale-95 text-center"
+                        >
+                            Go to Sign In
+                        </Link>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Header */}
+                    <div className="text-center space-y-2">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold">
+                            <IconBuilding className="w-3.5 h-3.5" />
+                            Partner Onboarding Portal
                         </div>
+                        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                            Partner with V-Sense
+                        </h1>
+                        <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                            Register your Garage or Service Center to log verified vehicle service history and authenticate maintenance records.
+                        </p>
+                    </div>
 
-                        <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-5 max-w-md mx-auto text-left text-xs space-y-2.5 text-slate-300">
-                            <div className="flex items-center gap-2 text-slate-200 font-semibold text-sm">
-                                <IconShield className="w-4 h-4 text-blue-400" />
-                                What happens next?
+                    {/* Error Alert */}
+                    {error && (
+                        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
+                            <IconAlertTriangle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Section 1: Partner Role */}
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                                Registration Type *
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label className={`cursor-pointer rounded-xl p-3 border flex items-center gap-3 transition ${
+                                    formData.role === 'Garage'
+                                        ? 'bg-blue-50/50 border-blue-600 text-slate-900 shadow-sm'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                }`}>
+                                    <input
+                                        type="radio"
+                                        name="role"
+                                        value="Garage"
+                                        checked={formData.role === 'Garage'}
+                                        onChange={handleChange}
+                                        className="sr-only"
+                                    />
+                                    <div className={`p-2 rounded-lg ${formData.role === 'Garage' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                        <IconWrench className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-xs text-slate-900">Automotive Garage</div>
+                                        <div className="text-[11px] text-slate-500">Repairs & Diagnostics</div>
+                                    </div>
+                                </label>
+
+                                <label className={`cursor-pointer rounded-xl p-3 border flex items-center gap-3 transition ${
+                                    formData.role === 'ServiceCenter'
+                                        ? 'bg-blue-50/50 border-blue-600 text-slate-900 shadow-sm'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                }`}>
+                                    <input
+                                        type="radio"
+                                        name="role"
+                                        value="ServiceCenter"
+                                        checked={formData.role === 'ServiceCenter'}
+                                        onChange={handleChange}
+                                        className="sr-only"
+                                    />
+                                    <div className={`p-2 rounded-lg ${formData.role === 'ServiceCenter' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                        <IconBuilding className="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-xs text-slate-900">Official Service Center</div>
+                                        <div className="text-[11px] text-slate-500">Authorized Dealer Hub</div>
+                                    </div>
+                                </label>
                             </div>
-                            <p>1. Our compliance team will inspect your uploaded Business Registration (BR) document.</p>
-                            <p>2. Once verified, your account status will be set to <strong className="text-emerald-400">Active</strong>.</p>
-                            <p>3. An official confirmation email will be delivered to <strong className="text-blue-400">{formData.email}</strong>.</p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                        {/* Business Info */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Business Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="businessName"
+                                    required
+                                    value={formData.businessName}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Apex Auto Care"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    BR Number *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="registrationNumber"
+                                    required
+                                    value={formData.registrationNumber}
+                                    onChange={handleChange}
+                                    placeholder="e.g. PV-0024891"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Contact Person */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Full Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="fullName"
+                                    required
+                                    value={formData.fullName}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Ruwan Silva"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Phone Number *
+                                </label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    required
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    placeholder="e.g. +94 77 123 4567"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Email & Address */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Official Email *
+                                </label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    required
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="contact@apexautocare.lk"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Workshop Address *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    required
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                    placeholder="e.g. Kiribathgoda"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Password */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Password *
+                                </label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    required
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder="••••••••"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    Confirm Password *
+                                </label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    required
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    placeholder="••••••••"
+                                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        {/* BR Document Upload */}
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                BR Document * (PDF, PNG, JPG — max 10MB)
+                            </label>
+                            <div className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-xl p-4 text-center transition bg-slate-50/50 hover:bg-blue-50/30">
+                                <input
+                                    type="file"
+                                    id="br-upload"
+                                    accept=".pdf,image/png,image/jpeg,image/jpg"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                                <label htmlFor="br-upload" className="cursor-pointer block space-y-1">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                                        <IconUpload className="w-5 h-5" />
+                                    </div>
+                                    {fileName ? (
+                                        <div className="flex items-center justify-center gap-1.5 text-emerald-600 text-xs font-semibold">
+                                            <IconFileText className="w-4 h-4" />
+                                            <span>{fileName}</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="text-xs font-semibold text-slate-800">
+                                                Click to upload BR Certificate
+                                            </div>
+                                            <p className="text-[11px] text-slate-400">
+                                                Official certificate issued by Registrar of Companies
+                                            </p>
+                                        </>
+                                    )}
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Submit Button */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 font-semibold text-white text-xs sm:text-sm shadow-md shadow-blue-600/20 transition disabled:opacity-50 active:scale-[0.99] flex items-center justify-center gap-2"
+                        >
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    <span>Submitting Application...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <IconBuilding className="w-4 h-4" />
+                                    <span>Submit Partner Application</span>
+                                </>
+                            )}
+                        </button>
+
+                        <div className="text-center text-xs text-slate-500 pt-1 font-medium">
+                            Already registered?{' '}
                             <Link
                                 to="/login"
-                                className="w-full sm:w-auto px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/30 transition active:scale-95"
+                                onClick={() => { if (isModal && onClose) onClose(); }}
+                                className="text-blue-600 hover:text-blue-700 font-bold hover:underline"
                             >
-                                Go to Sign In
-                            </Link>
-                            <Link
-                                to="/"
-                                className="w-full sm:w-auto px-8 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm border border-slate-700 transition"
-                            >
-                                Return to Home
+                                Sign In here
                             </Link>
                         </div>
-                    </div>
-                ) : (
-                    <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 sm:p-10 shadow-2xl backdrop-blur-md">
-                        {/* Title Header */}
-                        <div className="text-center space-y-3 mb-8">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
-                                <IconBuilding className="w-4 h-4" />
-                                Partner Onboarding Portal
-                            </div>
-                            <h1 className="text-3xl font-extrabold text-white tracking-tight sm:text-4xl">
-                                Partner with V-Sense
-                            </h1>
-                            <p className="text-sm text-slate-400 max-w-xl mx-auto">
-                                Register your Garage or Service Center to log verified vehicle service history, authenticate maintenance records, and establish trust with vehicle owners.
-                            </p>
-                        </div>
+                    </form>
+                </>
+            )}
+        </div>
+    );
 
-                        {/* Error Alert */}
-                        {error && (
-                            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-3">
-                                <IconAlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                <div>{error}</div>
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-6">
-
-                            {/* Section 1: Partner Role */}
-                            <div>
-                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                                    Registration Type *
-                                </label>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <label className={`cursor-pointer rounded-xl p-4 border flex items-center gap-3 transition ${
-                                        formData.role === 'Garage'
-                                            ? 'bg-blue-600/10 border-blue-500 text-white shadow-md shadow-blue-500/10'
-                                            : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                                    }`}>
-                                        <input
-                                            type="radio"
-                                            name="role"
-                                            value="Garage"
-                                            checked={formData.role === 'Garage'}
-                                            onChange={handleChange}
-                                            className="sr-only"
-                                        />
-                                        <div className={`p-2 rounded-lg ${formData.role === 'Garage' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                                            <IconWrench className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold text-sm">Automotive Garage</div>
-                                            <div className="text-xs text-slate-500">Repairs, Bodywork & Diagnostics</div>
-                                        </div>
-                                    </label>
-
-                                    <label className={`cursor-pointer rounded-xl p-4 border flex items-center gap-3 transition ${
-                                        formData.role === 'ServiceCenter'
-                                            ? 'bg-blue-600/10 border-blue-500 text-white shadow-md shadow-blue-500/10'
-                                            : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                                    }`}>
-                                        <input
-                                            type="radio"
-                                            name="role"
-                                            value="ServiceCenter"
-                                            checked={formData.role === 'ServiceCenter'}
-                                            onChange={handleChange}
-                                            className="sr-only"
-                                        />
-                                        <div className={`p-2 rounded-lg ${formData.role === 'ServiceCenter' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                                            <IconBuilding className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold text-sm">Official Service Center</div>
-                                            <div className="text-xs text-slate-500">Authorized Dealer / Lubrication Hub</div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Section 2: Business Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Business / Company Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="businessName"
-                                        required
-                                        value={formData.businessName}
-                                        onChange={handleChange}
-                                        placeholder="e.g. Apex Auto Care (Pvt) Ltd"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Business Registration (BR) Number *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="registrationNumber"
-                                        required
-                                        value={formData.registrationNumber}
-                                        onChange={handleChange}
-                                        placeholder="e.g. PV-0024891"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Section 3: Contact Person */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Primary Contact Full Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="fullName"
-                                        required
-                                        value={formData.fullName}
-                                        onChange={handleChange}
-                                        placeholder="e.g. Ruwan Silva"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Phone / Mobile Number *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        required
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        placeholder="e.g. +94 77 123 4567"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Section 4: Email & Address */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Official Business Email *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        required
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        placeholder="contact@apexautocare.lk"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Physical Workshop Address *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="address"
-                                        required
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 120 Kandy Road, Kiribathgoda"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Section 5: Password */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Portal Password *
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        required
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        placeholder="••••••••"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                        Confirm Password *
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="confirmPassword"
-                                        required
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
-                                        placeholder="••••••••"
-                                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Section 6: BR Document Upload */}
-                            <div>
-                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                                    Business Registration (BR) Document * (PDF, PNG, JPG — max 10MB)
-                                </label>
-                                <div className="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-6 text-center transition bg-slate-800/30">
-                                    <input
-                                        type="file"
-                                        id="br-upload"
-                                        accept=".pdf,image/png,image/jpeg,image/jpg"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
-                                    <label htmlFor="br-upload" className="cursor-pointer block space-y-2">
-                                        <div className="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mx-auto">
-                                            <IconUpload className="w-6 h-6" />
-                                        </div>
-                                        {fileName ? (
-                                            <div className="flex items-center justify-center gap-2 text-emerald-400 text-sm font-medium">
-                                                <IconFileText className="w-4 h-4" />
-                                                <span>{fileName}</span>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="text-sm font-medium text-slate-300">
-                                                    Click to upload or drag & drop BR Certificate
-                                                </div>
-                                                <p className="text-xs text-slate-500">
-                                                    Official certificate issued by the Registrar of Companies
-                                                </p>
-                                            </>
-                                        )}
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Submit Button */}
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 font-semibold text-white text-sm shadow-xl shadow-blue-600/25 transition disabled:opacity-50 active:scale-[0.99] flex items-center justify-center gap-2"
-                            >
-                                {loading ? (
-                                    <>
-                                        <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                        </svg>
-                                        <span>Submitting Application & Uploading Document...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <IconBuilding className="w-4 h-4" />
-                                        <span>Submit Partner Application</span>
-                                    </>
-                                )}
-                            </button>
-
-                            <div className="text-center text-xs text-slate-400 pt-2">
-                                Already have an approved account?{' '}
-                                <Link to="/login" className="text-blue-400 hover:underline font-medium">
-                                    Sign In here
-                                </Link>
-                            </div>
-                        </form>
-                    </div>
-                )}
+    {/* Render as Popup Modal */}
+    if (isModal) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                    className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+                    onClick={onClose}
+                />
+                {content}
             </div>
+        );
+    }
 
+    {/* Render as Full Page */}
+    return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+            <Navbar />
+            <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                {content}
+            </div>
             <Footer />
         </div>
     );
