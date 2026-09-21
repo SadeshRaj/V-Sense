@@ -5,25 +5,32 @@ namespace VSense.Infrastructure.Persistence;
 
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
     public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Ensure Email is unique
+        // User Configurations
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        // Vehicle mapping to existing "Vehicles" table
+        // Vehicle Configurations
         modelBuilder.Entity<Vehicle>(entity =>
         {
             entity.ToTable("Vehicles");
+
             entity.Property(v => v.Id).HasColumnName("id");
             entity.Property(v => v.RegistrationNumber).HasColumnName("RegistrationNumber");
             entity.Property(v => v.ChassisNumber).HasColumnName("ChassisNumber");
@@ -35,8 +42,32 @@ public class ApplicationDbContext : DbContext
             entity.Property(v => v.Type).HasColumnName("Type");
             entity.Property(v => v.LicenseNumber).HasColumnName("LicenseNumber");
 
+            entity.HasIndex(v => v.RegistrationNumber)
+                .IsUnique();
+
+            entity.HasIndex(v => v.VIN)
+                .IsUnique();
+
+            entity.HasIndex(v => v.LicenseNumber)
+                .IsUnique();
+
             entity.Ignore(v => v.VehicleNumber);
             entity.Ignore(v => v.Year);
+        });
+
+        // Payment Configurations
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.Property(p => p.Id).HasColumnName("id");
+
+            entity.HasIndex(p => p.TrasactionId)
+                .IsUnique();
+        });
+
+        // VehicleOwnership Configurations
+        modelBuilder.Entity<VehicleOwnership>(entity =>
+        {
+            entity.Property(v => v.Id).HasColumnName("id");
         });
 
         // ServiceRecord -> Vehicle (VehicleId -> Vehicles.id)

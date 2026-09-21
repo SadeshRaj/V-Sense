@@ -1,8 +1,5 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-white text-slate-900 antialiased font-sans;
-    margin: 0;
-  }
-}
+/* Add any custom global CSS below here */

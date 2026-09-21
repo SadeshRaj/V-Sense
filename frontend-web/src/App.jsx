@@ -1,12 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+// Page Imports
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import AdminDashboard from './pages/AdminDashboard';
 import GarageDashboard from './pages/GarageDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getCurrentUser } from './api/auth';
+
+// Admin Layout & Page Imports
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import CustomerSupport from './pages/admin/CustomerSupport';
+
+// Admin Sub-route Components
+const ReviewsQueue = () => <div className="text-slate-800">HITL Review Queue implementation goes here.</div>;
+const AiLogs = () => <div className="text-slate-800">AI Execution Logs view goes here.</div>;
+const ValuationRules = () => <div className="text-slate-800">Valuation Rules CRUD goes here.</div>;
 
 // Smart dispatcher based on role
 function RoleBasedDashboardRedirect() {
@@ -22,7 +33,7 @@ function RoleBasedDashboardRedirect() {
     return <Navigate to="/" replace />;
 }
 
-function App() {
+export default function App() {
     return (
         <Router>
             <Routes>
@@ -31,15 +42,22 @@ function App() {
                 <Route path="/login" element={<Login isModal={false} />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Role-Protected Admin Dashboard */}
+                {/* Role-Protected Admin Dashboard & Nested Routes */}
                 <Route
                     path="/admin"
                     element={
                         <ProtectedRoute allowedRoles={['Administrator']}>
-                            <AdminDashboard />
+                            <AdminLayout />
                         </ProtectedRoute>
                     }
-                />
+                >
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="support" element={<CustomerSupport />} />
+                    <Route path="reviews" element={<ReviewsQueue />} />
+                    <Route path="logs" element={<AiLogs />} />
+                    <Route path="rules" element={<ValuationRules />} />
+                </Route>
 
                 {/* Role-Protected Garage / Service Center Dashboard */}
                 <Route
@@ -67,5 +85,3 @@ function App() {
         </Router>
     );
 }
-
-export default App;

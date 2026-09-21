@@ -13,6 +13,14 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
 
     if (isModal && !isOpen) return null;
 
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+        } else {
+            navigate('/');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
