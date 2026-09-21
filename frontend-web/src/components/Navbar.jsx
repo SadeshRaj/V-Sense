@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout } from '../api/auth';
 import { IconShield, IconBuilding, IconLogOut } from './Icons';
 
-export default function Navbar({ onOpenLogin }) {
+export default function Navbar({ onOpenLogin, onOpenRegister }) {
     const [isOpen, setIsOpen] = useState(false);
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
@@ -14,6 +14,8 @@ export default function Navbar({ onOpenLogin }) {
 
     const handleSignOut = () => {
         logout();
+        setUser(null);
+        navigate('/');
     };
 
     const dashboardLink = user?.role === 'Administrator' ? '/admin' : '/garage';
@@ -39,10 +41,6 @@ export default function Navbar({ onOpenLogin }) {
                         <a href="/#about" className="hover:text-white transition-colors duration-200">About</a>
                         <a href="/#features" className="hover:text-white transition-colors duration-200">Features</a>
                         <a href="/#how-it-works" className="hover:text-white transition-colors duration-200">How It Works</a>
-                        <Link to="/register" className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors duration-200 flex items-center gap-1.5">
-                            <IconBuilding className="w-4 h-4" />
-                            Partner Registration
-                        </Link>
                     </div>
 
                     {/* Action Buttons */}
@@ -69,12 +67,12 @@ export default function Navbar({ onOpenLogin }) {
                             </div>
                         ) : (
                             <div className="flex items-center space-x-3">
-                                <Link
-                                    to="/register"
+                                <button
+                                    onClick={onOpenRegister ? onOpenRegister : () => navigate('/register')}
                                     className="px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-medium transition"
                                 >
                                     Register Partner
-                                </Link>
+                                </button>
                                 <button
                                     onClick={onOpenLogin ? onOpenLogin : () => navigate('/login')}
                                     className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30 transition-all duration-200 active:scale-95"
@@ -106,9 +104,7 @@ export default function Navbar({ onOpenLogin }) {
                     <Link to="/" onClick={() => setIsOpen(false)} className="block text-white font-semibold">Home</Link>
                     <a href="/#about" onClick={() => setIsOpen(false)} className="block hover:text-white transition">About</a>
                     <a href="/#features" onClick={() => setIsOpen(false)} className="block hover:text-white transition">Features</a>
-                    <Link to="/register" onClick={() => setIsOpen(false)} className="block text-emerald-400 font-semibold transition">
-                        Partner Registration
-                    </Link>
+
                     {user ? (
                         <div className="pt-2 space-y-2 border-t border-slate-800">
                             <Link
@@ -127,13 +123,12 @@ export default function Navbar({ onOpenLogin }) {
                         </div>
                     ) : (
                         <div className="pt-2 space-y-2 border-t border-slate-800">
-                            <Link
-                                to="/register"
-                                onClick={() => setIsOpen(false)}
+                            <button
+                                onClick={() => { setIsOpen(false); if (onOpenRegister) onOpenRegister(); else navigate('/register'); }}
                                 className="block w-full text-center py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition"
                             >
                                 Register Garage / Center
-                            </Link>
+                            </button>
                             <button
                                 onClick={() => { setIsOpen(false); if (onOpenLogin) onOpenLogin(); else navigate('/login'); }}
                                 className="block w-full text-center py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-md transition"

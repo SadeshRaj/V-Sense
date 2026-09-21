@@ -38,6 +38,11 @@ export default function AdminDashboard() {
     const [actionLoading, setActionLoading] = useState(false);
     const [notification, setNotification] = useState(null);
 
+    const handleSignOut = () => {
+        logout();
+        navigate('/');
+    };
+
     useEffect(() => {
         const currentUser = getCurrentUser();
         if (!currentUser || currentUser.role !== 'Administrator') {
@@ -151,7 +156,7 @@ export default function AdminDashboard() {
                             <span className="text-xs text-slate-300 font-medium">{user?.fullName || 'Administrator'}</span>
                         </div>
                         <button
-                            onClick={() => logout()}
+                            onClick={handleSignOut}
                             className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5"
                         >
                             <IconLogOut className="w-3.5 h-3.5" />
@@ -326,58 +331,58 @@ export default function AdminDashboard() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs">
                                 <thead className="bg-slate-800/40 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
-                                    <tr>
-                                        <th className="px-6 py-3.5 font-semibold">Business Info</th>
-                                        <th className="px-6 py-3.5 font-semibold">Contact Person</th>
-                                        <th className="px-6 py-3.5 font-semibold">Role</th>
-                                        <th className="px-6 py-3.5 font-semibold">BR Document</th>
-                                        <th className="px-6 py-3.5 font-semibold">Status</th>
-                                        <th className="px-6 py-3.5 font-semibold text-right">Actions</th>
-                                    </tr>
+                                <tr>
+                                    <th className="px-6 py-3.5 font-semibold">Business Info</th>
+                                    <th className="px-6 py-3.5 font-semibold">Contact Person</th>
+                                    <th className="px-6 py-3.5 font-semibold">Role</th>
+                                    <th className="px-6 py-3.5 font-semibold">BR Document</th>
+                                    <th className="px-6 py-3.5 font-semibold">Status</th>
+                                    <th className="px-6 py-3.5 font-semibold text-right">Actions</th>
+                                </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                                    {filteredList.map((partner) => {
-                                        const isPending = partner.approvalStatus === 'Pending';
-                                        const isApproved = partner.approvalStatus === 'Active' || partner.isActive;
-                                        const isRejected = partner.approvalStatus === 'Rejected';
+                                {filteredList.map((partner) => {
+                                    const isPending = partner.approvalStatus === 'Pending';
+                                    const isApproved = partner.approvalStatus === 'Active' || partner.isActive;
+                                    const isRejected = partner.approvalStatus === 'Rejected';
 
-                                        return (
-                                            <tr key={partner.id} className="hover:bg-slate-800/30 transition">
-                                                {/* Business Info */}
-                                                <td className="px-6 py-4">
-                                                    <div className="font-semibold text-white text-sm">
-                                                        {partner.businessName || 'N/A'}
+                                    return (
+                                        <tr key={partner.id} className="hover:bg-slate-800/30 transition">
+                                            {/* Business Info */}
+                                            <td className="px-6 py-4">
+                                                <div className="font-semibold text-white text-sm">
+                                                    {partner.businessName || 'N/A'}
+                                                </div>
+                                                <div className="text-slate-400 text-[11px] mt-0.5">
+                                                    BR: <span className="font-mono text-slate-300">{partner.registrationNumber || 'N/A'}</span>
+                                                </div>
+                                                {partner.address && (
+                                                    <div className="text-slate-500 text-[11px] flex items-center gap-1 mt-1">
+                                                        <IconMapPin className="w-3 h-3 flex-shrink-0" />
+                                                        <span className="truncate max-w-xs">{partner.address}</span>
                                                     </div>
-                                                    <div className="text-slate-400 text-[11px] mt-0.5">
-                                                        BR: <span className="font-mono text-slate-300">{partner.registrationNumber || 'N/A'}</span>
-                                                    </div>
-                                                    {partner.address && (
-                                                        <div className="text-slate-500 text-[11px] flex items-center gap-1 mt-1">
-                                                            <IconMapPin className="w-3 h-3 flex-shrink-0" />
-                                                            <span className="truncate max-w-xs">{partner.address}</span>
-                                                        </div>
-                                                    )}
-                                                </td>
+                                                )}
+                                            </td>
 
-                                                {/* Contact Person */}
-                                                <td className="px-6 py-4">
-                                                    <div className="font-medium text-slate-200">
-                                                        {partner.fullName}
-                                                    </div>
+                                            {/* Contact Person */}
+                                            <td className="px-6 py-4">
+                                                <div className="font-medium text-slate-200">
+                                                    {partner.fullName}
+                                                </div>
+                                                <div className="text-slate-400 text-[11px] flex items-center gap-1 mt-0.5">
+                                                    <IconMail className="w-3 h-3 text-slate-500" />
+                                                    <span>{partner.email}</span>
+                                                </div>
+                                                {partner.phone && (
                                                     <div className="text-slate-400 text-[11px] flex items-center gap-1 mt-0.5">
-                                                        <IconMail className="w-3 h-3 text-slate-500" />
-                                                        <span>{partner.email}</span>
+                                                        <IconPhone className="w-3 h-3 text-slate-500" />
+                                                        <span>{partner.phone}</span>
                                                     </div>
-                                                    {partner.phone && (
-                                                        <div className="text-slate-400 text-[11px] flex items-center gap-1 mt-0.5">
-                                                            <IconPhone className="w-3 h-3 text-slate-500" />
-                                                            <span>{partner.phone}</span>
-                                                        </div>
-                                                    )}
-                                                </td>
+                                                )}
+                                            </td>
 
-                                                {/* Role */}
-                                                <td className="px-6 py-4">
+                                            {/* Role */}
+                                            <td className="px-6 py-4">
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
                                                         {partner.role === 'ServiceCenter' ? (
                                                             <>
@@ -391,83 +396,83 @@ export default function AdminDashboard() {
                                                             </>
                                                         )}
                                                     </span>
-                                                </td>
+                                            </td>
 
-                                                {/* BR Document */}
-                                                <td className="px-6 py-4">
-                                                    {partner.brDocumentUrl ? (
-                                                        <button
-                                                            onClick={() => setSelectedDocUrl(partner.brDocumentUrl)}
-                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/30 transition"
-                                                        >
-                                                            <IconFileText className="w-3.5 h-3.5" />
-                                                            Inspect BR
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-slate-500 italic text-[11px]">No file</span>
-                                                    )}
-                                                </td>
+                                            {/* BR Document */}
+                                            <td className="px-6 py-4">
+                                                {partner.brDocumentUrl ? (
+                                                    <button
+                                                        onClick={() => setSelectedDocUrl(partner.brDocumentUrl)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/30 transition"
+                                                    >
+                                                        <IconFileText className="w-3.5 h-3.5" />
+                                                        Inspect BR
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-slate-500 italic text-[11px]">No file</span>
+                                                )}
+                                            </td>
 
-                                                {/* Status Badge */}
-                                                <td className="px-6 py-4">
-                                                    {isPending && (
-                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                            {/* Status Badge */}
+                                            <td className="px-6 py-4">
+                                                {isPending && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                                                             <IconClock className="w-3 h-3" />
                                                             Pending
                                                         </span>
-                                                    )}
-                                                    {isApproved && (
-                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                )}
+                                                {isApproved && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                                             <IconCheckCircle className="w-3 h-3" />
                                                             Approved
                                                         </span>
-                                                    )}
-                                                    {isRejected && (
-                                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                                                )}
+                                                {isRejected && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
                                                             <IconXCircle className="w-3 h-3" />
                                                             Rejected
                                                         </span>
-                                                    )}
-                                                </td>
+                                                )}
+                                            </td>
 
-                                                {/* Action Buttons */}
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {isPending && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => handleApprove(partner)}
-                                                                    disabled={actionLoading}
-                                                                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/20 flex items-center gap-1"
-                                                                >
-                                                                    <IconCheckCircle className="w-3.5 h-3.5" />
-                                                                    Approve
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleOpenReject(partner)}
-                                                                    disabled={actionLoading}
-                                                                    className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1"
-                                                                >
-                                                                    <IconXCircle className="w-3.5 h-3.5" />
-                                                                    Reject
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        {isApproved && (
-                                                            <span className="text-xs text-emerald-400 font-medium">
+                                            {/* Action Buttons */}
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {isPending && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleApprove(partner)}
+                                                                disabled={actionLoading}
+                                                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/20 flex items-center gap-1"
+                                                            >
+                                                                <IconCheckCircle className="w-3.5 h-3.5" />
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleOpenReject(partner)}
+                                                                disabled={actionLoading}
+                                                                className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 font-semibold text-xs transition flex items-center gap-1"
+                                                            >
+                                                                <IconXCircle className="w-3.5 h-3.5" />
+                                                                Reject
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {isApproved && (
+                                                        <span className="text-xs text-emerald-400 font-medium">
                                                                 Active Partner
                                                             </span>
-                                                        )}
-                                                        {isRejected && (
-                                                            <span className="text-xs text-slate-500 italic">
+                                                    )}
+                                                    {isRejected && (
+                                                        <span className="text-xs text-slate-500 italic">
                                                                 Closed
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 </tbody>
                             </table>
                         </div>
