@@ -19,16 +19,17 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Register Memory Cache & Http Client for OTP and SMS
+// 2. Register Memory Cache, Http Client, and Infrastructure Services
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
 
-// Bind Cloudinary Settings & Register PhotoService
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings"));
 builder.Services.AddScoped<IPhotoService, PhotoService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
-// 2. Configure JWT Authentication
+// 3. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -79,7 +80,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 3. Dynamic CORS
+// 4. Dynamic CORS
 var allowedOriginsSetting = builder.Configuration["AllowedOrigins"];
 var allowedOrigins = string.IsNullOrWhiteSpace(allowedOriginsSetting)
     ? Array.Empty<string>()
@@ -115,10 +116,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// 4. Seed Admin User on startup
+// 5. Apply EF Core migrations and seed Admin User on startup
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // Apply any pending migrations automatically
+    dbContext.Database.Migrate();
 
     // Seed default Admin if table is empty
     if (!dbContext.Users.Any())

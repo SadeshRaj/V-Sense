@@ -11,37 +11,35 @@ namespace VSense.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    FullName = table.Column<string>(type: "text", nullable: false),
-                    Email = table.Column<string>(type: "text", nullable: false),
-                    PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    NIC = table.Column<string>(type: "text", nullable: false),
-                    PhoneNumber = table.Column<string>(type: "text", nullable: false),
-                    Role = table.Column<string>(type: "text", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                });
+            migrationBuilder.Sql(@"
+                CREATE TABLE IF NOT EXISTS ""Users"" (
+                    ""Id"" uuid NOT NULL,
+                    ""FullName"" text NOT NULL,
+                    ""Email"" text NOT NULL,
+                    ""PasswordHash"" text NOT NULL,
+                    ""NIC"" text NOT NULL,
+                    ""PhoneNumber"" text NOT NULL,
+                    ""Role"" text NOT NULL,
+                    ""IsActive"" boolean NOT NULL,
+                    ""CreatedAt"" timestamp with time zone NOT NULL,
+                    CONSTRAINT ""PK_Users"" PRIMARY KEY (""Id"")
+                );
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_Email",
-                table: "Users",
-                column: "Email",
-                unique: true);
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_indexes
+                        WHERE tablename = 'Users' AND indexname = 'IX_Users_Email'
+                    ) THEN
+                        CREATE UNIQUE INDEX ""IX_Users_Email"" ON ""Users"" (""Email"");
+                    END IF;
+                END $$;
+            ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Users");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS ""Users"";");
         }
     }
 }

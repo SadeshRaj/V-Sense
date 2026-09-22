@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VSense.Application\VSense.Application.csproj" />
+    <ProjectReference Include="..\VSense.Domain\VSense.Domain.csproj" />
     <ProjectReference Include="..\VSense.Infrastructure\VSense.Infrastructure.csproj" />
   </ItemGroup>
 

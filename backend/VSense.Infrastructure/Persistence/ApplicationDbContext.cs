@@ -1,38 +1,69 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VSense.Domain.Entities;
 
 namespace VSense.Infrastructure.Persistence;
 
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
-
-    // Added the SupportMessages DbSet here
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+    public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        // User Configurations
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
 
-        // Vehicle Configurations
+        modelBuilder.Entity<Organization>(entity =>
+        {
+            entity.Property(o => o.Id).HasColumnName("id");
+            entity.HasIndex(o => o.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Email).IsUnique();
+        });
+
         modelBuilder.Entity<Vehicle>(entity =>
         {
-            entity.HasIndex(v => v.RegistrationNumber)
-                .IsUnique();
+            entity.Property(v => v.Id).HasColumnName("id");
+            entity.HasIndex(v => v.RegistrationNumber).IsUnique();
+            entity.HasIndex(v => v.VIN).IsUnique();
+            entity.HasIndex(v => v.LicenseNumber).IsUnique();
+        });
 
-            entity.HasIndex(v => v.VIN)
-                .IsUnique();
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.Property(p => p.Id).HasColumnName("id");
+            entity.HasIndex(p => p.TrasactionId).IsUnique();
+        });
 
-            entity.HasIndex(v => v.LicenseNumber)
-                .IsUnique();
+        modelBuilder.Entity<VehicleOwnership>(entity =>
+        {
+            entity.Property(v => v.Id).HasColumnName("id");
+        });
+
+        modelBuilder.Entity<ServiceRecord>(entity =>
+        {
+            entity.HasOne(s => s.Vehicle)
+                .WithMany()
+                .HasForeignKey(s => s.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Correctly configured to Organization
+            entity.HasOne(s => s.Organization)
+                .WithMany()
+                .HasForeignKey(s => s.GarageId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

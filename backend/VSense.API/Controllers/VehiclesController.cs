@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VSense.Application.DTOs;
+using VSense.Domain.Entities;
 using VSense.Infrastructure.Persistence;
 
 namespace VSense.API.Controllers;
@@ -54,5 +56,87 @@ public class VehiclesController : ControllerBase
             chassisNumber = vehicle.ChassisNumber,
             licenseNumber = vehicle.LicenseNumber
         });
+    }
+
+    [HttpGet("my-vehicles")]
+    public async Task<IActionResult> GetMyVehicles()
+    {
+        // Extract logged-in user ID from JWT claims
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                       ?? User.FindFirst("sub")?.Value 
+                       ?? User.FindFirst("id")?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { message = "Invalid token or user context missing." });
+        }
+
+        // Query VehicleOwnerships table joined with Vehicles table
+        var myVehicles = await _context.VehicleOwnerships
+            .AsNoTracking()
+            .Where(vo => vo.UserId == userId && vo.Status == "Active")
+            .Include(vo => vo.Vehicle)
+            .Where(vo => vo.Vehicle != null)
+            .Select(vo => new
+            {
+                id = vo.Vehicle!.Id,
+                registrationNumber = vo.Vehicle.RegistrationNumber,
+                make = vo.Vehicle.Make,
+                model = vo.Vehicle.Model,
+                manufacturingYear = vo.Vehicle.ManufacturingYear,
+                fuelType = vo.Vehicle.FuelType,
+                type = vo.Vehicle.Type,
+                chassisNumber = vo.Vehicle.ChassisNumber,
+                licenseNumber = vo.Vehicle.LicenseNumber,
+                ownershipId = vo.Id,
+                verifiedAt = vo.VerifiedAt,
+                status = vo.Status
+            })
+            .ToListAsync();
+
+        return Ok(myVehicles);
+    }
+
+    // ─── GET /api/Vehicles/search?vehicleNumber=WP CAQ-5834 ──────────────────
+    // ─── GET /api/Vehicles/search?chassisNumber=... ──────────────────────────
+    [HttpGet("search")]
+    public async Task<IActionResult> Search(
+        [FromQuery] string? vehicleNumber,
+        [FromQuery] string? chassisNumber)
+    {
+        if (string.IsNullOrWhiteSpace(vehicleNumber) && string.IsNullOrWhiteSpace(chassisNumber))
+            return BadRequest(new { message = "Please enter a vehicle number or chassis number." });
+
+        Vehicle? vehicle = null;
+
+        if (!string.IsNullOrWhiteSpace(vehicleNumber))
+        {
+            var cleanedNumber = vehicleNumber.Trim().ToLower().Replace(" ", "").Replace("-", "");
+            vehicle = await _context.Vehicles
+                .FirstOrDefaultAsync(v => 
+                    v.RegistrationNumber.ToLower().Replace(" ", "").Replace("-", "") == cleanedNumber);
+        }
+        else if (!string.IsNullOrWhiteSpace(chassisNumber))
+        {
+            var cleanChassis = chassisNumber.Trim().ToLower();
+            vehicle = await _context.Vehicles
+                .FirstOrDefaultAsync(v => 
+                    (v.ChassisNumber != null && v.ChassisNumber.ToLower() == cleanChassis) ||
+                    (v.VIN != null && v.VIN.ToLower() == cleanChassis));
+        }
+
+        if (vehicle == null)
+            return NotFound(new { message = "No vehicle found with the provided details." });
+
+        return Ok(new VehicleDto(
+            vehicle.Id,
+            vehicle.RegistrationNumber,
+            vehicle.ChassisNumber ?? vehicle.VIN ?? string.Empty,
+            vehicle.Make,
+            vehicle.Model,
+            vehicle.ManufacturingYear,
+            vehicle.Type ?? string.Empty,
+            string.Empty,
+            vehicle.FuelType ?? string.Empty));
     }
 }
