@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VSense.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using VSense.Infrastructure.Persistence;
 namespace VSense.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922033614_AddOdometerToServiceRecord")]
+    partial class AddOdometerToServiceRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -132,11 +135,11 @@ namespace VSense.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("GarageId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("OdometerReading")
                         .HasColumnType("integer");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
@@ -158,7 +161,7 @@ namespace VSense.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GarageId");
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("PerformedById");
 
@@ -362,7 +365,7 @@ namespace VSense.Infrastructure.Migrations
                 {
                     b.HasOne("VSense.Domain.Entities.Organization", "Organization")
                         .WithMany()
-                        .HasForeignKey("GarageId")
+                        .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

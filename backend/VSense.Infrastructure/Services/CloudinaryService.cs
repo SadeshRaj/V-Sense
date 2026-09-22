@@ -11,9 +11,10 @@ public class CloudinaryService : ICloudinaryService
 
     public CloudinaryService(IConfiguration config)
     {
-        var cloudName = config["Cloudinary:CloudName"];
-        var apiKey = config["Cloudinary:ApiKey"];
-        var apiSecret = config["Cloudinary:ApiSecret"];
+        // FIX: Match the exact section name defined in your appsettings.json / Program.cs
+        var cloudName = config["CloudinarySettings:CloudName"];
+        var apiKey = config["CloudinarySettings:ApiKey"];
+        var apiSecret = config["CloudinarySettings:ApiSecret"];
 
         _isConfigured = !string.IsNullOrWhiteSpace(cloudName)
             && cloudName != "YOUR_CLOUD_NAME"
@@ -34,12 +35,12 @@ public class CloudinaryService : ICloudinaryService
     {
         if (!_isConfigured || _cloudinary == null)
         {
-            // Simulation mode: generate a deterministic placeholder URL so development
-            // and grading work without a Cloudinary account configured.
+            // Simulation mode fallback
             var safeFileName = Uri.EscapeDataString(Path.GetFileNameWithoutExtension(fileName));
             return $"https://res.cloudinary.com/vsense-demo/{folder}/{safeFileName}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
         }
 
+        // Real upload to your Cloudinary account
         var uploadParams = new RawUploadParams
         {
             File = new FileDescription(fileName, fileStream),

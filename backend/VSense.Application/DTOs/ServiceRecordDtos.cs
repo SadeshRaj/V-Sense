@@ -1,22 +1,26 @@
+using System;
+using System.Collections.Generic;
+
 namespace VSense.Application.DTOs;
 
-// Request to create a service/maintenance record
-// Note: GarageId is NOT in the request — it comes from the authenticated JWT claim
-public record CreateServiceRecordRequestDto(
-    Guid VehicleId,
-    string Title,
-    string Description,
-    string PaymentMethod   // Must be "InsuranceClaim" or "CustomerPayment"
-);
+public class CreateServiceRecordRequestDto
+{
+    public Guid VehicleId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public int OdometerReading { get; set; }
+}
 
-// Response after creating a service record
-public record ServiceRecordResponseDto(
-    Guid Id,
-    Guid VehicleId,
-    Guid GarageId,
-    string Title,
-    string Description,
-    string PaymentMethod,
-    List<string> PhotoUrls,
-    DateTime CreatedAt
-);
+public class ServiceRecordResponseDto
+{
+    public Guid Id { get; set; }
+    public Guid VehicleId { get; set; }
+    public Guid GarageId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public int OdometerReading { get; set; }
+    public List<string> PhotoUrls { get; set; } = new();
+    public DateTime CreatedAt { get; set; }
+}
