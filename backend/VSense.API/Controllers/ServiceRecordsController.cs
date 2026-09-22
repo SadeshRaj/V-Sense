@@ -158,4 +158,48 @@ public class ServiceRecordsController : ControllerBase
             return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
         }
     }
+
+    // ─── GET /api/ServiceRecords/my-records ───────────────────────────────
+    [HttpGet("my-records")]
+    [Authorize(Roles = "Garage,ServiceCenter")]
+    public async Task<IActionResult> GetMyRecords()
+    {
+        try
+        {
+            // Extract the organization/garage ID from the JWT token
+            var orgIdClaim = User.FindFirst("organizationId")?.Value
+                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(orgIdClaim) || !Guid.TryParse(orgIdClaim, out var organizationId))
+                return Unauthorized(new { message = "Invalid authentication token." });
+
+            // Fetch records linked to this garage, explicitly including the Vehicle to get the RegistrationNumber
+            var records = await _context.ServiceRecords
+                .Include(r => r.Vehicle)
+                .Where(r => r.GarageId == organizationId)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    id = r.Id,
+                    title = r.Title,
+                    vehicleNumber = r.Vehicle != null ? r.Vehicle.RegistrationNumber : "Unknown",
+                    description = r.Description,
+                    paymentMethod = r.PaymentMethod,
+                    odometerReading = r.OdometerReading,
+                    // React frontend explicitly looks for the 'photos' property array
+                    photos = string.IsNullOrEmpty(r.PhotoUrls)
+                        ? new List<string>()
+                        : r.PhotoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                    createdAt = r.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(records);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+        }
+    }
 }
