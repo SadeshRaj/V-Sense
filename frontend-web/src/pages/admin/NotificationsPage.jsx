@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sendBroadcastNotification, getMyNotifications, getSentNotifications, markAsRead, uploadNotificationImage } from '../../api/notifications';
+import { sendBroadcastNotification, getMyNotifications, getSentNotifications, markAsRead, uploadNotificationImage, deleteNotification } from '../../api/notifications';
 
 export default function NotificationsPage() {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -44,6 +44,18 @@ export default function NotificationsPage() {
         if (isRead) return;
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
         await markAsRead(id);
+    };
+
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this notification for all users?')) {
+            try {
+                await deleteNotification(id);
+                setSentNotifications(prev => prev.filter(n => n.id !== id));
+                setStatus({ type: 'success', text: 'Notification successfully deleted.' });
+            } catch (error) {
+                setStatus({ type: 'error', text: 'Failed to delete notification.' });
+            }
+        }
     };
 
     const handleFileChange = (e) => {
@@ -216,6 +228,18 @@ export default function NotificationsPage() {
                                 <div className="flex justify-between items-start mb-1">
                                     <span className="text-xs font-bold px-2 py-1 bg-slate-200 text-slate-700 rounded uppercase tracking-wider">{n.category}</span>
                                     <span className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleDateString()}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleDateString()}</span>
+                                        <button 
+                                            onClick={() => handleDelete(n.id)}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                            title="Delete for all users"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                                 <h4 className="text-md font-semibold text-slate-900 mb-1">{n.title}</h4>
                                 <p className="text-sm text-slate-600 mb-2">{n.message}</p>

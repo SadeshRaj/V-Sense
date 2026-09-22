@@ -94,6 +94,7 @@ namespace VSense.Infrastructure.Services
         {
             return await _context.Notifications
                 .Where(n => n.CreatedBy == adminId)
+                .Where(n => n.IsBroadcast == true)
                 .OrderByDescending(n => n.CreatedAt)
                 .Select(n => new NotificationResponseDto
                 {
@@ -106,6 +107,16 @@ namespace VSense.Infrastructure.Services
                     CreatedAt = n.CreatedAt
                 })
                 .ToListAsync();
+        }
+
+        public async Task DeleteNotificationAsync(Guid notificationId)
+        {
+            var notification = await _context.Notifications.FindAsync(notificationId);
+            if (notification != null)
+            {
+                _context.Notifications.Remove(notification);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task MarkAsReadAsync(Guid userId, Guid notificationId)

@@ -13,6 +13,7 @@ namespace VSense.Application.Interfaces
         Task<List<NotificationResponseDto>> GetSentNotificationsAsync(Guid adminId);
         Task MarkAsReadAsync(Guid userId, Guid notificationId);
         Task<int> GetUnreadCountAsync(Guid userId);
+        Task DeleteNotificationAsync(Guid notificationId);
     }
 }
 

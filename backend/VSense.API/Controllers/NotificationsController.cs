@@ -97,6 +97,17 @@ namespace VSense.API.Controllers
             return Ok(new { url = uploadResult.SecureUrl.ToString() });
         }
 
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Administrator")]
+        public async Task<IActionResult> DeleteNotification(Guid id)
+        {
+            var adminIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(adminIdString, out _)) return Unauthorized();
+
+            await _notificationService.DeleteNotificationAsync(id);
+            return Ok(new { message = "Notification deleted successfully." });
+        }
+
         [HttpPatch("{id}/read")]
         public async Task<IActionResult> MarkAsRead(Guid id)
         {

@@ -43,6 +43,15 @@ export const sendBroadcastNotification = async (notificationData) => {
     return await response.json();
 };
 
+export const deleteNotification = async (id) => {
+    const response = await fetch(`${API_BASE_URL}/Notifications/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error('Failed to delete notification');
+    return await response.json();
+};
+
 export const getUnreadCount = async () => {
     const response = await fetch(`${API_BASE_URL}/Notifications/unread-count`, {
         method: 'GET',
