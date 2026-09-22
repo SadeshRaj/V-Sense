@@ -40,6 +40,7 @@ export default function GarageDashboard() {
 
     // Service Record Form state
     const [title, setTitle] = useState('');
+    const [odometer, setOdometer] = useState('');
     const [description, setDescription] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('CustomerPayment'); // 'CustomerPayment' | 'InsuranceClaim'
     const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -170,8 +171,8 @@ export default function GarageDashboard() {
             return;
         }
 
-        if (!title.trim() || !description.trim()) {
-            setFormError('Please fill in both the service title and work description.');
+        if (!title.trim() || !description.trim() || !odometer.trim()) {
+            setFormError('Please fill in the service title, odometer reading, and work description.');
             return;
         }
 
@@ -186,6 +187,7 @@ export default function GarageDashboard() {
             const formData = new FormData();
             formData.append('vehicleId', activeVehicle.id);
             formData.append('title', title.trim());
+            formData.append('odometerReading', odometer.trim());
             formData.append('description', description.trim());
             formData.append('paymentMethod', paymentMethod);
 
@@ -198,6 +200,7 @@ export default function GarageDashboard() {
 
             // Reset form
             setTitle('');
+            setOdometer('');
             setDescription('');
             setPaymentMethod('CustomerPayment');
             setSelectedPhotos([]);
@@ -515,7 +518,27 @@ export default function GarageDashboard() {
                                             />
                                         </div>
 
-                                        {/* Payment Method Selector — STRICT requirement: InsuranceClaim or CustomerPayment */}
+                                        {/* Odometer Reading */}
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                                Odometer Reading (km) *
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    required
+                                                    value={odometer}
+                                                    onChange={(e) => setOdometer(e.target.value)}
+                                                    placeholder="e.g. 45000"
+                                                    className="w-full pl-4 pr-12 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
+                                                />
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">
+                                                    km
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Payment Method Selector */}
                                         <div>
                                             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                                                 Payment Method *
@@ -678,6 +701,8 @@ export default function GarageDashboard() {
                                                                 </span>
                                                                 <span>•</span>
                                                                 <span>{new Date(record.createdAt).toLocaleDateString()}</span>
+                                                                <span>•</span>
+                                                                <span className="font-mono text-emerald-400">{record.odometerReading} km</span>
                                                             </div>
                                                         </div>
 
