@@ -1,0 +1,7 @@
+fastapi==0.111.0
+uvicorn==0.30.1
+langgraph==0.1.14
+langchain-google-genai==1.0.6 # For Gemini models
+supabase==2.5.0 # To read/write to your Supabase tables
+pydantic==2.7.4
+tenacity==8.3.0 # For tool retry limits
