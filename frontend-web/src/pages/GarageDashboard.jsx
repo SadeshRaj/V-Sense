@@ -219,10 +219,10 @@ export default function GarageDashboard() {
     const samplePlates = ['WP CAQ-5834', 'NP CAA-3467', 'WP CBM-6903'];
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col antialiased">
 
             {/* Top Navigation Bar */}
-            <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-6 py-4">
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 shadow-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-xl text-white shadow-lg shadow-blue-600/30">
@@ -230,25 +230,25 @@ export default function GarageDashboard() {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-white text-lg tracking-tight">V-SENSE</span>
-                                <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                <span className="font-bold text-slate-900 text-lg tracking-tight">V-SENSE</span>
+                                <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
                                     Authorized Partner Portal
                                 </span>
                             </div>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-slate-500">
                                 {user?.role === 'ServiceCenter' ? 'Service Center Console' : 'Garage Maintenance Console'}
                             </p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-                            <IconBuilding className="w-4 h-4 text-emerald-400" />
-                            <span className="text-xs text-slate-200 font-medium">{user?.fullName || 'Partner'}</span>
+                        <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                            <IconBuilding className="w-4 h-4 text-emerald-600" />
+                            <span className="text-xs text-slate-700 font-medium">{user?.fullName || 'Partner'}</span>
                         </div>
                         <button
                             onClick={() => logout()}
-                            className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5"
+                            className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold border border-slate-200 transition flex items-center gap-1.5"
                         >
                             <IconLogOut className="w-3.5 h-3.5" />
                             Sign Out
@@ -260,15 +260,15 @@ export default function GarageDashboard() {
             {/* Toast Notification */}
             {notification && (
                 <div className="fixed top-20 right-6 z-50 animate-bounce">
-                    <div className={`px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border ${
+                    <div className={`px-4 py-3 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 border ${
                         notification.type === 'error'
-                            ? 'bg-red-900/90 border-red-700 text-red-100'
-                            : 'bg-emerald-900/90 border-emerald-700 text-emerald-100'
+                            ? 'bg-red-50 border-red-200 text-red-700'
+                            : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                     }`}>
                         {notification.type === 'error' ? (
-                            <IconAlertTriangle className="w-4 h-4 text-red-400" />
+                            <IconAlertTriangle className="w-4 h-4 text-red-500" />
                         ) : (
-                            <IconCheckCircle className="w-4 h-4 text-emerald-400" />
+                            <IconCheckCircle className="w-4 h-4 text-emerald-600" />
                         )}
                         <span>{notification.message}</span>
                     </div>
@@ -278,14 +278,14 @@ export default function GarageDashboard() {
             <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
                 {/* Sub-Tab Navigation Bar */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <div className="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl w-fit">
                         <button
                             onClick={() => setViewTab('search')}
-                            className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 ${
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
                                 viewTab === 'search'
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'text-slate-400 hover:text-white'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'
                             }`}
                         >
                             <IconSearch className="w-3.5 h-3.5" />
@@ -293,10 +293,10 @@ export default function GarageDashboard() {
                         </button>
                         <button
                             onClick={() => setViewTab('my-records')}
-                            className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 ${
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
                                 viewTab === 'my-records'
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'text-slate-400 hover:text-white'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'
                             }`}
                         >
                             <IconFileText className="w-3.5 h-3.5" />
@@ -304,10 +304,10 @@ export default function GarageDashboard() {
                         </button>
                     </div>
 
-                    <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+                    <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
                         <span>Partner Status:</span>
-                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             Verified & Active
                         </span>
                     </div>
@@ -318,14 +318,14 @@ export default function GarageDashboard() {
                     <div className="space-y-8">
 
                         {/* Search Box Card */}
-                        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+                        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm">
                             <div className="max-w-2xl space-y-4">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                        <IconCar className="w-5 h-5 text-blue-400" />
+                                    <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                        <IconCar className="w-5 h-5 text-blue-600" />
                                         Vehicle Lookup
                                     </h2>
-                                    <p className="text-xs text-slate-400 mt-1">
+                                    <p className="text-xs text-slate-500 mt-1">
                                         Search the verified registry by vehicle registration plate or chassis/VIN number to inspect history and record maintenance.
                                     </p>
                                 </div>
@@ -338,9 +338,9 @@ export default function GarageDashboard() {
                                             name="searchType"
                                             checked={searchType === 'plate'}
                                             onChange={() => setSearchType('plate')}
-                                            className="text-blue-600 focus:ring-blue-500 bg-slate-800 border-slate-700"
+                                            className="text-blue-600 focus:ring-blue-500 bg-white border-slate-300"
                                         />
-                                        <span className="text-slate-300 font-medium">Registration Plate Number</span>
+                                        <span className="text-slate-700 font-medium">Registration Plate Number</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
@@ -348,9 +348,9 @@ export default function GarageDashboard() {
                                             name="searchType"
                                             checked={searchType === 'chassis'}
                                             onChange={() => setSearchType('chassis')}
-                                            className="text-blue-600 focus:ring-blue-500 bg-slate-800 border-slate-700"
+                                            className="text-blue-600 focus:ring-blue-500 bg-white border-slate-300"
                                         />
-                                        <span className="text-slate-300 font-medium">Chassis / VIN Number</span>
+                                        <span className="text-slate-700 font-medium">Chassis / VIN Number</span>
                                     </label>
                                 </div>
 
@@ -360,13 +360,13 @@ export default function GarageDashboard() {
                                     className="flex flex-col sm:flex-row gap-3"
                                 >
                                     <div className="relative flex-grow">
-                                        <IconSearch className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                        <IconSearch className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                         <input
                                             type="text"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             placeholder={searchType === 'plate' ? 'e.g. WP CAQ-5834 or NP CAA-3467' : 'e.g. JT2AW19E3X0284592'}
-                                            className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500 font-mono"
+                                            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-400 font-mono"
                                         />
                                     </div>
                                     <button
@@ -392,7 +392,7 @@ export default function GarageDashboard() {
                                 </form>
 
                                 {/* Sample Search Pills */}
-                                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-400">
+                                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500">
                                     <span>Sample vehicles in DB:</span>
                                     {samplePlates.map(plate => (
                                         <button
@@ -403,7 +403,7 @@ export default function GarageDashboard() {
                                                 setSearchType('plate');
                                                 handleSearch(plate, 'plate');
                                             }}
-                                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 text-xs font-mono transition"
+                                            className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-mono transition"
                                         >
                                             {plate}
                                         </button>
@@ -412,7 +412,7 @@ export default function GarageDashboard() {
 
                                 {/* Error Alert */}
                                 {searchError && (
-                                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                                         <IconAlertTriangle className="w-4 h-4 flex-shrink-0" />
                                         <span>{searchError}</span>
                                     </div>
@@ -422,56 +422,56 @@ export default function GarageDashboard() {
 
                         {/* Vehicle Information Banner (if vehicle found) */}
                         {activeVehicle && (
-                            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6 animate-fade-in">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+                            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6 animate-fade-in">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-200">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center">
                                             <IconCar className="w-7 h-7" />
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <h3 className="text-2xl font-black text-white tracking-tight">
+                                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
                                                     {activeVehicle.make} {activeVehicle.model}
                                                 </h3>
-                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                                     {activeVehicle.year}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-slate-400 mt-0.5">
-                                                Registry ID: <span className="font-mono text-slate-300">{activeVehicle.id}</span>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                Registry ID: <span className="font-mono text-slate-700">{activeVehicle.id}</span>
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* Plate badge */}
-                                    <div className="bg-amber-400 text-slate-950 font-black text-lg px-5 py-2 rounded-xl shadow-md font-mono tracking-wider text-center border-2 border-amber-300 w-fit">
+                                    <div className="bg-amber-400 text-slate-950 font-black text-lg px-5 py-2 rounded-xl shadow-sm font-mono tracking-wider text-center border-2 border-amber-300 w-fit">
                                         {activeVehicle.vehicleNumber}
                                     </div>
                                 </div>
 
                                 {/* Specs Grid */}
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                                    <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-800">
+                                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                                         <span className="text-slate-500 block uppercase text-[10px] font-semibold tracking-wider">Chassis / VIN</span>
-                                        <span className="text-white font-mono font-medium mt-1 block truncate">
+                                        <span className="text-slate-800 font-mono font-bold mt-1 block truncate">
                                             {activeVehicle.chassisNumber || 'N/A'}
                                         </span>
                                     </div>
-                                    <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-800">
+                                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                                         <span className="text-slate-500 block uppercase text-[10px] font-semibold tracking-wider">Fuel Type</span>
-                                        <span className="text-white font-semibold mt-1 block">
+                                        <span className="text-slate-800 font-bold mt-1 block">
                                             {activeVehicle.fuelType || 'Petrol'}
                                         </span>
                                     </div>
-                                    <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-800">
+                                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                                         <span className="text-slate-500 block uppercase text-[10px] font-semibold tracking-wider">Vehicle Class</span>
-                                        <span className="text-white font-semibold mt-1 block">
+                                        <span className="text-slate-800 font-bold mt-1 block">
                                             {activeVehicle.color || 'Sedan / Hatchback'}
                                         </span>
                                     </div>
-                                    <div className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-800">
+                                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                                         <span className="text-slate-500 block uppercase text-[10px] font-semibold tracking-wider">Service History</span>
-                                        <span className="text-emerald-400 font-semibold mt-1 block">
+                                        <span className="text-emerald-600 font-bold mt-1 block">
                                             {vehicleHistory.length} Logged Record{vehicleHistory.length !== 1 ? 's' : ''}
                                         </span>
                                     </div>
@@ -484,19 +484,19 @@ export default function GarageDashboard() {
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
                                 {/* Form Column (Left) */}
-                                <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+                                <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
                                     <div>
-                                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                            <IconWrench className="w-5 h-5 text-emerald-400" />
+                                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                            <IconWrench className="w-5 h-5 text-emerald-600" />
                                             Add Maintenance Record
                                         </h3>
-                                        <p className="text-xs text-slate-400 mt-1">
-                                            Log maintenance performed by <strong className="text-white">{user?.fullName}</strong>.
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            Log maintenance performed by <strong className="text-slate-800">{user?.fullName}</strong>.
                                         </p>
                                     </div>
 
                                     {formError && (
-                                        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                                        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                                             <IconAlertTriangle className="w-4 h-4 flex-shrink-0" />
                                             <span>{formError}</span>
                                         </div>
@@ -505,7 +505,7 @@ export default function GarageDashboard() {
                                     <form onSubmit={handleSubmitRecord} className="space-y-5">
                                         {/* Service Title */}
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                                                 Service Title *
                                             </label>
                                             <input
@@ -514,13 +514,13 @@ export default function GarageDashboard() {
                                                 value={title}
                                                 onChange={(e) => setTitle(e.target.value)}
                                                 placeholder="e.g. 40,000km Major Periodic Service & Brake Overhaul"
-                                                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
+                                                className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-400"
                                             />
                                         </div>
 
                                         {/* Odometer Reading */}
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                                                 Odometer Reading (km) *
                                             </label>
                                             <div className="relative">
@@ -530,9 +530,9 @@ export default function GarageDashboard() {
                                                     value={odometer}
                                                     onChange={(e) => setOdometer(e.target.value)}
                                                     placeholder="e.g. 45000"
-                                                    className="w-full pl-4 pr-12 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500"
+                                                    className="w-full pl-4 pr-12 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:border-blue-500 transition placeholder:text-slate-400"
                                                 />
-                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-semibold">
                                                     km
                                                 </span>
                                             </div>
@@ -540,13 +540,13 @@ export default function GarageDashboard() {
 
                                         {/* Payment Method Selector */}
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                                                 Payment Method *
                                             </label>
                                             <select
                                                 value={paymentMethod}
                                                 onChange={(e) => setPaymentMethod(e.target.value)}
-                                                className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-blue-500 transition"
+                                                className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm focus:outline-none focus:border-blue-500 transition"
                                             >
                                                 <option value="CustomerPayment">Customer Payment (Direct / Cash / Card)</option>
                                                 <option value="InsuranceClaim">Insurance Claim (Third-Party / Comprehensive)</option>
@@ -558,7 +558,7 @@ export default function GarageDashboard() {
 
                                         {/* Description */}
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                                                 Work Description & Parts Replaced *
                                             </label>
                                             <textarea
@@ -567,17 +567,17 @@ export default function GarageDashboard() {
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
                                                 placeholder="Details of services, diagnostics, synthetic oil viscosity, filter part numbers, brake pad thickness measurements..."
-                                                className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-blue-500 transition placeholder:text-slate-500 leading-relaxed"
+                                                className="w-full p-3.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-blue-500 transition placeholder:text-slate-400 leading-relaxed"
                                             />
                                         </div>
 
                                         {/* Photo Upload (Multiple) */}
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                                                 Service Evidence Photos (Optional, max 5)
                                             </label>
 
-                                            <div className="border border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-4 text-center transition bg-slate-800/40">
+                                            <div className="border border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-4 text-center transition bg-slate-50">
                                                 <input
                                                     type="file"
                                                     id="service-photos"
@@ -588,8 +588,8 @@ export default function GarageDashboard() {
                                                     disabled={selectedPhotos.length >= 5}
                                                 />
                                                 <label htmlFor="service-photos" className="cursor-pointer block space-y-1">
-                                                    <IconImage className="w-6 h-6 text-blue-400 mx-auto" />
-                                                    <div className="text-xs font-medium text-slate-300">
+                                                    <IconImage className="w-6 h-6 text-blue-500 mx-auto" />
+                                                    <div className="text-xs font-semibold text-slate-700">
                                                         Click to add photos of repairs, parts or odometer
                                                     </div>
                                                     <p className="text-[10px] text-slate-500">
@@ -602,7 +602,7 @@ export default function GarageDashboard() {
                                             {photoPreviews.length > 0 && (
                                                 <div className="grid grid-cols-5 gap-2 mt-3">
                                                     {photoPreviews.map((preview, idx) => (
-                                                        <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-700 h-16 bg-slate-950">
+                                                        <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200 h-16 bg-slate-100">
                                                             <img
                                                                 src={preview}
                                                                 alt={`preview-${idx}`}
@@ -646,20 +646,20 @@ export default function GarageDashboard() {
                                 </div>
 
                                 {/* Vehicle History Column (Right) */}
-                                <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+                                <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                                <IconClock className="w-5 h-5 text-blue-400" />
+                                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                                <IconClock className="w-5 h-5 text-blue-600" />
                                                 Vehicle Service History
                                             </h3>
-                                            <p className="text-xs text-slate-400 mt-1">
+                                            <p className="text-xs text-slate-500 mt-1">
                                                 Immutable chronological record for this chassis
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => loadVehicleHistory(activeVehicle.id)}
-                                            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                                            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
                                             title="Refresh history"
                                         >
                                             <IconRefresh className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />
@@ -672,12 +672,12 @@ export default function GarageDashboard() {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            <p className="text-xs text-slate-400">Loading service logs...</p>
+                                            <p className="text-xs text-slate-500">Loading service logs...</p>
                                         </div>
                                     ) : vehicleHistory.length === 0 ? (
-                                        <div className="py-16 text-center border border-dashed border-slate-800 rounded-xl space-y-2 p-6">
-                                            <IconFileText className="w-8 h-8 text-slate-600 mx-auto" />
-                                            <p className="text-xs font-semibold text-slate-300">No previous records logged</p>
+                                        <div className="py-16 text-center border border-dashed border-slate-200 rounded-xl space-y-2 p-6">
+                                            <IconFileText className="w-8 h-8 text-slate-400 mx-auto" />
+                                            <p className="text-xs font-bold text-slate-700">No previous records logged</p>
                                             <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
                                                 Use the form on the left to record the inaugural maintenance event for this vehicle.
                                             </p>
@@ -687,43 +687,43 @@ export default function GarageDashboard() {
                                             {vehicleHistory.map((record) => (
                                                 <div
                                                     key={record.id}
-                                                    className="bg-slate-800/50 border border-slate-700/60 rounded-xl p-4.5 space-y-3 hover:border-slate-600 transition"
+                                                    className="bg-slate-50 border border-slate-200 rounded-xl p-4.5 space-y-3 hover:border-slate-300 transition"
                                                 >
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div>
-                                                            <h4 className="font-bold text-white text-sm">
+                                                            <h4 className="font-bold text-slate-900 text-sm">
                                                                 {record.title}
                                                             </h4>
-                                                            <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                                                            <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
                                                                 <span className="flex items-center gap-1">
-                                                                    <IconBuilding className="w-3 h-3 text-emerald-400" />
+                                                                    <IconBuilding className="w-3 h-3 text-emerald-600" />
                                                                     {record.garageName}
                                                                 </span>
                                                                 <span>•</span>
                                                                 <span>{new Date(record.createdAt).toLocaleDateString()}</span>
                                                                 <span>•</span>
-                                                                <span className="font-mono text-emerald-400">{record.odometerReading} km</span>
+                                                                <span className="font-mono font-semibold text-emerald-600">{record.odometerReading} km</span>
                                                             </div>
                                                         </div>
 
                                                         {/* Payment Method Badge */}
-                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
+                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                                                             record.paymentMethod === 'InsuranceClaim'
-                                                                ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
-                                                                : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                                                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                         }`}>
                                                             {record.paymentMethod === 'InsuranceClaim' ? 'Insurance Claim' : 'Customer Payment'}
                                                         </span>
                                                     </div>
 
-                                                    <p className="text-xs text-slate-300 leading-relaxed">
+                                                    <p className="text-xs text-slate-600 leading-relaxed">
                                                         {record.description}
                                                     </p>
 
                                                     {/* Attached Photos */}
                                                     {record.photos && record.photos.length > 0 && (
-                                                        <div className="pt-2 border-t border-slate-700/50">
-                                                            <div className="text-[10px] font-semibold uppercase text-slate-400 mb-1.5 flex items-center gap-1">
+                                                        <div className="pt-2 border-t border-slate-200">
+                                                            <div className="text-[10px] font-bold uppercase text-slate-500 mb-1.5 flex items-center gap-1">
                                                                 <IconImage className="w-3 h-3" />
                                                                 Verified Evidence Photos ({record.photos.length})
                                                             </div>
@@ -732,7 +732,7 @@ export default function GarageDashboard() {
                                                                     <div
                                                                         key={pIdx}
                                                                         onClick={() => setPreviewImage(photoUrl)}
-                                                                        className="w-14 h-14 rounded-lg overflow-hidden border border-slate-700 cursor-pointer hover:border-blue-400 transition relative group"
+                                                                        className="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:border-blue-400 transition relative group"
                                                                     >
                                                                         <img
                                                                             src={photoUrl}
@@ -759,20 +759,20 @@ export default function GarageDashboard() {
 
                 {/* ─── TAB 2: WORKSHOP'S OWN LOGGED RECORDS ────────────────── */}
                 {viewTab === 'my-records' && (
-                    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                             <div>
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <IconFileText className="w-5 h-5 text-blue-400" />
+                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                    <IconFileText className="w-5 h-5 text-blue-600" />
                                     Your Workshop's Service Logs
                                 </h3>
-                                <p className="text-xs text-slate-400 mt-1">
+                                <p className="text-xs text-slate-500 mt-1">
                                     All maintenance events logged under your authenticated account
                                 </p>
                             </div>
                             <button
                                 onClick={loadMyRecords}
-                                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
                             >
                                 <IconRefresh className={`w-4 h-4 ${loadingMyRecords ? 'animate-spin' : ''}`} />
                             </button>
@@ -784,12 +784,12 @@ export default function GarageDashboard() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                                <p className="text-xs text-slate-400">Loading your service history...</p>
+                                <p className="text-xs text-slate-500">Loading your service history...</p>
                             </div>
                         ) : myRecords.length === 0 ? (
-                            <div className="py-20 text-center border border-dashed border-slate-800 rounded-xl space-y-2">
-                                <IconWrench className="w-10 h-10 text-slate-600 mx-auto" />
-                                <p className="text-sm font-semibold text-slate-300">No records logged yet</p>
+                            <div className="py-20 text-center border border-dashed border-slate-200 rounded-xl space-y-2">
+                                <IconWrench className="w-10 h-10 text-slate-400 mx-auto" />
+                                <p className="text-sm font-bold text-slate-700">No records logged yet</p>
                                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                                     Search for a vehicle in the search tab to begin recording services.
                                 </p>
@@ -799,34 +799,34 @@ export default function GarageDashboard() {
                                 {myRecords.map((rec) => (
                                     <div
                                         key={rec.id}
-                                        className="bg-slate-800/40 border border-slate-800 rounded-xl p-5 space-y-3 hover:border-slate-700 transition"
+                                        className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3 hover:border-slate-300 transition"
                                     >
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
-                                                <div className="font-bold text-white text-sm">
+                                                <div className="font-bold text-slate-900 text-sm">
                                                     {rec.title}
                                                 </div>
-                                                <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
                                                     Vehicle: {rec.vehicleNumber || 'Registered Vehicle'}
                                                 </div>
                                             </div>
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                                                 rec.paymentMethod === 'InsuranceClaim'
-                                                    ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
-                                                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                             }`}>
                                                 {rec.paymentMethod === 'InsuranceClaim' ? 'Insurance' : 'Customer'}
                                             </span>
                                         </div>
 
-                                        <p className="text-xs text-slate-300 line-clamp-2">
+                                        <p className="text-xs text-slate-600 line-clamp-2">
                                             {rec.description}
                                         </p>
 
-                                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-medium">
                                             <span>Logged {new Date(rec.createdAt).toLocaleDateString()}</span>
                                             {rec.photos && rec.photos.length > 0 && (
-                                                <span className="text-blue-400 flex items-center gap-1">
+                                                <span className="text-blue-600 flex items-center gap-1">
                                                     <IconImage className="w-3 h-3" />
                                                     {rec.photos.length} Photo{rec.photos.length !== 1 ? 's' : ''}
                                                 </span>
@@ -844,14 +844,14 @@ export default function GarageDashboard() {
             {previewImage && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div
-                        className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
                         onClick={() => setPreviewImage(null)}
                     />
                     <div className="relative max-w-4xl max-h-[90vh] z-10 space-y-3">
                         <div className="flex justify-end">
                             <button
                                 onClick={() => setPreviewImage(null)}
-                                className="text-white hover:text-red-400 p-2 text-sm font-bold bg-slate-800 rounded-full transition"
+                                className="text-slate-800 hover:text-slate-900 p-2 text-sm font-bold bg-white rounded-full transition"
                             >
                                 ✕
                             </button>
@@ -859,7 +859,7 @@ export default function GarageDashboard() {
                         <img
                             src={previewImage}
                             alt="Full evidence"
-                            className="max-h-[80vh] max-w-full rounded-2xl object-contain shadow-2xl border border-slate-800"
+                            className="max-h-[80vh] max-w-full rounded-2xl object-contain shadow-2xl border border-slate-200 bg-white"
                         />
                     </div>
                 </div>
