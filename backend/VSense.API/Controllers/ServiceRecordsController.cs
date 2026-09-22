@@ -27,105 +27,117 @@ public class ServiceRecordsController : ControllerBase
         _cloudinary = cloudinary;
     }
 
-    // ─── POST /api/ServiceRecords ────────────────────────────────────────────
     [HttpPost]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
         [FromForm] CreateServiceRecordRequestDto request,
         [FromForm] List<IFormFile>? photos)
     {
-        if (!AllowedPaymentMethods.Contains(request.PaymentMethod))
-            return BadRequest(new { message = "Payment method must be 'InsuranceClaim' or 'CustomerPayment'." });
-
-        if (string.IsNullOrWhiteSpace(request.Title))
-            return BadRequest(new { message = "Service title is required." });
-
-        if (string.IsNullOrWhiteSpace(request.Description))
-            return BadRequest(new { message = "Service description is required." });
-
-        // Garage/ServiceCenter accounts ARE the Organization — there's no linked
-        // User row for staff, so the org id comes straight from the JWT claim
-        // set in AuthController.GenerateJwtToken(Organization organization).
-        var orgIdClaim = User.FindFirst("organizationId")?.Value;
-
-        if (string.IsNullOrEmpty(orgIdClaim) || !Guid.TryParse(orgIdClaim, out var organizationId))
-            return Unauthorized(new { message = "Invalid authentication token." });
-
-        var organizationExists = await _context.Organizations.AnyAsync(o => o.Id == organizationId);
-        if (!organizationExists)
-            return Unauthorized(new { message = "Organization account not found." });
-
-        var vehicle = await _context.Vehicles.FindAsync(request.VehicleId);
-        if (vehicle == null)
-            return NotFound(new { message = "Vehicle not found." });
-
-        var photoUrls = new List<string>();
-        if (photos != null && photos.Count > 0)
+        try
         {
-            foreach (var photo in photos)
+            if (!AllowedPaymentMethods.Contains(request.PaymentMethod))
+                return BadRequest(new { message = "Payment method must be 'InsuranceClaim' or 'CustomerPayment'." });
+
+            if (string.IsNullOrWhiteSpace(request.Title))
+                return BadRequest(new { message = "Service title is required." });
+
+            if (string.IsNullOrWhiteSpace(request.Description))
+                return BadRequest(new { message = "Service description is required." });
+
+            // 1. Extract the organization ID from the JWT token.
+            var orgIdClaim = User.FindFirst("organizationId")?.Value
+                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(orgIdClaim) || !Guid.TryParse(orgIdClaim, out var organizationId))
+                return Unauthorized(new { message = "Invalid authentication token." });
+
+            // 2. Verify against the Organizations table
+            var organizationExists = await _context.Organizations.AnyAsync(o => o.Id == organizationId);
+            if (!organizationExists)
+                return Unauthorized(new { message = "Garage user account not found in Organizations table." });
+
+            var vehicle = await _context.Vehicles.FindAsync(request.VehicleId);
+            if (vehicle == null)
+                return NotFound(new { message = "Vehicle not found." });
+
+            var photoUrls = new List<string>();
+            if (photos != null && photos.Count > 0)
             {
-                if (photo.Length == 0) continue;
-                try
+                foreach (var photo in photos)
                 {
+                    if (photo.Length == 0) continue;
                     using var stream = photo.OpenReadStream();
                     var url = await _cloudinary.UploadAsync(stream, photo.FileName, "service-photos");
                     photoUrls.Add(url);
                 }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, new { message = $"Failed to upload photo '{photo.FileName}': {ex.Message}" });
-                }
             }
+
+            var record = new ServiceRecord
+            {
+                Id = Guid.NewGuid(),
+                VehicleId = request.VehicleId,
+                GarageId = organizationId,
+                Title = request.Title,
+                Description = request.Description,
+                PaymentMethod = request.PaymentMethod,
+                OdometerReading = request.OdometerReading,
+                PhotoUrls = string.Join(",", photoUrls),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.ServiceRecords.Add(record);
+            await _context.SaveChangesAsync();
+
+            return Created(string.Empty, new ServiceRecordResponseDto
+            {
+                Id = record.Id,
+                VehicleId = record.VehicleId,
+                GarageId = record.GarageId,
+                Title = record.Title,
+                Description = record.Description,
+                PaymentMethod = record.PaymentMethod,
+                OdometerReading = record.OdometerReading,
+                PhotoUrls = photoUrls,
+                CreatedAt = record.CreatedAt
+            });
         }
-
-        var record = new ServiceRecord
+        catch (Exception ex)
         {
-            Id = Guid.NewGuid(),
-            VehicleId = request.VehicleId,
-            OrganizationId = organizationId,
-            PerformedById = null, // no individual staff User accounts exist for garages
-            Title = request.Title,
-            Description = request.Description,
-            PaymentMethod = request.PaymentMethod,
-            PhotoUrls = string.Join(",", photoUrls),
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _context.ServiceRecords.Add(record);
-        await _context.SaveChangesAsync();
-
-        return Created(string.Empty, new ServiceRecordResponseDto(
-            record.Id,
-            record.VehicleId,
-            record.OrganizationId, // Passed as GarageId parameter in DTO
-            record.Title,
-            record.Description,
-            record.PaymentMethod,
-            photoUrls,
-            record.CreatedAt));
+            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+        }
     }
 
-    // ─── GET /api/ServiceRecords/vehicle/{vehicleId} ─────────────────────────
     [HttpGet("vehicle/{vehicleId:guid}")]
     public async Task<IActionResult> GetByVehicle(Guid vehicleId)
     {
-        var records = await _context.ServiceRecords
-            .Where(r => r.VehicleId == vehicleId)
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
+        try
+        {
+            var records = await _context.ServiceRecords
+                .Where(r => r.VehicleId == vehicleId)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
 
-        var result = records.Select(r => new ServiceRecordResponseDto(
-            r.Id,
-            r.VehicleId,
-            r.OrganizationId,
-            r.Title,
-            r.Description,
-            r.PaymentMethod,
-            string.IsNullOrEmpty(r.PhotoUrls)
-                ? new List<string>()
-                : r.PhotoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-            r.CreatedAt));
+            var result = records.Select(r => new ServiceRecordResponseDto
+            {
+                Id = r.Id,
+                VehicleId = r.VehicleId,
+                GarageId = r.GarageId,
+                Title = r.Title,
+                Description = r.Description,
+                PaymentMethod = r.PaymentMethod,
+                OdometerReading = r.OdometerReading,
+                PhotoUrls = string.IsNullOrEmpty(r.PhotoUrls)
+                    ? new List<string>()
+                    : r.PhotoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                CreatedAt = r.CreatedAt
+            });
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
+        }
     }
 }
