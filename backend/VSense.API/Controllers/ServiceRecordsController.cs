@@ -12,7 +12,6 @@ namespace VSense.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Garage,ServiceCenter")]
 public class ServiceRecordsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -28,6 +27,7 @@ public class ServiceRecordsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Garage,ServiceCenter")] // STRICTLY restricts creating records to Garages
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Create(
         [FromForm] CreateServiceRecordRequestDto request,
@@ -44,7 +44,7 @@ public class ServiceRecordsController : ControllerBase
             if (string.IsNullOrWhiteSpace(request.Description))
                 return BadRequest(new { message = "Service description is required." });
 
-            // 1. Extract the organization ID from the JWT token.
+            // CORRECTED: Extract organization ID from the JWT token
             var orgIdClaim = User.FindFirst("organizationId")?.Value
                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                           ?? User.FindFirst("id")?.Value;
@@ -52,7 +52,7 @@ public class ServiceRecordsController : ControllerBase
             if (string.IsNullOrEmpty(orgIdClaim) || !Guid.TryParse(orgIdClaim, out var organizationId))
                 return Unauthorized(new { message = "Invalid authentication token." });
 
-            // 2. Verify against the Organizations table
+            // CORRECTED: Verify against the Organizations table
             var organizationExists = await _context.Organizations.AnyAsync(o => o.Id == organizationId);
             if (!organizationExists)
                 return Unauthorized(new { message = "Garage user account not found in Organizations table." });
@@ -109,10 +109,28 @@ public class ServiceRecordsController : ControllerBase
     }
 
     [HttpGet("vehicle/{vehicleId:guid}")]
+    [Authorize] // Allows any authenticated user (Clients or Garages)
     public async Task<IActionResult> GetByVehicle(Guid vehicleId)
     {
         try
         {
+            // SECURE OWNERSHIP CHECK FOR CLIENTS
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+
+            if (userRole != "Garage" && userRole != "ServiceCenter" && userRole != "Administrator")
+            {
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("id")?.Value;
+                if (Guid.TryParse(userIdStr, out var userId))
+                {
+                    // Verify the client actually owns this vehicle
+                    var isOwner = await _context.VehicleOwnerships
+                        .AnyAsync(vo => vo.VehicleId == vehicleId && vo.UserId == userId && vo.Status == "Active");
+
+                    if (!isOwner)
+                        return Forbid("You do not have active ownership rights to view this vehicle's history.");
+                }
+            }
+
             var records = await _context.ServiceRecords
                 .Where(r => r.VehicleId == vehicleId)
                 .OrderByDescending(r => r.CreatedAt)
