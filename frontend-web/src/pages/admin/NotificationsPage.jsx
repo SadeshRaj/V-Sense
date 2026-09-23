@@ -115,21 +115,41 @@ export default function NotificationsPage() {
                             <div 
                                 key={n.id} 
                                 onClick={() => handleRead(n.id, n.isRead)}
-                                className={`p-5 rounded-xl border cursor-pointer transition-colors ${n.isRead ? 'bg-white border-slate-200' : 'bg-blue-50 border-blue-200'}`}
+                                className={`p-5 rounded-xl border cursor-pointer transition-colors ${n.isRead ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 shadow-sm'}`}
                             >
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded uppercase tracking-wider">{n.category}</span>
-                                    {!n.isRead && <span className="w-2.5 h-2.5 bg-red-500 rounded-full"></span>}
+                                <div className="flex items-start gap-3 mb-3">
+                                    <div className="relative">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${n.category === 'Promotional' ? 'bg-[#ff3366]' : 'bg-blue-500'}`}>
+                                            {n.category === 'Promotional' ? (
+                                                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        {!n.isRead && <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-600 border-2 border-white rounded-full"></span>}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <h3 className="text-lg font-bold text-slate-800 leading-tight">{n.title}</h3>
+                                        <span className="text-sm text-slate-500 mt-0.5">
+                                            {new Date(n.createdAt).toLocaleDateString() === new Date().toLocaleDateString() 
+                                                ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                : new Date(n.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
                                 </div>
-                                <h3 className="text-lg font-semibold text-slate-900 mb-1">{n.title}</h3>
-                                <p className="text-slate-600 mb-3">{n.message}</p>
+
                                 {n.imageUrl && (
-                                    <div className="flex flex-col gap-3 mt-3">
+                                    <div className="flex flex-col gap-3 mb-3">
                                         {n.imageUrl.split(',').filter(Boolean).map((url, i) => (
                                             <img key={i} src={url} alt={`Notification ${i+1}`} className="w-full h-48 object-cover rounded-lg" />
                                         ))}
                                     </div>
                                 )}
+                                <p className="text-slate-600 whitespace-pre-wrap">{n.message}</p>
                             </div>
                         ))}
                     </div>
@@ -225,31 +245,47 @@ export default function NotificationsPage() {
                     <div className="space-y-4">
                         {sentNotifications.map(n => (
                             <div key={n.id} className="p-4 rounded-xl border bg-slate-50 border-slate-200">
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className="text-xs font-bold px-2 py-1 bg-slate-200 text-slate-700 rounded uppercase tracking-wider">{n.category}</span>
-                                    <span className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleDateString()}</span>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleDateString()}</span>
-                                        <button 
-                                            onClick={() => handleDelete(n.id)}
-                                            className="text-red-500 hover:text-red-700 p-1"
-                                            title="Delete for all users"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${n.category === 'Promotional' ? 'bg-[#ff3366]' : 'bg-blue-500'}`}>
+                                            {n.category === 'Promotional' ? (
+                                                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h4 className="text-lg font-bold text-slate-800 leading-tight">{n.title}</h4>
+                                            <span className="text-sm text-slate-500 mt-0.5">
+                                                {new Date(n.createdAt).toLocaleDateString() === new Date().toLocaleDateString() 
+                                                    ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                                    : new Date(n.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
                                     </div>
+                                    <button 
+                                        onClick={() => handleDelete(n.id)}
+                                        className="text-red-500 hover:text-red-700 p-1"
+                                        title="Delete for all users"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </div>
-                                <h4 className="text-md font-semibold text-slate-900 mb-1">{n.title}</h4>
-                                <p className="text-sm text-slate-600 mb-2">{n.message}</p>
+                                
                                 {n.imageUrl && (
-                                    <div className="flex gap-2 mt-2 overflow-x-auto">
+                                    <div className="flex gap-2 mb-3 overflow-x-auto">
                                         {n.imageUrl.split(',').filter(Boolean).map((url, i) => (
-                                            <img key={i} src={url} alt="thumbnail" className="h-16 w-16 object-cover rounded shadow-sm border border-slate-200" />
+                                            <img key={i} src={url} alt="thumbnail" className="h-24 object-cover rounded shadow-sm border border-slate-200" />
                                         ))}
                                     </div>
                                 )}
+                                <p className="text-sm text-slate-600 whitespace-pre-wrap">{n.message}</p>
                             </div>
                         ))}
                     </div>
