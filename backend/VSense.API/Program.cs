@@ -83,20 +83,23 @@ builder.Services.AddSwaggerGen(c =>
 // 4. Dynamic CORS
 var allowedOriginsSetting = builder.Configuration["AllowedOrigins"];
 var allowedOrigins = string.IsNullOrWhiteSpace(allowedOriginsSetting)
-    ? Array.Empty<string>()
-    : allowedOriginsSetting.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    ? new List<string>()
+    : allowedOriginsSetting.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+// Ensure the React development port is always allowed
+if (!allowedOrigins.Contains("http://localhost:5173"))
+{
+    allowedOrigins.Add("http://localhost:5173");
+}
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DynamicCorsPolicy", policy =>
     {
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
+        policy.WithOrigins(allowedOrigins.ToArray())
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
