@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
-import 'my_garage_screen.dart'; // <--- Added Import
+import 'my_garage_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
+import 'digital_certs_screen.dart';
+import 'qr_scanner_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -109,7 +111,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -179,7 +180,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Greeting & Location
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -225,7 +225,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Status Chips
               Row(
                 children: [
                   GestureDetector(
@@ -244,7 +243,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Primary Action: Search & Link Vehicle Banner
               InkWell(
                 onTap: () {
                   Navigator.push(
@@ -315,7 +313,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Workflow Alert Tile
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -357,7 +354,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 28),
 
-              // Portal Tools Grid
               const Text(
                 'V-Sense Portal',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: navyDeep, letterSpacing: 0.5),
@@ -371,8 +367,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage), // <--- Linked here
-                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {}),
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage),
+                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
+                    );
+                  }),
                   _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
                     Navigator.push(
                       context,
@@ -389,8 +390,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-
-      // Bottom Navigation Bar
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -408,9 +407,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              setState(() => _currentIndex = index);
-              if (index == 1) {
-                _navigateToGarage(); // <--- Linked to Garage bottom bar tab
+              if (index == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+                );
+              } else {
+                setState(() => _currentIndex = index);
+                if (index == 1) {
+                  _navigateToGarage();
+                }
               }
             },
             backgroundColor: Colors.white,

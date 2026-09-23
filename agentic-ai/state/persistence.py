@@ -1,4 +1,6 @@
 import os
+import json
+from datetime import datetime, timezone
 from supabase import create_client, Client, ClientOptions
 from state.schema import WorkflowState
 
@@ -18,13 +20,20 @@ def save_workflow_state(state: WorkflowState):
     """
     supabase = get_supabase_client()
     try:
-        # Extract the ai_insight safely if it exists
+        # Extract data safely
         ai_insight = state.get("valuation", {}).get("ai_insight", "")
+        fraud_flags_json = json.dumps(state.get("fraud_flags", []))
+        history_summary_json = json.dumps(state.get("history_summary", {}))
 
         supabase.table("AIWorkflows").upsert({
             "id": state["workflow_id"],
             "Status": state["status"],
-            "ai_insight": ai_insight
+            "ai_insight": ai_insight,
+            "fraud_flags": fraud_flags_json,
+            "history_summary": history_summary_json,
+            "vehicle_id": state.get("vehicle_id"),
+            "requested_by": state.get("requested_by"),
+            "created_at": datetime.now(timezone.utc).isoformat()
         }).execute()
         return True
     except Exception as e:
