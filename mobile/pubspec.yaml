@@ -17,6 +17,10 @@ dependencies:
   payhere_mobilesdk_flutter: ^3.2.3
   file_picker: ^13.0.0
   intl: ^0.20.3
+  qr_flutter: ^4.1.0
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  mobile_scanner: ^7.4.2
 
 dev_dependencies:
   flutter_test:
