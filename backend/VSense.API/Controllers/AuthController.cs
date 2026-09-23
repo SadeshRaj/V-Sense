@@ -157,7 +157,7 @@ public class AuthController : ControllerBase
             BRDocumentUrl = brDocumentUrl,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             ContactPersonName = request.FullName,
-            IsVerified = false,
+            Status = "Pending",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -169,7 +169,7 @@ public class AuthController : ControllerBase
             organization.Id,
             organization.Name,
             organization.Email ?? string.Empty,
-            organization.IsVerified == true ? "Active" : "Pending"
+            organization.Status
         ));
     }
 
@@ -251,8 +251,11 @@ public class AuthController : ControllerBase
                 !BCrypt.Net.BCrypt.Verify(request.Password, organization.PasswordHash))
                 return Unauthorized(new { message = "Invalid email or password." });
 
-            if (organization.IsVerified != true)
-                return StatusCode(403, new { message = "Your organization application is awaiting admin approval." });
+            if (organization.Status == "Rejected")
+                return StatusCode(403, new { message = "Your registration has been rejected. Please contact support." });
+
+            if (organization.Status != "Active")
+                return StatusCode(403, new { message = "Your application is pending admin approval." });
 
             var orgToken = GenerateJwtToken(organization);
 

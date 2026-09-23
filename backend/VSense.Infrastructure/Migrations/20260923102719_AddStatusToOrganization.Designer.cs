@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VSense.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using VSense.Infrastructure.Persistence;
 namespace VSense.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260923102719_AddStatusToOrganization")]
+    partial class AddStatusToOrganization
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,47 +24,6 @@ namespace VSense.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("VSense.Domain.Entities.AIWorkflow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AiInsight")
-                        .HasColumnType("text")
-                        .HasColumnName("ai_insight");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("FraudFlags")
-                        .HasColumnType("text")
-                        .HasColumnName("fraud_flags");
-
-                    b.Property<string>("HistorySummary")
-                        .HasColumnType("text")
-                        .HasColumnName("history_summary");
-
-                    b.Property<string>("RequestedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("requested_by");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Status");
-
-                    b.Property<string>("VehicleId")
-                        .HasColumnType("text")
-                        .HasColumnName("vehicle_id");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AIWorkflows");
-                });
 
             modelBuilder.Entity("VSense.Domain.Entities.Organization", b =>
                 {
