@@ -1,4 +1,4 @@
-namespace VSense.Domain.Entities;
+﻿namespace VSense.Domain.Entities;
 
 public class Organization
 {
@@ -10,9 +10,7 @@ public class Organization
     public string? Adress { get; set; }
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
-    public string Status { get; set; } = "Pending";
-    public bool? IsVerified => Status == "Active";
-
+    public bool? IsVerified { get; set; } = false;
     public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
     public string? PasswordHash { get; set; }

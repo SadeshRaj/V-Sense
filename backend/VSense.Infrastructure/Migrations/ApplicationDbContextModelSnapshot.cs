@@ -85,6 +85,9 @@ namespace VSense.Infrastructure.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("text");
 
+                    b.Property<bool?>("IsVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal?>("Latitude")
                         .HasColumnType("numeric");
 
@@ -100,13 +103,6 @@ namespace VSense.Infrastructure.Migrations
 
                     b.Property<string>("Phone")
                         .HasColumnType("text");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Pending");
 
                     b.Property<string>("Type")
                         .HasColumnType("text");
@@ -167,7 +163,8 @@ namespace VSense.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -186,6 +183,9 @@ namespace VSense.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("PerformedById")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PhotoUrls")
                         .IsRequired()
                         .HasColumnType("text");
@@ -200,6 +200,8 @@ namespace VSense.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GarageId");
+
+                    b.HasIndex("PerformedById");
 
                     b.HasIndex("VehicleId");
 
@@ -405,6 +407,11 @@ namespace VSense.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("VSense.Domain.Entities.User", "PerformedBy")
+                        .WithMany()
+                        .HasForeignKey("PerformedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("VSense.Domain.Entities.Vehicle", "Vehicle")
                         .WithMany()
                         .HasForeignKey("VehicleId")
@@ -412,6 +419,8 @@ namespace VSense.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Organization");
+
+                    b.Navigation("PerformedBy");
 
                     b.Navigation("Vehicle");
                 });

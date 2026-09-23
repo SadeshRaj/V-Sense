@@ -26,7 +26,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetPendingRegistrations()
     {
         var pending = await _context.Organizations
-            .Where(o => o.Status == "Pending")
+            .Where(o => o.IsVerified == false || o.IsVerified == null)
             .OrderByDescending(o => o.CreatedAt)
             .Select(o => new PendingRegistrationDto(
                 o.Id,
@@ -37,7 +37,7 @@ public class AdminController : ControllerBase
                 o.Phone ?? string.Empty,
                 o.Adress ?? string.Empty,
                 o.Type ?? "Garage",
-                o.Status,
+                "Pending",
                 o.BRDocumentUrl,
                 o.CreatedAt ?? DateTime.UtcNow))
             .ToListAsync();
@@ -60,7 +60,7 @@ public class AdminController : ControllerBase
                 o.Phone ?? string.Empty,
                 o.Adress ?? string.Empty,
                 o.Type ?? "Garage",
-                o.Status,
+                o.IsVerified == true ? "Active" : "Pending",
                 o.BRDocumentUrl,
                 o.CreatedAt ?? DateTime.UtcNow))
             .ToListAsync();
@@ -78,10 +78,10 @@ public class AdminController : ControllerBase
         if (organization == null)
             return NotFound(new { message = "Registration not found." });
 
-        if (organization.Status == "Active")
+        if (organization.IsVerified == true)
             return BadRequest(new { message = "Organization is already approved." });
 
-        organization.Status = "Active";
+        organization.IsVerified = true;
         organization.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -107,7 +107,7 @@ public class AdminController : ControllerBase
         if (organization == null)
             return NotFound(new { message = "Registration not found." });
 
-        organization.Status = "Rejected";
+        organization.IsVerified = false;
         organization.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
