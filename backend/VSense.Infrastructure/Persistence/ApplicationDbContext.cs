@@ -27,6 +27,9 @@ public class ApplicationDbContext : DbContext
         {
             entity.Property(o => o.Id).HasColumnName("id");
             entity.HasIndex(o => o.Email).IsUnique();
+            // IsVerified is a computed property (derived from Status); exclude from DB mapping
+            entity.Ignore(o => o.IsVerified);
+            entity.Property(o => o.Status).HasMaxLength(20).HasDefaultValue("Pending");
         });
 
         modelBuilder.Entity<User>(entity =>
