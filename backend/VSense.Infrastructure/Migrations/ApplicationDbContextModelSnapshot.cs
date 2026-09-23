@@ -22,6 +22,47 @@ namespace VSense.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("VSense.Domain.Entities.AIWorkflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AiInsight")
+                        .HasColumnType("text")
+                        .HasColumnName("ai_insight");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FraudFlags")
+                        .HasColumnType("text")
+                        .HasColumnName("fraud_flags");
+
+                    b.Property<string>("HistorySummary")
+                        .HasColumnType("text")
+                        .HasColumnName("history_summary");
+
+                    b.Property<string>("RequestedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("requested_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Status");
+
+                    b.Property<string>("VehicleId")
+                        .HasColumnType("text")
+                        .HasColumnName("vehicle_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AIWorkflows");
+                });
+
             modelBuilder.Entity("VSense.Domain.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -122,8 +163,7 @@ namespace VSense.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -142,9 +182,6 @@ namespace VSense.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("PerformedById")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("PhotoUrls")
                         .IsRequired()
                         .HasColumnType("text");
@@ -159,8 +196,6 @@ namespace VSense.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GarageId");
-
-                    b.HasIndex("PerformedById");
 
                     b.HasIndex("VehicleId");
 
@@ -366,11 +401,6 @@ namespace VSense.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("VSense.Domain.Entities.User", "PerformedBy")
-                        .WithMany()
-                        .HasForeignKey("PerformedById")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("VSense.Domain.Entities.Vehicle", "Vehicle")
                         .WithMany()
                         .HasForeignKey("VehicleId")
@@ -378,8 +408,6 @@ namespace VSense.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Organization");
-
-                    b.Navigation("PerformedBy");
 
                     b.Navigation("Vehicle");
                 });

@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
     public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
+    public DbSet<AIWorkflow> AIWorkflows { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
