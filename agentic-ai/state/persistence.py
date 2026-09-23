@@ -18,10 +18,13 @@ def save_workflow_state(state: WorkflowState):
     """
     supabase = get_supabase_client()
     try:
-        # Removed ReportId to prevent Foreign Key constraint crashes during isolated testing
+        # Extract the ai_insight safely if it exists
+        ai_insight = state.get("valuation", {}).get("ai_insight", "")
+
         supabase.table("AIWorkflows").upsert({
             "id": state["workflow_id"],
-            "Status": state["status"]
+            "Status": state["status"],
+            "ai_insight": ai_insight
         }).execute()
         return True
     except Exception as e:
