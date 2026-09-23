@@ -4,6 +4,12 @@ from tools.vehicle_data import get_vehicle_profile
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 import os
+from tenacity import retry, stop_after_attempt, wait_fixed
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+def safe_llm_invoke(llm_with_tools, prompt_text):
+    """Helper to invoke the LLM with automatic retries for transient network drops."""
+    return llm_with_tools.invoke([HumanMessage(content=prompt_text)])
 
 def agent_1_coordinator(state: WorkflowState) -> dict:
     """
@@ -34,7 +40,15 @@ def agent_1_coordinator(state: WorkflowState) -> dict:
     llm_with_tools = llm.bind_tools([get_vehicle_profile])
 
     prompt = f"Fetch the vehicle profile for vehicle_id: {state['vehicle_id']}. Use the provided tool."
-    response = llm_with_tools.invoke([HumanMessage(content=prompt)])
+
+    # Use the safe invoker with a try-except block to prevent ASGI server crashes
+    try:
+        response = safe_llm_invoke(llm_with_tools, prompt)
+    except Exception as e:
+        state["status"] = "failed"
+        state["error"] = f"AI API connection failed after retries: {str(e)}"
+        save_workflow_state(state)
+        return state
 
     if response.tool_calls:
         tool_call = response.tool_calls[0]
