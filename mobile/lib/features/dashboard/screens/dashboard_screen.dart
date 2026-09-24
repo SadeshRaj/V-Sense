@@ -28,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Notification state
   int _unreadNotificationsCount = 0;
+  int _unreadSupportCount = 0;
   final NotificationService _notificationService = NotificationService();
 
   @override
@@ -40,6 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _loadUserData();
     await _fetchVehicleCount();
     await _fetchUnreadCount();
+    await _fetchUnreadSupportCount();
   }
 
   Future<void> _fetchUnreadCount() async {
@@ -48,6 +50,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         _unreadNotificationsCount = count;
       });
+    }
+  }
+
+  Future<void> _fetchUnreadSupportCount() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${EnvConfig.apiUrl}/support/unread-count'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            _unreadSupportCount = data['count'] ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      // Intentionally silences failure so Dashboard still loads
     }
   }
 
@@ -119,6 +146,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Color accentGold = Color(0xFFD4AF37);
     const Color textGrey = Color(0xFF64748B);
 
+    // MERGED BADGE COUNT: Combine System Notifications + Unread Support Messages
+    int totalAlerts = _unreadNotificationsCount + _unreadSupportCount;
+
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
@@ -169,7 +199,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
-                      // Notifications Bell Icon (From Friend's Branch)
+                      // Notifications Bell Icon WITH MERGED TOTAL ALERTS
                       Stack(
                         alignment: Alignment.topRight,
                         children: [
@@ -186,11 +216,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (_) => const NotificationsScreen()),
-                              ).then((_) => _fetchUnreadCount());
+                              ).then((_) {
+                                _fetchUnreadCount();
+                                _fetchUnreadSupportCount();
+                              });
                             },
                             tooltip: 'Notifications',
                           ),
-                          if (_unreadNotificationsCount > 0)
+                          if (totalAlerts > 0)
                             Positioned(
                               top: 8,
                               right: 8,
@@ -201,14 +234,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
-                                  _unreadNotificationsCount > 9 ? '9+' : _unreadNotificationsCount.toString(),
+                                  totalAlerts > 9 ? '9+' : totalAlerts.toString(),
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
                         ],
                       ),
-                      // Customer Support Headset Icon
+
+                      // Support Headset Button (Badge removed here since it's now on the Bell icon)
                       IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(6),
@@ -222,10 +256,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => const SupportChatScreen()),
-                          );
+                          ).then((_) {
+                            _fetchUnreadSupportCount();
+                            _fetchUnreadCount();
+                          });
                         },
                         tooltip: 'Support Chat',
                       ),
+
                       IconButton(
                         icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
                         onPressed: _logout,
@@ -429,25 +467,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage),
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, 0, _navigateToGarage),
 
-                  // Digital Certs Screen Link (From Main Branch)
-                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {
+                  // Digital Certs Screen Link
+                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, 0, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
                     );
                   }),
 
-                  _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
+                  // Support Chat with Notification Badge handled individually on tile
+                  _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, _unreadSupportCount, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const SupportChatScreen()),
-                    );
+                    ).then((_) {
+                      _fetchUnreadSupportCount();
+                      _fetchUnreadCount();
+                    });
                   }),
-                  _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue, () {}),
-                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold, () {}),
-                  _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, () {}),
+
+                  _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue, 0, () {}),
+                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold, 0, () {}),
+                  _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, 0, () {}),
                 ],
               ),
               const SizedBox(height: 24),
@@ -474,7 +517,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              // Main Branch logic including QR Scanner
               if (index == 2) {
                 Navigator.push(
                   context,
@@ -544,7 +586,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildToolCard(IconData icon, String title, Color iconColor, VoidCallback onTap) {
+  Widget _buildToolCard(IconData icon, String title, Color iconColor, int badgeCount, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -561,27 +603,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, size: 28, color: iconColor),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, size: 28, color: iconColor),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF0A1930),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFF0A1930),
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                letterSpacing: 0.3,
+
+            // Badge UI inside the ToolCard
+            if (badgeCount > 0)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : badgeCount.toString(),
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),
