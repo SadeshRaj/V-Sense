@@ -32,6 +32,17 @@ export async function getAllRegistrations() {
     return data;
 }
 
+export async function getAssignedVehicles() {
+    const response = await fetch(`${API_BASE_URL}/Admin/assigned-vehicles`, {
+        headers: authHeaders()
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch assigned vehicles.');
+    }
+    return data;
+}
+
 export async function approveGarage(id) {
     const response = await fetch(`${API_BASE_URL}/Admin/registrations/${id}/approve`, {
         method: 'PUT',
@@ -53,6 +64,18 @@ export async function rejectGarage(id, reason) {
     const data = await response.json();
     if (!response.ok) {
         throw new Error(data.message || 'Failed to reject partner.');
+    }
+    return data;
+}
+
+export async function deleteGarage(id) {
+    const response = await fetch(`${API_BASE_URL}/Admin/registrations/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete partner.');
     }
     return data;
 }
