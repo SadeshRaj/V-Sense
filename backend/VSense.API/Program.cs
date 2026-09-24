@@ -28,6 +28,7 @@ builder.Services.Configure<CloudinarySettings>(
 builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // 3. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];

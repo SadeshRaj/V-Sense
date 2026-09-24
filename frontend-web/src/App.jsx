@@ -7,13 +7,14 @@ import Register from './pages/Register';
 import GarageDashboard from './pages/GarageDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getCurrentUser } from './api/auth';
-import PublicVerification from './pages/PublicVerification'; // NEW IMPORT
+import PublicVerification from './pages/PublicVerification';
 
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CustomerSupport from './pages/admin/CustomerSupport';
 import HITLReviewQueue from "./pages/admin/HITLReviewQueue.jsx";
 import AiLogs from "./pages/admin/AiLogs.jsx";
+import NotificationsPage from './pages/admin/NotificationsPage';
 
 const ValuationRules = () => <div className="text-slate-800">Valuation Rules CRUD goes here.</div>;
 
@@ -55,6 +56,7 @@ export default function App() {
                     <Route path="reviews" element={<HITLReviewQueue />} />
                     <Route path="logs" element={<AiLogs />} />
                     <Route path="rules" element={<ValuationRules />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                 </Route>
 
                 <Route

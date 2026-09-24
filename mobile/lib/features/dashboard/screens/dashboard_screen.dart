@@ -7,6 +7,8 @@ import 'search_vehicle_screen.dart';
 import 'my_garage_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../notifications/services/notification_service.dart';
 import 'digital_certs_screen.dart';
 import 'qr_scanner_screen.dart';
 
@@ -24,6 +26,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _storage = const FlutterSecureStorage();
   int _currentIndex = 0;
 
+  // Notification state
+  int _unreadNotificationsCount = 0;
+  final NotificationService _notificationService = NotificationService();
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +39,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardData() async {
     await _loadUserData();
     await _fetchVehicleCount();
+    await _fetchUnreadCount();
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    final count = await _notificationService.getUnreadCount();
+    if (mounted) {
+      setState(() {
+        _unreadNotificationsCount = count;
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -111,6 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -152,6 +169,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
+                      // Notifications Bell Icon (From Friend's Branch)
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          IconButton(
+                            icon: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: accentBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.notifications_outlined, color: accentBlue, size: 20),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                              ).then((_) => _fetchUnreadCount());
+                            },
+                            tooltip: 'Notifications',
+                          ),
+                          if (_unreadNotificationsCount > 0)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  _unreadNotificationsCount > 9 ? '9+' : _unreadNotificationsCount.toString(),
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      // Customer Support Headset Icon
                       IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(6),
@@ -180,6 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Greeting & Location
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -225,6 +283,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 20),
 
+              // Status Chips
               Row(
                 children: [
                   GestureDetector(
@@ -243,6 +302,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Primary Action: Search & Link Vehicle Banner
               InkWell(
                 onTap: () {
                   Navigator.push(
@@ -313,6 +373,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
 
+              // Workflow Alert Tile
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -354,6 +415,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 28),
 
+              // Portal Tools Grid
               const Text(
                 'V-Sense Portal',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: navyDeep, letterSpacing: 0.5),
@@ -368,12 +430,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 childAspectRatio: 1.15,
                 children: [
                   _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage),
+
+                  // Digital Certs Screen Link (From Main Branch)
                   _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
                     );
                   }),
+
                   _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
                     Navigator.push(
                       context,
@@ -390,6 +455,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
+
+      // Bottom Navigation Bar
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -407,6 +474,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
+              // Main Branch logic including QR Scanner
               if (index == 2) {
                 Navigator.push(
                   context,
