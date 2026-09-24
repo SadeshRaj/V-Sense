@@ -56,6 +56,33 @@ public class AdminController : ControllerBase
         return Ok(assignedVehicles);
     }
 
+    // ─── GET /api/Admin/registrations/all ───────────────────────────────────
+    [HttpGet("registrations/all")]
+    public async Task<IActionResult> GetAllRegistrations()
+    {
+        var all = await _context.Organizations
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new
+            {
+                id = o.Id,
+                businessName = o.Name ?? string.Empty,
+                registrationNumber = string.Empty,
+                fullName = o.ContactPersonName ?? string.Empty,
+                email = o.Email ?? string.Empty,
+                phone = o.Phone ?? string.Empty,
+                address = o.Adress ?? string.Empty,
+                role = o.Type ?? "Garage",
+                approvalStatus = o.Status ?? "Pending",
+                brDocumentUrl = o.BRDocumentUrl,
+                createdAt = o.CreatedAt ?? DateTime.UtcNow,
+                latitude = o.Latitude,
+                longitude = o.Longitude
+            })
+            .ToListAsync();
+
+        return Ok(all);
+    }
+
     // ─── GET /api/Admin/registrations/pending ───────────────────────────────
     [HttpGet("registrations/pending")]
     public async Task<IActionResult> GetPendingRegistrations()
@@ -63,48 +90,25 @@ public class AdminController : ControllerBase
         var pending = await _context.Organizations
             .Where(o => o.Status == "Pending")
             .OrderByDescending(o => o.CreatedAt)
-            .Select(o => new PendingRegistrationDto(
-                o.Id,
-                o.Name ?? string.Empty,
-                string.Empty,
-                o.ContactPersonName ?? string.Empty,
-                o.Email ?? string.Empty,
-                o.Phone ?? string.Empty,
-                o.Adress ?? string.Empty,
-                o.Type ?? "Garage",
-                o.Status ?? "Pending",
-                o.BRDocumentUrl,
-                o.CreatedAt ?? DateTime.UtcNow,
-                o.Latitude,
-                o.Longitude))
+            .Select(o => new
+            {
+                id = o.Id,
+                businessName = o.Name ?? string.Empty,
+                registrationNumber = string.Empty,
+                fullName = o.ContactPersonName ?? string.Empty,
+                email = o.Email ?? string.Empty,
+                phone = o.Phone ?? string.Empty,
+                address = o.Adress ?? string.Empty,
+                role = o.Type ?? "Garage",
+                approvalStatus = o.Status ?? "Pending",
+                brDocumentUrl = o.BRDocumentUrl,
+                createdAt = o.CreatedAt ?? DateTime.UtcNow,
+                latitude = o.Latitude,
+                longitude = o.Longitude
+            })
             .ToListAsync();
 
         return Ok(pending);
-    }
-
-    // ─── GET /api/Admin/registrations/all ───────────────────────────────────
-    [HttpGet("registrations/all")]
-    public async Task<IActionResult> GetAllRegistrations()
-    {
-        var all = await _context.Organizations
-            .OrderByDescending(o => o.CreatedAt)
-            .Select(o => new PendingRegistrationDto(
-                o.Id,
-                o.Name ?? string.Empty,
-                string.Empty,
-                o.ContactPersonName ?? string.Empty,
-                o.Email ?? string.Empty,
-                o.Phone ?? string.Empty,
-                o.Adress ?? string.Empty,
-                o.Type ?? "Garage",
-                o.Status ?? "Pending",
-                o.BRDocumentUrl,
-                o.CreatedAt ?? DateTime.UtcNow,
-                o.Latitude,
-                o.Longitude))
-            .ToListAsync();
-
-        return Ok(all);
     }
 
     // ─── PUT /api/Admin/registrations/{id}/approve ──────────────────────────

@@ -715,9 +715,9 @@ export default function AdminDashboard() {
                                         <IconMapPin className="w-3.5 h-3.5 text-blue-600" />
                                         Physical Address & GPS Location
                                     </p>
-                                    {selectedPartner.latitude && selectedPartner.longitude && (
+                                    {(selectedPartner.latitude || selectedPartner.Latitude) && (selectedPartner.longitude || selectedPartner.Longitude) && (
                                         <a
-                                            href={`https://www.google.com/maps?q=${selectedPartner.latitude},${selectedPartner.longitude}`}
+                                            href={`https://www.google.com/maps?q=${selectedPartner.latitude || selectedPartner.Latitude},${selectedPartner.longitude || selectedPartner.Longitude}`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
@@ -728,9 +728,9 @@ export default function AdminDashboard() {
                                     )}
                                 </div>
                                 <p className="text-slate-700 font-medium">{selectedPartner.address || 'Address not specified'}</p>
-                                {selectedPartner.latitude && selectedPartner.longitude ? (
+                                {(selectedPartner.latitude || selectedPartner.Latitude) && (selectedPartner.longitude || selectedPartner.Longitude) ? (
                                     <p className="text-[11px] text-slate-500 font-mono">
-                                        Latitude: <span className="font-bold text-slate-800">{selectedPartner.latitude}</span> | Longitude: <span className="font-bold text-slate-800">{selectedPartner.longitude}</span>
+                                        Latitude: <span className="font-bold text-slate-800">{selectedPartner.latitude || selectedPartner.Latitude}</span> | Longitude: <span className="font-bold text-slate-800">{selectedPartner.longitude || selectedPartner.Longitude}</span>
                                     </p>
                                 ) : (
                                     <p className="text-[11px] text-slate-400 italic">No GPS coordinates recorded</p>
