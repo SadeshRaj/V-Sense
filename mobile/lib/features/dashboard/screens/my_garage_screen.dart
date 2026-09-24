@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
+import 'vehicle_service_history_screen.dart'; // <-- Added import for the history screen
 
 class MyGarageScreen extends StatefulWidget {
   const MyGarageScreen({super.key});
@@ -103,7 +104,7 @@ class _MyGarageScreenState extends State<MyGarageScreen> {
             itemCount: _vehicles.length,
             itemBuilder: (context, index) {
               final vehicle = _vehicles[index];
-              return _buildVehicleCard(vehicle, navyDeep, accentBlue, textGrey);
+              return _buildVehicleCard(context, vehicle, navyDeep, accentBlue, textGrey);
             },
           ),
         ),
@@ -111,7 +112,9 @@ class _MyGarageScreenState extends State<MyGarageScreen> {
     );
   }
 
-  Widget _buildVehicleCard(dynamic vehicle, Color navyDeep, Color accentBlue, Color textGrey) {
+  // Updated to include BuildContext for navigation and added InkWell for tap effects
+  Widget _buildVehicleCard(BuildContext context, dynamic vehicle, Color navyDeep, Color accentBlue, Color textGrey) {
+    final vehicleId = vehicle['id'] ?? vehicle['vehicleId'] ?? '';
     final regNo = vehicle['registrationNumber'] ?? vehicle['registration_number'] ?? 'N/A';
     final make = vehicle['make'] ?? '';
     final model = vehicle['model'] ?? '';
@@ -124,7 +127,6 @@ class _MyGarageScreenState extends State<MyGarageScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -137,50 +139,84 @@ class _MyGarageScreenState extends State<MyGarageScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: accentBlue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(Icons.directions_car_rounded, color: accentBlue, size: 30),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titleText,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: navyDeep),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          highlightColor: accentBlue.withOpacity(0.05),
+          splashColor: accentBlue.withOpacity(0.1),
+          onTap: () {
+            // Navigate to the history screen when the card is tapped
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VehicleServiceHistoryScreen(
+                  vehicleId: vehicleId.toString(),
+                  vehicleNumber: regNo,
                 ),
-                if (make.isNotEmpty || model.isNotEmpty)
-                  Text(
-                    'Reg: $regNo',
-                    style: TextStyle(fontSize: 13, color: textGrey, fontWeight: FontWeight.w600),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: accentBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                const SizedBox(height: 4),
-                Text(
-                  'Chassis: $chassisOrVin',
-                  style: TextStyle(fontSize: 12, color: textGrey.withOpacity(0.8)),
+                  child: Icon(Icons.directions_car_rounded, color: accentBlue, size: 30),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titleText,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: navyDeep),
+                      ),
+                      if (make.isNotEmpty || model.isNotEmpty)
+                        Text(
+                          'Reg: $regNo',
+                          style: TextStyle(fontSize: 13, color: textGrey, fontWeight: FontWeight.w600),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Chassis: $chassisOrVin',
+                        style: TextStyle(fontSize: 12, color: textGrey.withOpacity(0.8)),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Active',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Icon(
+                        Icons.chevron_right_rounded,
+                        color: textGrey.withOpacity(0.5),
+                        size: 24
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              'Active',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,8 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using VSense.Application.DTOs;
 using VSense.Domain.Entities;
 using VSense.Infrastructure.Persistence;
+using VSense.Infrastructure.Services;
 
 namespace VSense.API.Controllers;
 
@@ -21,20 +22,22 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IMemoryCache _cache;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ICloudinaryService _cloudinary;
 
-    // Allowed self-registration roles
     private static readonly string[] AllowedRoles = { "Client" };
 
     public AuthController(
         ApplicationDbContext context,
         IConfiguration config,
         IMemoryCache cache,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ICloudinaryService cloudinary)
     {
         _context = context;
         _config = config;
         _cache = cache;
         _httpClientFactory = httpClientFactory;
+        _cloudinary = cloudinary;
     }
 
     // --- REGISTRATION OTP FLOW ---
@@ -80,10 +83,7 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.NIC.ToLower() == request.NIC.ToLower()))
             return BadRequest(new { message = "NIC is already registered." });
 
-        // Normalize role and default to Client
         var requestedRole = string.IsNullOrWhiteSpace(request.Role) ? "Client" : request.Role.Trim();
-        
-        // Format to title case (e.g., "client" -> "Client")
         requestedRole = char.ToUpper(requestedRole[0]) + requestedRole.Substring(1).ToLower();
 
         if (!AllowedRoles.Contains(requestedRole))
@@ -98,7 +98,7 @@ public class AuthController : ControllerBase
             NIC = request.NIC,
             PhoneNumber = request.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = requestedRole // Assigns "Client"
+            Role = requestedRole
         };
 
         _context.Users.Add(user);
@@ -106,6 +106,71 @@ public class AuthController : ControllerBase
         _cache.Remove($"VERIFIED_{request.PhoneNumber}");
 
         return Ok(new { message = "Registration successful. Please log in." });
+    }
+
+    // --- GARAGE / SERVICE CENTER REGISTRATION FLOW ---
+    // Organization IS the account. No linked User row is created.
+
+    [HttpPost("register-garage")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> RegisterGarage(
+        [FromForm] GarageRegisterRequestDto request,
+        IFormFile brDocument)
+    {
+        if (brDocument == null || brDocument.Length == 0)
+            return BadRequest(new { message = "Business Registration document is required." });
+
+        if (request.Password != request.ConfirmPassword)
+            return BadRequest(new { message = "Passwords do not match." });
+
+        var role = request.Role?.Trim();
+        if (role != "Garage" && role != "ServiceCenter")
+            return BadRequest(new { message = "Role must be 'Garage' or 'ServiceCenter'." });
+
+        var emailExists = await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()) ||
+                          await _context.Organizations.AnyAsync(o => o.Email != null && o.Email.ToLower() == request.Email.ToLower());
+
+        if (emailExists)
+            return Conflict(new { message = "An account with this email already exists." });
+
+        string brDocumentUrl;
+        try
+        {
+            using var stream = brDocument.OpenReadStream();
+            brDocumentUrl = await _cloudinary.UploadAsync(stream, brDocument.FileName, "br-documents");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = $"Failed to upload BR document: {ex.Message}" });
+        }
+
+        var organization = new Organization
+        {
+            Id = Guid.NewGuid(),
+            Name = request.BusinessName,
+            Type = role,
+            Email = request.Email,
+            Phone = request.Phone,
+            Adress = request.Address,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            BRDocumentUrl = brDocumentUrl,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            ContactPersonName = request.FullName,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Organizations.Add(organization);
+        await _context.SaveChangesAsync();
+
+        return Created(string.Empty, new GarageRegisterResponseDto(
+            organization.Id,
+            organization.Name,
+            organization.Email ?? string.Empty,
+            organization.Status
+        ));
     }
 
     // --- FORGOT PASSWORD OTP FLOW ---
@@ -154,6 +219,7 @@ public class AuthController : ControllerBase
     }
 
     // --- LOGIN ---
+    // Checks Users (Client/Administrator) first, then Organizations (Garage/ServiceCenter).
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
@@ -161,18 +227,53 @@ public class AuthController : ControllerBase
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            return Unauthorized(new { message = "Invalid email or password." });
+        if (user != null)
+        {
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                return Unauthorized(new { message = "Invalid email or password." });
 
-        if (!user.IsActive)
-            return StatusCode(403, new { message = "Account is disabled." });
+            if (!user.IsActive)
+                return StatusCode(403, new { message = "Account is disabled." });
 
-        var token = GenerateJwtToken(user);
+            var token = GenerateJwtToken(user);
 
-        return Ok(new LoginResponseDto(
-            token, user.Id, user.FullName, user.Email, user.Role, user.IsActive, user.CreatedAt
-        ));
+            return Ok(new LoginResponseDto(
+                token, user.Id, user.FullName, user.Email, user.Role, user.IsActive, user.CreatedAt
+            ));
+        }
+
+        var organization = await _context.Organizations
+            .FirstOrDefaultAsync(o => o.Email != null && o.Email.ToLower() == request.Email.ToLower());
+
+        if (organization != null)
+        {
+            if (string.IsNullOrEmpty(organization.PasswordHash) ||
+                !BCrypt.Net.BCrypt.Verify(request.Password, organization.PasswordHash))
+                return Unauthorized(new { message = "Invalid email or password." });
+
+            if (organization.Status == "Rejected")
+                return StatusCode(403, new { message = "Your registration has been rejected. Please contact support." });
+
+            if (organization.Status != "Active")
+                return StatusCode(403, new { message = "Your application is pending admin approval." });
+
+            var orgToken = GenerateJwtToken(organization);
+
+            return Ok(new LoginResponseDto(
+                orgToken,
+                organization.Id,
+                organization.ContactPersonName ?? organization.Name,
+                organization.Email!,
+                organization.Type ?? "Garage",
+                true,
+                organization.CreatedAt ?? DateTime.UtcNow
+            ));
+        }
+
+        return Unauthorized(new { message = "Invalid email or password." });
     }
+
+    // --- HELPER METHODS ---
 
     private async Task SendSmsAsync(string phoneNumber, string message)
     {
@@ -202,17 +303,37 @@ public class AuthController : ControllerBase
 
     private string GenerateJwtToken(User user)
     {
-        var secret = _config["JwtSettings:Secret"];
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role),
             new Claim("fullName", user.FullName)
         };
+
+        return BuildToken(claims);
+    }
+
+    private string GenerateJwtToken(Organization organization)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, organization.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, organization.Email ?? string.Empty),
+            new Claim(ClaimTypes.Role, organization.Type ?? "Garage"),
+            new Claim("fullName", organization.ContactPersonName ?? organization.Name),
+            new Claim("organizationId", organization.Id.ToString()),
+            new Claim("businessName", organization.Name)
+        };
+
+        return BuildToken(claims);
+    }
+
+    private string BuildToken(List<Claim> claims)
+    {
+        var secret = _config["JwtSettings:Secret"];
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
             issuer: _config["JwtSettings:Issuer"],

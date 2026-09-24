@@ -67,7 +67,14 @@ The AI subsystem processes multi-agent workflows for vehicle fraud detection and
 **Using the Terminal:**
 ```bash
 cd agentic-ai
+# Create a virtual environment
+python3 -m venv .venv
+# Activate the virtual environment
+source .venv/bin/activate
 # Install required Python packages
 pip install -r requirements.txt
-# (Execution command depends on the selected orchestration framework)
+# Start the FastAPI server on port 8000
+uvicorn api.main:app --reload --port 8000
+
+test karanna - python test_agent4.py
 ```

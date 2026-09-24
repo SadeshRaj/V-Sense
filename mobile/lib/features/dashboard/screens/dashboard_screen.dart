@@ -4,11 +4,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
-import 'my_garage_screen.dart'; // <--- Added Import
+import 'my_garage_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../notifications/services/notification_service.dart';
+import 'digital_certs_screen.dart';
+import 'qr_scanner_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,6 +25,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoadingVehicles = true;
   final _storage = const FlutterSecureStorage();
   int _currentIndex = 0;
+
+  // Notification state
   int _unreadNotificationsCount = 0;
   final NotificationService _notificationService = NotificationService();
 
@@ -165,9 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
-
-
-                      // Notifications Bell Icon
+                      // Notifications Bell Icon (From Friend's Branch)
                       Stack(
                         alignment: Alignment.topRight,
                         children: [
@@ -207,7 +209,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       // Customer Support Headset Icon
-
                       IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(6),
@@ -428,8 +429,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage), // <--- Linked here
-                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {}),
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage),
+
+                  // Digital Certs Screen Link (From Main Branch)
+                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
+                    );
+                  }),
+
                   _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
                     Navigator.push(
                       context,
@@ -465,9 +474,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              setState(() => _currentIndex = index);
-              if (index == 1) {
-                _navigateToGarage(); // <--- Linked to Garage bottom bar tab
+              // Main Branch logic including QR Scanner
+              if (index == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+                );
+              } else {
+                setState(() => _currentIndex = index);
+                if (index == 1) {
+                  _navigateToGarage();
+                }
               }
             },
             backgroundColor: Colors.white,
