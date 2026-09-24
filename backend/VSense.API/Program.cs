@@ -29,6 +29,7 @@ builder.Services.AddScoped<IPhotoService, PhotoService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSignalR();
 
 // 3. Configure JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Secret"];
@@ -44,6 +45,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret!))
+        };
+
+        // NEW: SignalR passes the token via query string for WebSockets
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/support"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -100,7 +116,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins.ToArray())
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials(); // Required for SignalR
     });
 });
 
@@ -119,6 +135,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// NEW: Map the SignalR Hub
+app.MapHub<VSense.API.Hubs.SupportHub>("/hubs/support");
 
 // 5. Apply EF Core migrations and seed Admin User on startup
 using (var scope = app.Services.CreateScope())
