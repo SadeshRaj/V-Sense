@@ -236,6 +236,9 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
 
       final vehicle = reportData['vehicle'] ?? {};
       final List<dynamic> records = reportData['records'] ?? [];
+      final legalStatus = reportData['legalStatus'] ?? {};
+      final List<dynamic> pastOwners = reportData['pastOwners'] ?? [];
+
       final String verificationUrl = _getVerificationUrl(_workflowId!);
 
       final pdf = pw.Document();
@@ -288,6 +291,37 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   ],
                 ),
               ),
+              pw.SizedBox(height: 12),
+
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Legal & Insurance Status', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Divider(thickness: 0.5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Reg Status: ${legalStatus['registrationStatus'] ?? 'Unknown'}'),
+                        pw.Text('License Expiry: ${legalStatus['revenueLicenseExpiryDate'] != null ? legalStatus['revenueLicenseExpiryDate'].toString().split('T').first : 'N/A'}'),
+                      ],
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Insurance: ${legalStatus['insuranceStatus'] ?? 'Unknown'} (${legalStatus['insuranceType'] ?? '-'})'),
+                        pw.Text('Ins Expiry: ${legalStatus['insuranceExpiryDate'] != null ? legalStatus['insuranceExpiryDate'].toString().split('T').first : 'N/A'}'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               pw.SizedBox(height: 16),
 
               if (_aiInsight.isNotEmpty) ...[
@@ -307,8 +341,34 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 20),
+                pw.SizedBox(height: 16),
               ],
+
+              pw.Text('Ownership History', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 8),
+              if (pastOwners.isEmpty)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 8),
+                  child: pw.Text('No previous ownership changes reported on platform.',
+                      style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                )
+              else
+                pw.TableHelper.fromTextArray(
+                  headers: ['Owner Name', 'Start Date', 'End Date'],
+                  data: pastOwners.map((o) {
+                    return [
+                      o['ownerName'] ?? 'Unknown',
+                      o['ownershipStartDate'] != null ? o['ownershipStartDate'].toString().split('T').first : '',
+                      o['ownershipEndDate'] != null ? o['ownershipEndDate'].toString().split('T').first : 'Present',
+                    ];
+                  }).toList(),
+                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                  cellStyle: const pw.TextStyle(fontSize: 9),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.grey800),
+                  cellHeight: 25,
+                ),
+
+              pw.SizedBox(height: 16),
 
               pw.Text('Detailed Maintenance & Service Timeline', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 8),
