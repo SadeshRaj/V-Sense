@@ -22,7 +22,6 @@ public class AdminController : ControllerBase
     }
 
     // ─── GET /api/Admin/assigned-vehicles ───────────────────────────────────
-    // Returns ONLY vehicles that have been purchased & assigned to users via VehicleOwnerships
     [HttpGet("assigned-vehicles")]
     public async Task<IActionResult> GetAssignedVehicles()
     {
@@ -31,7 +30,7 @@ public class AdminController : ControllerBase
             .Include(vo => vo.Vehicle)
             .Include(vo => vo.User)
             .Include(vo => vo.Payment)
-            .Where(vo => vo.Vehicle != null) // Exclude orphaned ownership records
+            .Where(vo => vo.Vehicle != null)
             .OrderByDescending(vo => vo.CreatedAt ?? vo.VerifiedAt)
             .Select(vo => new
             {
@@ -75,7 +74,9 @@ public class AdminController : ControllerBase
                 o.Type ?? "Garage",
                 o.Status ?? "Pending",
                 o.BRDocumentUrl,
-                o.CreatedAt ?? DateTime.UtcNow))
+                o.CreatedAt ?? DateTime.UtcNow,
+                o.Latitude,
+                o.Longitude))
             .ToListAsync();
 
         return Ok(pending);
@@ -98,7 +99,9 @@ public class AdminController : ControllerBase
                 o.Type ?? "Garage",
                 o.Status ?? "Pending",
                 o.BRDocumentUrl,
-                o.CreatedAt ?? DateTime.UtcNow))
+                o.CreatedAt ?? DateTime.UtcNow,
+                o.Latitude,
+                o.Longitude))
             .ToListAsync();
 
         return Ok(all);
@@ -157,5 +160,28 @@ public class AdminController : ControllerBase
         }
 
         return Ok(new ApprovalActionResponseDto(organization.Id, "Rejected", "Registration rejected. Rejection email sent."));
+    }
+
+    // ─── DELETE /api/Admin/registrations/{id} ───────────────────────────────
+    [HttpDelete("registrations/{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var organization = await _context.Organizations.FindAsync(id);
+        if (organization == null)
+            return NotFound(new { message = "Partner registration not found." });
+
+        // Safeguard: Check if partner has recorded service histories
+        var hasServiceRecords = await _context.ServiceRecords
+            .AnyAsync(sr => sr.GarageId == id);
+
+        if (hasServiceRecords)
+        {
+            return BadRequest(new { message = "Cannot delete this organization because it has active vehicle service records. Reject or suspend it instead." });
+        }
+
+        _context.Organizations.Remove(organization);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = $"Partner '{organization.Name}' deleted successfully." });
     }
 }

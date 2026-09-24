@@ -67,3 +67,15 @@ export async function rejectGarage(id, reason) {
     }
     return data;
 }
+
+export async function deleteGarage(id) {
+    const response = await fetch(`${API_BASE_URL}/Admin/registrations/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete partner.');
+    }
+    return data;
+}

@@ -1,6 +1,6 @@
 namespace VSense.Application.DTOs;
 
-// Used in Admin pending registrations list
+// Used in Admin registrations list
 public record PendingRegistrationDto(
     Guid Id,
     string BusinessName,
@@ -12,7 +12,9 @@ public record PendingRegistrationDto(
     string Role,
     string ApprovalStatus,
     string? BrDocumentUrl,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    decimal? Latitude = null,
+    decimal? Longitude = null
 );
 
 // Admin approve/reject action response

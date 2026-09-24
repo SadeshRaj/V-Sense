@@ -6,7 +6,8 @@ import {
     getAllRegistrations,
     getAssignedVehicles,
     approveGarage,
-    rejectGarage
+    rejectGarage,
+    deleteGarage
 } from '../../api/adminApi';
 import {
     IconBuilding,
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
+    const [selectedPartner, setSelectedPartner] = useState(null);
 
     // Assigned Vehicles States
     const [assignedVehicles, setAssignedVehicles] = useState([]);
@@ -110,6 +112,7 @@ export default function AdminDashboard() {
         try {
             await approveGarage(partner.id);
             showToast(`Approved ${partner.businessName}! Confirmation email dispatched.`);
+            setSelectedPartner(null);
             await loadPartnerData();
         } catch (err) {
             showToast(err.message || 'Failed to approve partner.', 'error');
@@ -130,10 +133,29 @@ export default function AdminDashboard() {
             await rejectGarage(rejectingItem.id, rejectionReason);
             showToast(`Rejected ${rejectingItem.businessName}. Rejection email sent with explanation.`);
             setRejectingItem(null);
+            setSelectedPartner(null);
             setRejectionReason('');
             await loadPartnerData();
         } catch (err) {
             showToast(err.message || 'Failed to reject partner.', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeletePartner = async (partner) => {
+        if (!window.confirm(`Are you sure you want to permanently delete "${partner.businessName || partner.fullName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            await deleteGarage(partner.id);
+            showToast(`Deleted partner '${partner.businessName || partner.fullName}' successfully.`);
+            setSelectedPartner(null);
+            await loadPartnerData();
+        } catch (err) {
+            showToast(err.message || 'Failed to delete partner.', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -193,7 +215,6 @@ export default function AdminDashboard() {
 
                 {/* Top Metrics Overview */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Pending Approvals */}
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                             <div>
@@ -211,7 +232,6 @@ export default function AdminDashboard() {
                         <p className="text-[11px] text-slate-500 mt-2 font-medium">Awaiting BR document check</p>
                     </div>
 
-                    {/* Active Partners */}
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                             <div>
@@ -229,7 +249,6 @@ export default function AdminDashboard() {
                         <p className="text-[11px] text-slate-500 mt-2 font-medium">Authorized garages & centers</p>
                     </div>
 
-                    {/* Total Registered Partners */}
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                             <div>
@@ -247,7 +266,6 @@ export default function AdminDashboard() {
                         <p className="text-[11px] text-slate-500 mt-2 font-medium">Lifetime network signups</p>
                     </div>
 
-                    {/* Assigned Vehicles Metrics */}
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all">
                         <div className="flex items-center justify-between">
                             <div>
@@ -280,7 +298,6 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            {/* Tab Switcher */}
                             <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl">
                                 <button
                                     onClick={() => setActiveTab('pending')}
@@ -306,7 +323,6 @@ export default function AdminDashboard() {
                                 </button>
                             </div>
 
-                            {/* Search & Refresh */}
                             <div className="flex items-center gap-2">
                                 <div className="relative flex-grow sm:w-56">
                                     <IconSearch className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -380,7 +396,11 @@ export default function AdminDashboard() {
                                     const isRejected = partner.approvalStatus === 'Rejected';
 
                                     return (
-                                        <tr key={partner.id} className="hover:bg-slate-50/80 transition-colors">
+                                        <tr
+                                            key={partner.id}
+                                            onClick={() => setSelectedPartner(partner)}
+                                            className="hover:bg-blue-50/40 transition-colors cursor-pointer"
+                                        >
                                             <td className="px-6 py-3.5">
                                                 <div className="font-bold text-slate-900 text-xs sm:text-sm">
                                                     {partner.businessName || 'N/A'}
@@ -413,22 +433,22 @@ export default function AdminDashboard() {
                                             </td>
 
                                             <td className="px-6 py-3.5">
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                                                        {partner.role === 'ServiceCenter' ? (
-                                                            <>
-                                                                <IconBuilding className="w-3 h-3 text-blue-600" />
-                                                                Service Center
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <IconWrench className="w-3 h-3 text-emerald-600" />
-                                                                Garage
-                                                            </>
-                                                        )}
-                                                    </span>
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                                    {partner.role === 'ServiceCenter' ? (
+                                                        <>
+                                                            <IconBuilding className="w-3 h-3 text-blue-600" />
+                                                            Service Center
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <IconWrench className="w-3 h-3 text-emerald-600" />
+                                                            Garage
+                                                        </>
+                                                    )}
+                                                </span>
                                             </td>
 
-                                            <td className="px-6 py-3.5">
+                                            <td className="px-6 py-3.5" onClick={(e) => e.stopPropagation()}>
                                                 {partner.brDocumentUrl ? (
                                                     <button
                                                         onClick={() => setSelectedDocUrl(partner.brDocumentUrl)}
@@ -445,57 +465,31 @@ export default function AdminDashboard() {
                                             <td className="px-6 py-3.5">
                                                 {isPending && (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                                            <IconClock className="w-3 h-3" />
-                                                            Pending
-                                                        </span>
+                                                        <IconClock className="w-3 h-3" />
+                                                        Pending
+                                                    </span>
                                                 )}
                                                 {isApproved && (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                            <IconCheckCircle className="w-3 h-3" />
-                                                            Approved
-                                                        </span>
+                                                        <IconCheckCircle className="w-3 h-3" />
+                                                        Approved
+                                                    </span>
                                                 )}
                                                 {isRejected && (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
-                                                            <IconXCircle className="w-3 h-3" />
-                                                            Rejected
-                                                        </span>
+                                                        <IconXCircle className="w-3 h-3" />
+                                                        Rejected
+                                                    </span>
                                                 )}
                                             </td>
 
-                                            <td className="px-6 py-3.5 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {isPending && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleApprove(partner)}
-                                                                disabled={actionLoading}
-                                                                className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-xs flex items-center gap-1"
-                                                            >
-                                                                <IconCheckCircle className="w-3.5 h-3.5" />
-                                                                Approve
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleOpenReject(partner)}
-                                                                disabled={actionLoading}
-                                                                className="px-3 py-1 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-red-200 font-semibold text-xs transition flex items-center gap-1"
-                                                            >
-                                                                <IconXCircle className="w-3.5 h-3.5" />
-                                                                Reject
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {isApproved && (
-                                                        <span className="text-xs text-emerald-700 font-semibold">
-                                                                Active Partner
-                                                            </span>
-                                                    )}
-                                                    {isRejected && (
-                                                        <span className="text-xs text-slate-400 italic font-medium">
-                                                                Closed
-                                                            </span>
-                                                    )}
-                                                </div>
+                                            <td className="px-6 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    onClick={() => setSelectedPartner(partner)}
+                                                    className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition border border-slate-200"
+                                                >
+                                                    View Details
+                                                </button>
                                             </td>
                                         </tr>
                                     );
@@ -507,7 +501,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ─────────────────────────────────────────────────────────────
-                    SECTION 2: ASSIGNED VEHICLES (POST-PAYMENT) DIRECTORY
+                    SECTION 2: ASSIGNED VEHICLES DIRECTORY
                    ───────────────────────────────────────────────────────────── */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
                     <div className="p-5 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50">
@@ -539,7 +533,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Vehicles Table */}
                     {vehiclesLoading ? (
                         <div className="py-16 text-center space-y-3">
                             <svg className="animate-spin h-7 w-7 text-blue-600 mx-auto" viewBox="0 0 24 24">
@@ -605,10 +598,10 @@ export default function AdminDashboard() {
                                         </td>
 
                                         <td className="px-6 py-3.5">
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    <IconCheckCircle className="w-3 h-3" />
-                                                    Verified Paid
-                                                </span>
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <IconCheckCircle className="w-3 h-3" />
+                                                Verified Paid
+                                            </span>
                                             {vehicle.transactionId && (
                                                 <div className="text-slate-400 font-mono text-[10px] mt-1">
                                                     Txn: {vehicle.transactionId}
@@ -639,6 +632,170 @@ export default function AdminDashboard() {
                     )}
                 </div>
             </main>
+
+            {/* ─────────────────────────────────────────────────────────────
+                MODAL 1: GARAGE / PARTNER FULL DETAILS MODAL WITH DELETE
+               ───────────────────────────────────────────────────────────── */}
+            {selectedPartner && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"
+                        onClick={() => setSelectedPartner(null)}
+                    />
+                    <div className="relative w-full max-w-xl bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl z-10 space-y-5">
+
+                        {/* Header */}
+                        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-lg font-bold text-slate-900">
+                                        {selectedPartner.businessName || 'Garage / Partner Profile'}
+                                    </h3>
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                                        {selectedPartner.role === 'ServiceCenter' ? 'Service Center' : 'Garage'}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    BR Reg: <span className="font-mono font-semibold text-slate-700">{selectedPartner.registrationNumber || 'N/A'}</span>
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedPartner(null)}
+                                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg text-sm font-bold"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Details Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            {/* Contact Info Card */}
+                            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                                <p className="font-bold text-slate-900 text-xs uppercase tracking-wider">Contact Person</p>
+                                <p className="font-semibold text-slate-800">{selectedPartner.fullName || 'N/A'}</p>
+                                <div className="flex items-center gap-1.5 text-slate-600">
+                                    <IconMail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                    <span className="truncate">{selectedPartner.email || 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-slate-600">
+                                    <IconPhone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                    <span>{selectedPartner.phone || 'N/A'}</span>
+                                </div>
+                            </div>
+
+                            {/* Status & Dates Card */}
+                            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                                <p className="font-bold text-slate-900 text-xs uppercase tracking-wider">Account Status</p>
+                                <div>
+                                    {selectedPartner.approvalStatus === 'Pending' && (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            <IconClock className="w-3 h-3" /> Pending Review
+                                        </span>
+                                    )}
+                                    {(selectedPartner.approvalStatus === 'Active' || selectedPartner.isActive) && (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <IconCheckCircle className="w-3 h-3" /> Active Partner
+                                        </span>
+                                    )}
+                                    {selectedPartner.approvalStatus === 'Rejected' && (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                                            <IconXCircle className="w-3 h-3" /> Rejected
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-[11px] text-slate-500 pt-1">
+                                    Registered: {new Date(selectedPartner.createdAt).toLocaleDateString()}
+                                </p>
+                            </div>
+
+                            {/* Location & Coordinates Card */}
+                            <div className="sm:col-span-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <p className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1">
+                                        <IconMapPin className="w-3.5 h-3.5 text-blue-600" />
+                                        Physical Address & GPS Location
+                                    </p>
+                                    {selectedPartner.latitude && selectedPartner.longitude && (
+                                        <a
+                                            href={`https://www.google.com/maps?q=${selectedPartner.latitude},${selectedPartner.longitude}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+                                        >
+                                            <IconExternalLink className="w-3 h-3" />
+                                            Open Google Maps
+                                        </a>
+                                    )}
+                                </div>
+                                <p className="text-slate-700 font-medium">{selectedPartner.address || 'Address not specified'}</p>
+                                {selectedPartner.latitude && selectedPartner.longitude ? (
+                                    <p className="text-[11px] text-slate-500 font-mono">
+                                        Latitude: <span className="font-bold text-slate-800">{selectedPartner.latitude}</span> | Longitude: <span className="font-bold text-slate-800">{selectedPartner.longitude}</span>
+                                    </p>
+                                ) : (
+                                    <p className="text-[11px] text-slate-400 italic">No GPS coordinates recorded</p>
+                                )}
+                            </div>
+
+                            {/* BR Document Inspector Link */}
+                            {selectedPartner.brDocumentUrl && (
+                                <div className="sm:col-span-2 bg-blue-50/60 p-3 rounded-xl border border-blue-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-blue-900 font-medium">
+                                        <IconFileText className="w-4 h-4 text-blue-600" />
+                                        <span>Business Registration Document</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedDocUrl(selectedPartner.brDocumentUrl)}
+                                        className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition"
+                                    >
+                                        Inspect Document
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Action Footer */}
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                            {/* Delete Button inside modal */}
+                            <button
+                                onClick={() => handleDeletePartner(selectedPartner)}
+                                disabled={actionLoading}
+                                className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs transition flex items-center gap-1.5"
+                            >
+                                <IconXCircle className="w-4 h-4 text-red-500" />
+                                Delete Partner
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                                {selectedPartner.approvalStatus === 'Pending' && (
+                                    <>
+                                        <button
+                                            onClick={() => handleApprove(selectedPartner)}
+                                            disabled={actionLoading}
+                                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1"
+                                        >
+                                            <IconCheckCircle className="w-3.5 h-3.5" /> Approve
+                                        </button>
+                                        <button
+                                            onClick={() => handleOpenReject(selectedPartner)}
+                                            disabled={actionLoading}
+                                            className="px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold text-xs transition flex items-center gap-1"
+                                        >
+                                            <IconXCircle className="w-3.5 h-3.5" /> Reject
+                                        </button>
+                                    </>
+                                )}
+                                <button
+                                    onClick={() => setSelectedPartner(null)}
+                                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs border border-slate-200 transition"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* BR Document Inspector Modal */}
             {selectedDocUrl && (
@@ -672,7 +829,6 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        {/* Document Viewer Frame */}
                         <div className="bg-slate-50 rounded-xl overflow-hidden h-96 flex items-center justify-center border border-slate-200">
                             {selectedDocUrl.toLowerCase().endsWith('.pdf') ? (
                                 <iframe
