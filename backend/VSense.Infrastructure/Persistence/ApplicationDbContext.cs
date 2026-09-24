@@ -16,26 +16,33 @@ public class ApplicationDbContext : DbContext
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
-
-    // NEW: Support Tickets
     public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
-
-    // Notifications DbSets
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
     public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
     public DbSet<AIWorkflow> AIWorkflows { get; set; }
 
+    public DbSet<VehicleHistory> VehicleHistories => Set<VehicleHistory>();
+    public DbSet<VehicleOwnershipHistory> VehicleOwnershipHistories => Set<VehicleOwnershipHistory>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Explicitly map SupportTicket so EF Core doesn't create a 'UserId1' shadow property
+        // Explicitly map lowercase 'id' for the new tables
+        modelBuilder.Entity<VehicleHistory>(entity =>
+        {
+            entity.Property(e => e.Id).HasColumnName("id");
+        });
+
+        modelBuilder.Entity<VehicleOwnershipHistory>(entity =>
+        {
+            entity.Property(e => e.Id).HasColumnName("id");
+        });
+
         modelBuilder.Entity<SupportTicket>(entity =>
         {
-            entity.HasKey(t => t.UserId); // Set Primary Key
-
-            // Map the Foreign Key explicitly
+            entity.HasKey(t => t.UserId);
             entity.HasOne(t => t.User)
                   .WithOne()
                   .HasForeignKey<SupportTicket>(t => t.UserId)
@@ -46,7 +53,6 @@ public class ApplicationDbContext : DbContext
         {
             entity.Property(o => o.Id).HasColumnName("id");
             entity.HasIndex(o => o.Email).IsUnique();
-            // IsVerified is a computed property (derived from Status); exclude from DB mapping
             entity.Ignore(o => o.IsVerified);
             entity.Property(o => o.Status).HasMaxLength(20).HasDefaultValue("Pending");
         });
