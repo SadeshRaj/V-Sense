@@ -17,6 +17,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<VehicleOwnership> VehicleOwnerships => Set<VehicleOwnership>();
     public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
 
+    // NEW: Support Tickets
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+
     // Notifications DbSets
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
@@ -26,6 +29,18 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Explicitly map SupportTicket so EF Core doesn't create a 'UserId1' shadow property
+        modelBuilder.Entity<SupportTicket>(entity =>
+        {
+            entity.HasKey(t => t.UserId); // Set Primary Key
+
+            // Map the Foreign Key explicitly
+            entity.HasOne(t => t.User)
+                  .WithOne()
+                  .HasForeignKey<SupportTicket>(t => t.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<Organization>(entity =>
         {
@@ -67,7 +82,6 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(s => s.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Correctly configured to Organization
             entity.HasOne(s => s.Organization)
                 .WithMany()
                 .HasForeignKey(s => s.GarageId)

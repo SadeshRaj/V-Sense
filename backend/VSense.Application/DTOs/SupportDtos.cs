@@ -24,5 +24,6 @@ public record SupportConversationSummaryDto(
     string NIC,
     string LastMessage,
     DateTime LastMessageAt,
-    int UnreadCount
+    int UnreadCount,
+    string Status // <--- NEW
 );
