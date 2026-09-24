@@ -21,6 +21,42 @@ public class AdminController : ControllerBase
         _email = email;
     }
 
+    // ─── GET /api/Admin/assigned-vehicles ───────────────────────────────────
+    // Returns ONLY vehicles that have been purchased & assigned to users via VehicleOwnerships
+    [HttpGet("assigned-vehicles")]
+    public async Task<IActionResult> GetAssignedVehicles()
+    {
+        var assignedVehicles = await _context.VehicleOwnerships
+            .AsNoTracking()
+            .Include(vo => vo.Vehicle)
+            .Include(vo => vo.User)
+            .Include(vo => vo.Payment)
+            .Where(vo => vo.Vehicle != null) // Exclude orphaned ownership records
+            .OrderByDescending(vo => vo.CreatedAt ?? vo.VerifiedAt)
+            .Select(vo => new
+            {
+                id = vo.Id,
+                vehicleId = vo.VehicleId,
+                registrationNumber = vo.Vehicle!.RegistrationNumber,
+                vin = vo.Vehicle.VIN ?? vo.Vehicle.ChassisNumber,
+                make = vo.Vehicle.Make,
+                model = vo.Vehicle.Model,
+                manufacturingYear = vo.Vehicle.ManufacturingYear,
+                fuelType = vo.Vehicle.FuelType,
+                ownerName = vo.User != null ? vo.User.FullName : "Registered User",
+                ownerEmail = vo.User != null ? vo.User.Email : "N/A",
+                ownerPhone = vo.User != null ? vo.User.PhoneNumber : "N/A",
+                status = vo.Status ?? "Active",
+                paymentStatus = "Paid",
+                amountPaid = vo.Payment != null ? vo.Payment.Amount : (decimal?)null,
+                transactionId = vo.Payment != null ? vo.Payment.TrasactionId : null,
+                assignedAt = vo.VerifiedAt ?? vo.CreatedAt ?? DateTime.UtcNow
+            })
+            .ToListAsync();
+
+        return Ok(assignedVehicles);
+    }
+
     // ─── GET /api/Admin/registrations/pending ───────────────────────────────
     [HttpGet("registrations/pending")]
     public async Task<IActionResult> GetPendingRegistrations()
@@ -37,7 +73,7 @@ public class AdminController : ControllerBase
                 o.Phone ?? string.Empty,
                 o.Adress ?? string.Empty,
                 o.Type ?? "Garage",
-                o.Status,
+                o.Status ?? "Pending",
                 o.BRDocumentUrl,
                 o.CreatedAt ?? DateTime.UtcNow))
             .ToListAsync();
@@ -60,7 +96,7 @@ public class AdminController : ControllerBase
                 o.Phone ?? string.Empty,
                 o.Adress ?? string.Empty,
                 o.Type ?? "Garage",
-                o.Status,
+                o.Status ?? "Pending",
                 o.BRDocumentUrl,
                 o.CreatedAt ?? DateTime.UtcNow))
             .ToListAsync();

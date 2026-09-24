@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../api/auth';
-import { getPendingRegistrations, getAllRegistrations, approveGarage, rejectGarage } from '../../api/adminApi';
+import {
+    getPendingRegistrations,
+    getAllRegistrations,
+    getAssignedVehicles,
+    approveGarage,
+    rejectGarage
+} from '../../api/adminApi';
 import {
     IconBuilding,
     IconClock,
@@ -85,22 +91,11 @@ export default function AdminDashboard() {
     const fetchAssignedVehicles = async () => {
         setVehiclesLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/admin/assigned-vehicles', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setAssignedVehicles(data || []);
-            } else {
-                // Fallback mock data structure for assigned vehicles if API is still being wired up
-                setAssignedVehicles([]);
-            }
+            const data = await getAssignedVehicles();
+            setAssignedVehicles(data || []);
         } catch (err) {
             console.error('Error fetching assigned vehicles:', err);
+            setAssignedVehicles([]);
         } finally {
             setVehiclesLoading(false);
         }
