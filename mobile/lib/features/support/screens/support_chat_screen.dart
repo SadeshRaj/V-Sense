@@ -6,7 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:signalr_netcore/signalr_client.dart'; // NEW: SignalR Client
+import 'package:signalr_netcore/signalr_client.dart';
 import '../../../core/config/env_config.dart';
 
 class SupportChatScreen extends StatefulWidget {
@@ -27,6 +27,15 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   bool _isUploadingAttachment = false;
   bool _showScrollDown = false;
 
+  // Pagination State
+  int _skip = 0;
+  final int _take = 30;
+  bool _hasMore = true;
+  bool _isLoadingOlder = false;
+
+  // Ticket Status State
+  String _ticketStatus = "Open";
+
   String? _stagedAttachmentUrl;
   String? _stagedFileName;
   Map<String, dynamic>? _replyingToMessage;
@@ -40,15 +49,22 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchTicketStatus();
     _fetchMessages().then((_) {
       _initSignalR();
     });
 
     _scrollController.addListener(() {
       if (_scrollController.hasClients) {
-        final isScrolledUp = _scrollController.position.pixels < _scrollController.position.maxScrollExtent - 150;
+        // Because the list is reversed, scrolling UP means pixels increase.
+        final isScrolledUp = _scrollController.position.pixels > 150;
         if (isScrolledUp != _showScrollDown) {
           setState(() => _showScrollDown = isScrolledUp);
+        }
+
+        // Infinite Scroll trigger
+        if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 && !_isLoadingOlder && _hasMore) {
+          _fetchMessages(loadMore: true);
         }
       }
     });
@@ -62,11 +78,25 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     super.dispose();
   }
 
+  Future<void> _fetchTicketStatus() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
+      final res = await http.get(
+        Uri.parse('${EnvConfig.apiUrl}/support/ticket-status'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() => _ticketStatus = data['status']);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _initSignalR() async {
     final token = await _storage.read(key: 'jwt_token');
     if (token == null) return;
 
-    // Convert API URL to Hub URL (e.g., http://localhost:5000/api -> http://localhost:5000/hubs/support)
     final hubUrl = EnvConfig.apiUrl.replaceAll('/api', '/hubs/support');
 
     _hubConnection = HubConnectionBuilder()
@@ -78,16 +108,23 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
     _hubConnection?.on("ReceiveMessage", _handleNewMessage);
 
+    // Listen for admin closing/opening the ticket
+    _hubConnection?.on("TicketStatusChanged", (parameters) {
+      if (parameters != null && parameters.isNotEmpty) {
+        setState(() {
+          _ticketStatus = parameters[0].toString();
+        });
+      }
+    });
+
     try {
       await _hubConnection?.start();
 
-      // Parse token to get UserId (Assuming standard JWT structure)
       final parts = token.split('.');
       if (parts.length == 3) {
         final payload = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
         final userId = payload['sub'] ?? payload['nameid'] ?? payload['id'];
 
-        // Instruct the Hub we are opening the chat room
         if (userId != null) {
           await _hubConnection?.invoke("JoinChat", args: [userId]);
         }
@@ -101,25 +138,34 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     if (parameters != null && parameters.isNotEmpty) {
       final newMsg = parameters[0];
 
-      // Prevent duplicates if REST API was slightly faster
       if (_messages.any((msg) => msg['id'] == newMsg['id'])) return;
 
       if (mounted) {
         setState(() {
-          _messages.add(newMsg);
+          // Because list is reversed, index 0 is the bottom (newest)
+          _messages.insert(0, newMsg);
         });
         _scrollToBottom();
       }
     }
   }
 
-  Future<void> _fetchMessages() async {
+  Future<void> _fetchMessages({bool loadMore = false}) async {
+    if (loadMore) {
+      _skip += _take;
+      setState(() => _isLoadingOlder = true);
+    } else {
+      _skip = 0;
+      _hasMore = true;
+      if (mounted) setState(() => _isLoading = true);
+    }
+
     try {
       final token = await _storage.read(key: 'jwt_token');
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('${EnvConfig.apiUrl}/support/my-messages'),
+        Uri.parse('${EnvConfig.apiUrl}/support/my-messages?skip=$_skip&take=$_take'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -130,15 +176,24 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         final List<dynamic> data = jsonDecode(response.body);
         if (mounted) {
           setState(() {
-            _messages.clear();
-            _messages.addAll(data);
-            _isLoading = false;
+            if (data.length < _take) _hasMore = false;
+
+            if (loadMore) {
+              _messages.addAll(data);
+              _isLoadingOlder = false;
+            } else {
+              _messages.clear();
+              _messages.addAll(data);
+              _isLoading = false;
+            }
           });
-          _scrollToBottom();
         }
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() {
+        _isLoading = false;
+        _isLoadingOlder = false;
+      });
     }
   }
 
@@ -222,6 +277,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       _stagedAttachmentUrl = null;
       _stagedFileName = null;
       _replyingToMessage = null;
+
+      // Speculatively set to Open (backend handles the real logic)
+      _ticketStatus = 'Open';
     });
 
     try {
@@ -239,8 +297,6 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
           'attachmentUrl': attachmentUrl,
         }),
       );
-
-      // SignalR handle appending the message to the list!
     } catch (_) {
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -251,8 +307,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (_scrollController.hasClients) {
+          // In a reversed list, 0.0 is the bottom
           _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
+            0.0,
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutCubic,
           );
@@ -298,8 +355,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 Container(
                   width: 38,
                   height: 38,
-                  decoration: const BoxDecoration(
-                    color: navyDeep,
+                  decoration: BoxDecoration(
+                    color: _ticketStatus == 'Resolved' ? Colors.grey.shade400 : navyDeep,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.headset_mic_rounded, color: Colors.white, size: 18),
@@ -311,7 +368,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
+                      color: _ticketStatus == 'Resolved' ? Colors.grey.shade500 : const Color(0xFF10B981),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
@@ -320,16 +377,20 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
               ],
             ),
             const SizedBox(width: 12),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'V-Sense Support',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: navyDeep),
                 ),
                 Text(
-                  'Official Helpdesk • Online',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600),
+                  _ticketStatus == 'Resolved' ? 'Ticket Resolved' : 'Official Helpdesk • Online',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: _ticketStatus == 'Resolved' ? Colors.grey.shade600 : const Color(0xFF10B981),
+                      fontWeight: FontWeight.w600
+                  ),
                 ),
               ],
             ),
@@ -340,24 +401,44 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         children: [
           Column(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                color: const Color(0xFFEEF2F6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.lock_outline, size: 14, color: Color(0xFF64748B)),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: const Text(
-                        'End-to-end verified authority channel',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                        overflow: TextOverflow.ellipsis,
+              if (_ticketStatus == 'Resolved')
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  color: Colors.grey.shade200,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'This ticket is marked as resolved. Send a message to reopen.',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  color: const Color(0xFFEEF2F6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.lock_outline, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6),
+                      const Flexible(
+                        child: Text(
+                          'End-to-end verified authority channel',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               Expanded(
                 child: _isLoading
@@ -383,9 +464,18 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 )
                     : ListView.builder(
                   controller: _scrollController,
+                  reverse: true, // NEW: Flips the list for smooth chat scrolling
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: _messages.length,
+                  itemCount: _messages.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
+
+                    if (index == _messages.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey))),
+                      );
+                    }
+
                     final msg = _messages[index];
                     final isUser = msg['senderType'] == 'Client';
                     final attachmentUrl = msg['attachmentUrl'] as String?;
@@ -703,11 +793,11 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                             textCapitalization: TextCapitalization.sentences,
                             maxLines: null,
                             keyboardType: TextInputType.multiline,
-                            decoration: const InputDecoration(
-                              hintText: 'Type your message...',
-                              hintStyle: TextStyle(fontSize: 15, color: Color(0xFF94A3B8)),
+                            decoration: InputDecoration(
+                              hintText: _ticketStatus == 'Resolved' ? 'Type to reopen ticket...' : 'Type your message...',
+                              hintStyle: const TextStyle(fontSize: 15, color: Color(0xFF94A3B8)),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 12),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
                         ),

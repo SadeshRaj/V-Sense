@@ -10,7 +10,7 @@ using VSense.Application.Common;
 using VSense.Application.DTOs;
 using VSense.Domain.Entities;
 using VSense.Infrastructure.Persistence;
-using VSense.API.Hubs; // Adjust based on your namespace
+using VSense.API.Hubs;
 
 namespace VSense.API.Controllers;
 
@@ -21,7 +21,7 @@ public class SupportController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly Cloudinary _cloudinary;
-    private readonly IHubContext<SupportHub> _hubContext; // NEW: SignalR Hub
+    private readonly IHubContext<SupportHub> _hubContext;
 
     public SupportController(
         ApplicationDbContext context,
@@ -53,8 +53,22 @@ public class SupportController : ControllerBase
         else
         {
             ticket.LastUpdatedAt = DateTime.UtcNow;
-            if (ticket.Status == "Resolved") ticket.Status = "Open"; // Reopen if customer replies
+            if (ticket.Status == "Resolved")
+            {
+                ticket.Status = "Open";
+                await _hubContext.Clients.Group(userId.ToString()).SendAsync("TicketStatusChanged", "Open");
+            }
         }
+    }
+
+    [HttpGet("ticket-status")]
+    public async Task<ActionResult> GetTicketStatus()
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var ticket = await _context.SupportTickets.FirstOrDefaultAsync(t => t.UserId == userId);
+        return Ok(new { status = ticket?.Status ?? "Open" });
     }
 
     [HttpPost("upload-attachment")]
@@ -99,7 +113,7 @@ public class SupportController : ControllerBase
     }
 
     [HttpGet("my-messages")]
-    public async Task<ActionResult<IEnumerable<SupportMessageResponseDto>>> GetMyMessages()
+    public async Task<ActionResult<IEnumerable<SupportMessageResponseDto>>> GetMyMessages([FromQuery] int skip = 0, [FromQuery] int take = 30)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
@@ -114,15 +128,21 @@ public class SupportController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
+        // 1. Fetch newest messages first (so pagination grabs the most recent 30)
         var messages = await _context.SupportMessages
             .Where(m => m.UserId == userId)
-            .OrderBy(m => m.CreatedAt)
+            .OrderByDescending(m => m.CreatedAt)
+            .Skip(skip)
+            .Take(take)
             .Select(m => new SupportMessageResponseDto(
                 m.Id, m.UserId, m.SenderType, m.SenderId, m.Message, m.AttachmentUrl, m.IsReadByAdmin, m.IsReadByClient, m.CreatedAt
             ))
             .ToListAsync();
 
-        if (!messages.Any())
+        // 2. Flip the array back to chronological order so your Flutter app renders Newest at the bottom
+        messages.Reverse();
+
+        if (!messages.Any() && skip == 0)
         {
             var welcomeMsg = new SupportMessage
             {
@@ -137,6 +157,7 @@ public class SupportController : ControllerBase
             _context.SupportMessages.Add(welcomeMsg);
             await EnsureTicketExists(userId);
             await _context.SaveChangesAsync();
+
             messages.Add(new SupportMessageResponseDto(welcomeMsg.Id, welcomeMsg.UserId, welcomeMsg.SenderType, welcomeMsg.SenderId, welcomeMsg.Message, welcomeMsg.AttachmentUrl, welcomeMsg.IsReadByAdmin, welcomeMsg.IsReadByClient, welcomeMsg.CreatedAt));
         }
 
@@ -169,7 +190,6 @@ public class SupportController : ControllerBase
 
         _context.SupportMessages.Add(msg);
 
-        // Offline Auto-Reply
         var sriLankaTime = DateTime.UtcNow.AddHours(5.5);
         SupportMessage? autoReply = null;
         if (sriLankaTime.Hour < 9 || sriLankaTime.Hour >= 18)
@@ -191,7 +211,6 @@ public class SupportController : ControllerBase
 
         var responseDto = new SupportMessageResponseDto(msg.Id, msg.UserId, msg.SenderType, msg.SenderId, msg.Message, msg.AttachmentUrl, msg.IsReadByAdmin, msg.IsReadByClient, msg.CreatedAt);
 
-        // PUSH VIA SIGNALR
         await _hubContext.Clients.Group(userId.ToString()).SendAsync("ReceiveMessage", responseDto);
         if (autoReply != null)
         {
@@ -285,18 +304,41 @@ public class SupportController : ControllerBase
         };
 
         _context.SupportMessages.Add(msg);
+
+        var supportNotification = new Notification
+        {
+            Id = Guid.NewGuid(),
+            Title = "Support Update",
+            Message = string.IsNullOrWhiteSpace(dto.Message)
+                ? "An admin attached a file to your support inquiry."
+                : (dto.Message.Length > 80 ? dto.Message.Substring(0, 77) + "..." : dto.Message),
+            Category = "System",
+            IsBroadcast = false,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedBy = adminId == Guid.Empty ? null : adminId
+        };
+
+        var userNotification = new UserNotification
+        {
+            Id = Guid.NewGuid(),
+            UserId = dto.UserId,
+            NotificationId = supportNotification.Id,
+            IsRead = false
+        };
+
+        _context.Notifications.Add(supportNotification);
+        _context.UserNotifications.Add(userNotification);
+
         await _context.SaveChangesAsync();
 
         var responseDto = new SupportMessageResponseDto(msg.Id, msg.UserId, msg.SenderType, msg.SenderId, msg.Message, msg.AttachmentUrl, msg.IsReadByAdmin, msg.IsReadByClient, msg.CreatedAt);
 
-        // PUSH VIA SIGNALR
         await _hubContext.Clients.Group(dto.UserId.ToString()).SendAsync("ReceiveMessage", responseDto);
         await _hubContext.Clients.All.SendAsync("ConversationUpdated");
 
         return Ok(responseDto);
     }
 
-    // NEW: TICKET STATUS TOGGLE
     [HttpPost("admin/ticket-status/{userId:guid}")]
     [Authorize(Roles = "Admin,Administrator")]
     public async Task<IActionResult> ToggleTicketStatus(Guid userId, [FromBody] string status)
@@ -312,8 +354,38 @@ public class SupportController : ControllerBase
             ticket.Status = status;
             ticket.LastUpdatedAt = DateTime.UtcNow;
         }
+
+        if (status == "Resolved")
+        {
+            var adminId = GetCurrentUserId();
+            var resolvedNotification = new Notification
+            {
+                Id = Guid.NewGuid(),
+                Title = "Ticket Resolved",
+                Message = "Your support ticket has been marked as resolved. Reply if you need further assistance.",
+                Category = "System",
+                IsBroadcast = false,
+                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedBy = adminId == Guid.Empty ? null : adminId
+            };
+
+            var resolvedUserNotification = new UserNotification
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                NotificationId = resolvedNotification.Id,
+                IsRead = false
+            };
+
+            _context.Notifications.Add(resolvedNotification);
+            _context.UserNotifications.Add(resolvedUserNotification);
+        }
+
         await _context.SaveChangesAsync();
+
         await _hubContext.Clients.All.SendAsync("ConversationUpdated");
+        await _hubContext.Clients.Group(userId.ToString()).SendAsync("TicketStatusChanged", ticket.Status);
+
         return Ok(new { status = ticket.Status });
     }
 }
