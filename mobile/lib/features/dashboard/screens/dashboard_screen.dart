@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
 import 'my_garage_screen.dart';
+import 'partnered_garages_screen.dart'; // <-- Added import for Partnered Garages Screen
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
@@ -144,6 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Color navyDeep = Color(0xFF0A1930);
     const Color accentBlue = Color(0xFF2563EB);
     const Color accentGold = Color(0xFFD4AF37);
+    const Color accentEmerald = Color(0xFF10B981);
     const Color textGrey = Color(0xFF64748B);
 
     // MERGED BADGE COUNT: Combine System Notifications + Unread Support Messages
@@ -242,7 +244,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
 
-                      // Support Headset Button (Badge removed here since it's now on the Bell icon)
+                      // Support Headset Button
                       IconButton(
                         icon: Container(
                           padding: const EdgeInsets.all(6),
@@ -335,7 +337,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _buildStatusChip(Icons.shield_outlined, 'Account Verified', const Color(0xFF10B981)),
+                  _buildStatusChip(Icons.shield_outlined, 'Account Verified', accentEmerald),
                 ],
               ),
               const SizedBox(height: 24),
@@ -477,7 +479,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   }),
 
-                  // Support Chat with Notification Badge handled individually on tile
+                  // Replaced "Upload Receipts" with "Partnered Garages"
+                  _buildToolCard(
+                    Icons.store_mall_directory_outlined,
+                    'Partnered Garages',
+                    accentEmerald,
+                    0,
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PartneredGaragesScreen()),
+                      );
+                    },
+                  ),
+
+                  // Support Chat
                   _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, _unreadSupportCount, () {
                     Navigator.push(
                       context,
@@ -488,7 +504,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     });
                   }),
 
-                  _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue, 0, () {}),
                   _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold, 0, () {}),
                   _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, 0, () {}),
                 ],
