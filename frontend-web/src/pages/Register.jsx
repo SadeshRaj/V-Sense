@@ -41,6 +41,11 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
     const [submitted, setSubmitted] = useState(false);
     const [mapLoaded, setMapLoaded] = useState(false);
 
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
     // Default map center (Sri Lanka center: Colombo ~ 6.9271, 79.8612)
     const defaultLat = 6.9271;
     const defaultLng = 79.8612;
@@ -81,22 +86,46 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
         const initialLat = formData.latitude ? parseFloat(formData.latitude) : defaultLat;
         const initialLng = formData.longitude ? parseFloat(formData.longitude) : defaultLng;
 
-        const map = L.map(mapRef.current).setView([initialLat, initialLng], 12);
+        const map = L.map(mapRef.current, {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([initialLat, initialLng], 12);
+
         leafletMapInstance.current = map;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+        const cartoKey = import.meta.env.VITE_CARTO_API_KEY;
+
+        L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${cartoKey}`, {
+            maxZoom: 19,
+            subdomains: 'abcd'
         }).addTo(map);
 
-        // If coordinates already exist, place initial marker
-        if (formData.latitude && formData.longitude) {
-            markerRef.current = L.marker([initialLat, initialLng]).addTo(map);
-        }
+        // Custom Pin Icon
+        const customIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        // Initialize Marker
+        const marker = L.marker([initialLat, initialLng], {
+            draggable: true,
+            icon: customIcon
+        }).addTo(map);
+
+        markerRef.current = marker;
+
+        // Drag marker event
+        marker.on('dragend', (e) => {
+            const position = marker.getLatLng();
+            updateLocation(position.lat, position.lng, false);
+        });
 
         // Map click event to drop/move pin
         map.on('click', (e) => {
             const { lat, lng } = e.latlng;
-            updateLocation(lat, lng);
+            updateLocation(lat, lng, true);
         });
 
         return () => {
@@ -107,10 +136,10 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
         };
     }, [mapLoaded, submitted]);
 
-    const updateLocation = (lat, lng) => {
+    const updateLocation = (lat, lng, moveMarker = true) => {
         const L = window.L;
-        const formattedLat = lat.toFixed(6);
-        const formattedLng = lng.toFixed(6);
+        const formattedLat = Number(lat).toFixed(6);
+        const formattedLng = Number(lng).toFixed(6);
 
         setFormData(prev => ({
             ...prev,
@@ -118,14 +147,50 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
             longitude: formattedLng
         }));
 
-        if (leafletMapInstance.current && L) {
-            if (markerRef.current) {
+        if (markerRef.current) {
+            if (moveMarker) {
                 markerRef.current.setLatLng([lat, lng]);
-            } else {
-                markerRef.current = L.marker([lat, lng]).addTo(leafletMapInstance.current);
             }
+        }
+
+        if (leafletMapInstance.current && moveMarker) {
             leafletMapInstance.current.panTo([lat, lng]);
         }
+    };
+
+    // Free Nominatim OpenStreetMap Search
+    const handleSearch = async (query) => {
+        setSearchQuery(query);
+        if (query.trim().length < 3) {
+            setSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+            );
+            const data = await response.json();
+            setSearchResults(data);
+        } catch (err) {
+            console.error('Location search failed:', err);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleSelectSearchResult = (result) => {
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+
+        updateLocation(lat, lng, true);
+        if (leafletMapInstance.current) {
+            leafletMapInstance.current.setZoom(15);
+        }
+
+        setSearchQuery(result.display_name.split(',')[0]);
+        setSearchResults([]);
     };
 
     // Geolocation API to detect device position
@@ -138,9 +203,9 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                updateLocation(latitude, longitude);
+                updateLocation(latitude, longitude, true);
                 if (leafletMapInstance.current) {
-                    leafletMapInstance.current.setZoom(15);
+                    leafletMapInstance.current.setZoom(16);
                 }
             },
             () => {
@@ -447,9 +512,9 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
                             </div>
                         </div>
 
-                        {/* Workshop Location Map Picker */}
-                        <div>
-                            <div className="flex items-center justify-between mb-1">
+                        {/* Workshop Location Map Picker with Free Search */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
                                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
                                     Pin Workshop Location on Map
                                 </label>
@@ -462,22 +527,52 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
                                 </button>
                             </div>
 
-                            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-inner bg-slate-100 relative">
-                                <div ref={mapRef} className="h-48 w-full z-0" />
+                            {/* Search Location Bar */}
+                            <div className="relative z-20">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                    placeholder="Search location or city..."
+                                    className="w-full px-3.5 py-2 pl-9 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600 transition shadow-sm placeholder:text-slate-400 font-medium"
+                                />
+                                <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+
+                                {/* Autocomplete Search Results Dropdown */}
+                                {searchResults.length > 0 && (
+                                    <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 z-30">
+                                        {searchResults.map((item, index) => (
+                                            <li
+                                                key={index}
+                                                onClick={() => handleSelectSearchResult(item)}
+                                                className="px-3.5 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-600 cursor-pointer transition truncate font-medium"
+                                            >
+                                                {item.display_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            {/* Map Container */}
+                            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-slate-100 relative z-10">
+                                <div ref={mapRef} className="h-52 w-full z-0" />
                                 {!mapLoaded && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 text-slate-400 text-xs">
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 text-slate-400 text-xs font-medium">
                                         Loading map...
                                     </div>
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div className="grid grid-cols-2 gap-2">
                                 <input
                                     type="text"
                                     name="latitude"
                                     readOnly
                                     value={formData.latitude ? `Lat: ${formData.latitude}` : ''}
-                                    placeholder="Latitude (Click map)"
+                                    placeholder="Latitude (Click map or drag pin)"
                                     className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-mono text-center"
                                 />
                                 <input
@@ -485,7 +580,7 @@ export default function Register({ isOpen = true, onClose, isModal = false }) {
                                     name="longitude"
                                     readOnly
                                     value={formData.longitude ? `Lng: ${formData.longitude}` : ''}
-                                    placeholder="Longitude (Click map)"
+                                    placeholder="Longitude (Click map or drag pin)"
                                     className="px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-mono text-center"
                                 />
                             </div>
