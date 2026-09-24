@@ -123,7 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -142,7 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
                                   color: navyDeep.withOpacity(0.06),
@@ -169,18 +169,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Row(
                     children: [
-                      // Notifications Bell Icon (From Friend's Branch)
+                      // Notifications Bell Icon
                       Stack(
                         alignment: Alignment.topRight,
                         children: [
                           IconButton(
                             icon: Container(
-                              padding: const EdgeInsets.all(6),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: accentBlue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
-                              child: const Icon(Icons.notifications_outlined, color: accentBlue, size: 20),
+                              child: const Icon(Icons.notifications_outlined, color: navyDeep, size: 20),
                             ),
                             onPressed: () {
                               Navigator.push(
@@ -192,12 +193,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           if (_unreadNotificationsCount > 0)
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: 6,
+                              right: 6,
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: const BoxDecoration(
-                                  color: Colors.red,
+                                  color: Color(0xFFEF4444),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
@@ -211,10 +212,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // Customer Support Headset Icon
                       IconButton(
                         icon: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: accentBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: const Icon(Icons.headset_mic_rounded, color: accentBlue, size: 20),
                         ),
@@ -235,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Greeting & Location
               Row(
@@ -247,13 +249,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         getGreeting(),
-                        style: const TextStyle(fontSize: 16, color: textGrey, fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontSize: 14, color: textGrey, fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         _userName,
                         style: const TextStyle(
-                          fontSize: 30,
+                          fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: navyDeep,
                           letterSpacing: -0.5,
@@ -267,21 +269,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: accentBlue.withOpacity(0.1),
+                          color: accentBlue.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: accentBlue.withOpacity(0.2)),
                         ),
                         child: const Text(
                           'CLIENT PORTAL',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentBlue),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: accentBlue, letterSpacing: 0.5),
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text('Colombo, LK', style: TextStyle(fontSize: 12, color: textGrey, fontWeight: FontWeight.w500)),
+                      Row(
+                        children: const [
+                          Icon(Icons.location_on_outlined, size: 14, color: textGrey),
+                          SizedBox(width: 2),
+                          Text('Colombo, LK', style: TextStyle(fontSize: 12, color: textGrey, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               // Status Chips
               Row(
@@ -296,11 +305,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       accentBlue,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _buildStatusChip(Icons.shield_outlined, 'Account Verified', const Color(0xFF10B981)),
+                  const SizedBox(width: 10),
+                  _buildStatusChip(Icons.verified_user_outlined, 'Account Verified', const Color(0xFF10B981)),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Primary Action: Search & Link Vehicle Banner
               InkWell(
@@ -310,7 +319,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     MaterialPageRoute(builder: (_) => const SearchVehicleScreen()),
                   ).then((_) => _fetchVehicleCount());
                 },
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -319,12 +328,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: navyDeep.withOpacity(0.25),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
+                        color: navyDeep.withOpacity(0.2),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -338,17 +347,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               'Link Your Vehicle',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 19,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.3,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Find your vehicle in the government registry',
+                              'Find your vehicle in the official state registry',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.8),
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
                               maxLines: 2,
@@ -359,13 +368,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(width: 12),
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.white.withOpacity(0.2)),
                         ),
-                        child: const Icon(Icons.search_rounded, color: Colors.white, size: 28),
+                        child: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
                       ),
                     ],
                   ),
@@ -378,11 +387,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF2F2),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: const Color(0xFFFECACA)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEF4444).withOpacity(0.05),
+                      color: const Color(0xFFEF4444).withOpacity(0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -396,58 +405,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: const Color(0xFFFEE2E2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
+                      child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 22),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Verification Status', style: TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text('Verification Status', style: TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.bold, fontSize: 13)),
                           SizedBox(height: 2),
                           Text('1 report pending inspector validation', style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12)),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Color(0xFFEF4444)),
+                    const Icon(Icons.chevron_right_rounded, color: Color(0xFFEF4444), size: 22),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-              // Portal Tools Grid
+              // Portal Tools Grid Header
               const Text(
-                'V-Sense Portal',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: navyDeep, letterSpacing: 0.5),
+                'V-Sense Portal Tools',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: navyDeep, letterSpacing: -0.2),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, _navigateToGarage),
+                  _buildToolCard(
+                    Icons.garage_outlined,
+                    'My Garage',
+                    'Manage active vehicles',
+                    accentBlue,
+                    _navigateToGarage,
+                  ),
 
-                  // Digital Certs Screen Link (From Main Branch)
-                  _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
-                    );
-                  }),
+                  _buildToolCard(
+                    Icons.workspace_premium_outlined,
+                    'Digital Certs',
+                    'Verified inspection passes',
+                    accentGold,
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
+                      );
+                    },
+                  ),
 
-                  _buildToolCard(Icons.headset_mic_outlined, 'Support Chat', accentBlue, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SupportChatScreen()),
-                    );
-                  }),
-                  _buildToolCard(Icons.receipt_long_outlined, 'Upload Receipts', accentBlue, () {}),
-                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold, () {}),
-                  _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, () {}),
+                  _buildToolCard(
+                    Icons.store_mall_directory_outlined,
+                    'Service Centers',
+                    'Locate partnered garages',
+                    const Color(0xFF10B981),
+                        () {},
+                  ),
+
+                  _buildToolCard(
+                    Icons.headset_mic_outlined,
+                    'Support Chat',
+                    '24/7 AI & agent help',
+                    accentBlue,
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+                      );
+                    },
+                  ),
+
+                  _buildToolCard(
+                    Icons.payments_outlined,
+                    'Buy Report',
+                    'Official vehicle valuation',
+                    accentGold,
+                        () {},
+                  ),
+
+                  _buildToolCard(
+                    Icons.settings_outlined,
+                    'Settings',
+                    'Account & preferences',
+                    textGrey,
+                        () {},
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -462,19 +510,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: navyDeep.withOpacity(0.08),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
+              color: navyDeep.withOpacity(0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -6),
             )
           ],
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              // Main Branch logic including QR Scanner
               if (index == 2) {
                 Navigator.push(
                   context,
@@ -491,8 +538,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             selectedItemColor: accentBlue,
             unselectedItemColor: textGrey.withOpacity(0.6),
             showUnselectedLabels: true,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
             type: BottomNavigationBarType.fixed,
             elevation: 0,
             items: const [
@@ -521,66 +568,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildStatusChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withOpacity(0.25)),
         boxShadow: [
-          BoxShadow(color: color.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: color.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 8),
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color.withOpacity(0.9)),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildToolCard(IconData icon, String title, Color iconColor, VoidCallback onTap) {
+  Widget _buildToolCard(
+      IconData icon, String title, String subtitle, Color iconColor, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0A1930).withOpacity(0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: const Color(0xFF0A1930).withOpacity(0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
+                color: iconColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 28, color: iconColor),
+              child: Icon(icon, size: 24, color: iconColor),
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFF0A1930),
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                letterSpacing: 0.3,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF0A1930),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
