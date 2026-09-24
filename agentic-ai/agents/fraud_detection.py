@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 import os
+import datetime
 
 def agent_3_fraud_detection(state: WorkflowState) -> dict:
     if state.get("status") == "failed": return state
@@ -15,6 +16,8 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
     history_summary = state.get("history_summary", {})
     mileage_timeline = history_summary.get("mileage_timeline", [])
     service_records = history_summary.get("service_records", [])
+    vehicle_profile = state.get("vehicle_profile", {})
+    ownership_history = vehicle_profile.get("ownership_history", [])
 
     @tool
     def check_mileage(vehicle_id: str) -> list:
@@ -27,19 +30,16 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
             current_mileage = entry.get("mileage", 0)
             date_str = entry.get("date", "")
 
-            # 1. Rollback check
             if current_mileage < max_mileage_seen:
                 flags.append({"type": "odometer_rollback", "detail": f"Mileage dropped to {current_mileage}.", "severity": "high"})
             else:
                 max_mileage_seen = max(max_mileage_seen, current_mileage)
 
-            # 2. Same-date anomaly tracking
             if date_str:
                 if date_str not in date_to_mileages:
                     date_to_mileages[date_str] = []
                 date_to_mileages[date_str].append(current_mileage)
 
-        # Evaluate date anomalies
         for date_str, mileages in date_to_mileages.items():
             if len(mileages) > 1:
                 mileage_diff = max(mileages) - min(mileages)
@@ -49,7 +49,6 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
                         "detail": f"Impossible usage: {mileage_diff}km gap logged on the exact same day ({date_str}).",
                         "severity": "high"
                     })
-
         return flags
 
     @tool
@@ -68,11 +67,23 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
                 seen_records.add(record_hash)
         return flags
 
+    @tool
+    def check_ownership_anomalies(vehicle_id: str) -> list:
+        """NEW: Deterministic tool to flag excessive ownership transfers."""
+        flags = []
+        if len(ownership_history) > 3:
+            flags.append({
+                "type": "ownership_anomaly",
+                "detail": f"Vehicle has changed hands {len(ownership_history)} times, indicating potential issues.",
+                "severity": "medium"
+            })
+        return flags
+
     model_name = os.getenv("CHAT_MODEL", "gemini-3.5-flash-lite")
     llm = ChatGoogleGenerativeAI(model=model_name)
-    llm_with_tools = llm.bind_tools([check_mileage, check_records])
+    llm_with_tools = llm.bind_tools([check_mileage, check_records, check_ownership_anomalies])
 
-    prompt = f"You are the Fraud Detection Agent. Run fraud checks for vehicle_id: {state['vehicle_id']} by calling BOTH tools."
+    prompt = f"You are the Fraud Detection Agent. Run all 3 fraud checks for vehicle_id: {state['vehicle_id']} by calling the tools."
     response = llm_with_tools.invoke([HumanMessage(content=prompt)])
 
     all_flags = []
@@ -82,6 +93,8 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
                 all_flags.extend(check_mileage.invoke(tool_call["args"]))
             elif tool_call["name"] == "check_records":
                 all_flags.extend(check_records.invoke(tool_call["args"]))
+            elif tool_call["name"] == "check_ownership_anomalies":
+                all_flags.extend(check_ownership_anomalies.invoke(tool_call["args"]))
 
     risk_score = 0.0
     for flag in all_flags:

@@ -155,40 +155,57 @@ public class WorkflowsController : ControllerBase
     }
 
     [HttpGet("report-data/{vehicleId}")]
-    [Authorize]
-    public async Task<IActionResult> GetReportData(Guid vehicleId)
-    {
-        var vehicle = await _context.Vehicles.FindAsync(vehicleId);
-        if (vehicle == null) return NotFound("Vehicle not found");
+        [Authorize]
+        public async Task<IActionResult> GetReportData(Guid vehicleId)
+        {
+            var vehicle = await _context.Vehicles.FindAsync(vehicleId);
+            if (vehicle == null) return NotFound("Vehicle not found");
 
-        var serviceRecords = await _context.ServiceRecords
-            .Include(s => s.Organization)
-            .Where(s => s.VehicleId == vehicleId)
-            .OrderByDescending(s => s.CreatedAt)
-            .Select(s => new {
-                s.Id,
-                s.Title,
-                s.Description,
-                s.OdometerReading,
-                s.CreatedAt,
-                GarageName = s.Organization != null ? s.Organization.Name : "Independent Garage",
-                GarageVerified = s.Organization != null && s.Organization.IsVerified == true
-            })
-            .ToListAsync();
+            var serviceRecords = await _context.ServiceRecords
+                .Include(s => s.Organization)
+                .Where(s => s.VehicleId == vehicleId)
+                .OrderByDescending(s => s.CreatedAt)
+                .Select(s => new {
+                    s.Id,
+                    s.Title,
+                    s.Description,
+                    s.OdometerReading,
+                    s.CreatedAt,
+                    GarageName = s.Organization != null ? s.Organization.Name : "Independent Garage",
+                    GarageVerified = s.Organization != null && s.Organization.IsVerified == true
+                })
+                .ToListAsync();
 
-        return Ok(new {
-            vehicle = new {
-                vehicle.Id,
-                vehicle.Make,
-                vehicle.Model,
-                vehicle.RegistrationNumber,
-                vehicle.VIN,
-                vehicle.ManufacturingYear,
-                vehicle.FuelType
-            },
-            records = serviceRecords
-        });
-    }
+            // NEW: Fetch Legal/Insurance History
+            var vehicleHistory = await _context.VehicleHistories
+                .FirstOrDefaultAsync(vh => vh.VehicleId == vehicleId);
+
+            // NEW: Fetch Past Ownership History
+            var ownershipHistory = await _context.VehicleOwnershipHistories
+                .Where(o => o.VehicleId == vehicleId)
+                .OrderByDescending(o => o.OwnershipStartDate)
+                .Select(o => new {
+                    o.OwnerName,
+                    o.OwnershipStartDate,
+                    o.OwnershipEndDate
+                })
+                .ToListAsync();
+
+            return Ok(new {
+                vehicle = new {
+                    vehicle.Id,
+                    vehicle.Make,
+                    vehicle.Model,
+                    vehicle.RegistrationNumber,
+                    vehicle.VIN,
+                    vehicle.ManufacturingYear,
+                    vehicle.FuelType
+                },
+                records = serviceRecords,
+                legalStatus = vehicleHistory,
+                pastOwners = ownershipHistory
+            });
+        }
 
     [HttpPost("{id}/approve")]
     [Authorize(Roles = "Administrator")]

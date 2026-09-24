@@ -22,12 +22,15 @@ def agent_4_validation(state: WorkflowState) -> dict:
     def calculate_valuation(vehicle_id: str, ai_insight: str) -> dict:
         """
         Rule-based tool to estimate vehicle condition.
-        You MUST provide a detailed 'ai_insight' formatted ONLY as a BULLETED LIST (using '- ' for each point).
-        CRITICAL RULES FOR AI_INSIGHT:
-        1. Predict future maintenance (e.g., 'Approaching major timing belt service at 70k km') based on current mileage.
-        2. Explicitly cite evidence from the history descriptions to justify your predictions.
-        3. Point out ANY highly suspicious anomalies (e.g., 'Nonsense descriptions like "test test test"' or 'Impossible same-day mileage jumps').
-        Output must be 3-4 bullet points.
+        You MUST provide a highly detailed 'ai_insight' formatted ONLY as a BULLETED LIST (using '- ' for each point).
+        CRITICAL RULES FOR AI_INSIGHT (Make it highly valuable for a potential buyer):
+        1. Overall Condition Assessment: State the overall condition based on service frequency, mileage, and fraud flags.
+        2. Deep Service History Analysis: Summarize repair patterns, check for consistent mileage increments, and explicitly cite evidence from the history descriptions.
+        3. Future Predictions: Predict future maintenance (e.g., 'Approaching major timing belt service at 75k km') based on the current mileage.
+        4. Anomaly Detection: Point out ANY suspicious anomalies (e.g., 'Rapid succession of service records on the same day' or 'Nonsense descriptions').
+        5. Legal & Ownership Evaluation: Evaluate the Insurance Status (Active/Expired) and Ownership stability (e.g., frequency of transfers).
+        6. Final Buyer Recommendation based on the combined mechanical and legal evidence.
+        Output must be 5 to 7 detailed bullet points.
         """
         mileage = 0
         if history_summary.get("mileage_timeline"):
@@ -59,12 +62,16 @@ def agent_4_validation(state: WorkflowState) -> dict:
     llm_with_tools = llm.bind_tools([calculate_valuation, validate_report])
 
     prompt = f"""
-    You are the Valuation & Validation Agent.
-    Finalize the evaluation for vehicle_id: {state['vehicle_id']}.
-    Review this history carefully: {history_summary}
-    Review these detected fraud flags: {fraud_flags}
-    You MUST call BOTH 'calculate_valuation' and 'validate_report'.
-    """
+        You are the Valuation & Validation Agent, an expert vehicle appraiser and data analyst.
+        Your goal is to provide a highly valuable, detailed analysis for a potential buyer looking at vehicle_id: {state['vehicle_id']}.
+
+        Review this service history carefully: {history_summary}
+        Review these detected fraud flags: {fraud_flags}
+        Review the legal status and ownership history: {vehicle_profile.get('legal_status')}, {vehicle_profile.get('ownership_history')}
+
+        You MUST call BOTH 'calculate_valuation' and 'validate_report'.
+        Your 'ai_insight' MUST cover BOTH the mechanical service history (mileage jumps, repair consistency, maintenance predictions) AND the legal/ownership status. Do not ignore the mechanical service history records!
+        """
 
     response = llm_with_tools.invoke([HumanMessage(content=prompt)])
 
