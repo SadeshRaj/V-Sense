@@ -44,16 +44,19 @@ class NotificationService {
   }
 
   Future<void> markAsRead(String id) async {
-    final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return;
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
 
-    await http.patch(
-      Uri.parse('${EnvConfig.apiUrl}/notifications/$id/read'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+      await http.patch(
+        Uri.parse('${EnvConfig.apiUrl}/notifications/$id/read'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+    } catch (e) {
+      // Fails silently in the background so it doesn't crash the UI
+    }
   }
 }
-

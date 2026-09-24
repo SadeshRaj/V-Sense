@@ -22,22 +22,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadNotifications() async {
     try {
       final notifications = await _notificationService.getMyNotifications();
-      setState(() {
-        _notifications = notifications;
-        _isLoading = false;
-      });
+
+      if (mounted) {
+        setState(() {
+          _notifications = notifications;
+          _isLoading = false;
+        });
+      }
+
+      // Automatically mark all unread notifications as read in the background.
+      // This ensures the dashboard count clears when you press the back button.
+      for (var notification in _notifications) {
+        final isRead = notification['isRead'] ?? false;
+        if (!isRead && notification['id'] != null) {
+          _notificationService.markAsRead(notification['id'].toString());
+        }
+      }
+
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _markAsRead(dynamic notification) async {
-    if (notification['isRead']) return;
+    if (notification['isRead'] == true) return;
 
     setState(() {
       notification['isRead'] = true;
     });
-    await _notificationService.markAsRead(notification['id']);
+
+    if (notification['id'] != null) {
+      await _notificationService.markAsRead(notification['id'].toString());
+    }
   }
 
   @override
