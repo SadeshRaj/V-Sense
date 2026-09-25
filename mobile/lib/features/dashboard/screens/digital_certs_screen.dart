@@ -184,7 +184,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     return '$base/verify/$workflowId';
   }
 
-  // NEW: Sanitizes text to prevent Helvetica WinAnsi encoding crashes in PDF
+  // Sanitizes text to prevent Helvetica WinAnsi encoding crashes in PDF
   String _sanitizePdfText(String text) {
     return text
         .replaceAll('—', '-') // Em-dash
@@ -262,20 +262,56 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
 
       final String verificationUrl = _getVerificationUrl(_workflowId!);
 
-      // 2. Load the App Logo for the PDF Header
-      final ByteData imageByteData = await rootBundle.load('assets/logo_S.png');
-      final Uint8List imageBytes = imageByteData.buffer.asUint8List();
-      final pdfLogo = pw.MemoryImage(imageBytes);
+      // ==========================================
+      // WATERMARK TRANSPARENCY ADJUSTMENT
+      // ==========================================
+      // Change this value from 0.0 (fully invisible) to 1.0 (fully solid)
+      final double watermarkOpacity = 0.08;
+
+      // 2. Load the App Logos for PDF Generation
+      final ByteData headerImageByteData = await rootBundle.load('assets/logo_S.png');
+      final Uint8List headerImageBytes = headerImageByteData.buffer.asUint8List();
+      final pdfHeaderLogo = pw.MemoryImage(headerImageBytes);
+
+      final ByteData watermarkByteData = await rootBundle.load('assets/logo_L2.png');
+      final Uint8List watermarkBytes = watermarkByteData.buffer.asUint8List();
+      final pdfWatermarkLogo = pw.MemoryImage(watermarkBytes);
 
       final pdf = pw.Document();
 
+      final String generateDate = DateTime.now().toString().substring(0, 16);
+
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(36),
+          pageTheme: pw.PageTheme(
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(36),
+            // NEW: Background Watermark implementation
+            buildBackground: (pw.Context context) {
+              return pw.FullPage(
+                ignoreMargins: false,
+                child: pw.Center(
+                  child: pw.Opacity(
+                    opacity: watermarkOpacity,
+                    child: pw.Image(pdfWatermarkLogo, width: 350),
+                  ),
+                ),
+              );
+            },
+          ),
+          // NEW: Professional Page Footer
+          footer: (pw.Context context) {
+            return pw.Container(
+              alignment: pw.Alignment.centerRight,
+              margin: const pw.EdgeInsets.only(top: 10),
+              child: pw.Text(
+                'Generated on: $generateDate | Page ${context.pageNumber} of ${context.pagesCount} | V-Sense Confidential',
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+              ),
+            );
+          },
           build: (pw.Context context) {
             return [
-              // UPDATED HEADER: Resized Logo and adjusted spacing
               pw.Header(
                 level: 0,
                 child: pw.Row(
@@ -285,8 +321,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                     pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        // Reduced height from 40 to 22 so the wide logo fits perfectly
-                        pw.Image(pdfLogo, height: 22),
+                        pw.Image(pdfHeaderLogo, height: 22),
                         pw.SizedBox(width: 16),
                         pw.Text('VEHICLE HISTORY CERTIFICATE',
                             style: pw.TextStyle(
@@ -395,7 +430,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                               fontWeight: pw.FontWeight.bold,
                               color: PdfColors.blue900)),
                       pw.SizedBox(height: 8),
-                      // Bullet points are automatically sanitized inside _buildBulletPoints
                       ..._buildBulletPoints(_aiInsight)
                     ],
                   ),
@@ -529,6 +563,24 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   ),
                 ],
               ),
+
+              // ==========================================
+              // NEW: REAL-WORLD LEGAL & POLICY DISCLAIMER
+              // ==========================================
+              pw.SizedBox(height: 32),
+              pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+              pw.SizedBox(height: 8),
+              pw.Text('TERMS OF USE & LEGAL DISCLAIMER',
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                '1. Data Limitations: This V-Sense certificate is generated based on historical data provided by affiliated garages, insurers, and users. V-Sense does not guarantee that this report contains the complete history of the vehicle, as independent repairs, collisions, or modifications may not have been reported to our network.\n\n'
+                    '2. AI Insights Advisory: The V-Sense Agentic AI insights, condition assessments, and future predictions are advisory only, generated via algorithmic analysis of service intervals. They do not constitute a warranty or guarantee, and they do not replace a physical inspection by a qualified mechanic. V-Sense accepts no liability for mechanical failures or undisclosed defects.\n\n'
+                    '3. Legal & Ownership Status: Registration, licensing, and insurance statuses are snapshot references provided at the time of certificate generation. This document does not constitute legal proof of ownership or guarantee the absence of outstanding financial liens.',
+                style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600, lineSpacing: 1.5),
+              ),
+              // ==========================================
+
             ];
           },
         ),
