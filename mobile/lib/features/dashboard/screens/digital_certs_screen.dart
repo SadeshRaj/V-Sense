@@ -10,7 +10,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/config/env_config.dart';
-import '../widgets/ai_processing_animation.dart'; // Import the new animation
+import '../widgets/ai_processing_animation.dart';
 
 class DigitalCertsScreen extends StatefulWidget {
   const DigitalCertsScreen({super.key});
@@ -257,11 +257,21 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
       final vehicle = reportData['vehicle'] ?? {};
       final List<dynamic> records = reportData['records'] ?? [];
       final legalStatus = reportData['legalStatus'] ?? {};
-      final List<dynamic> pastOwners = reportData['pastOwners'] ?? [];
+      final List<dynamic> allOwners = reportData['pastOwners'] ?? [];
       final List<dynamic> policeRecords = reportData['policeRecords'] ?? [];
 
-      final String verificationUrl = _getVerificationUrl(_workflowId!);
+      Map<String, dynamic>? currentOwner;
+      List<dynamic> pastOwners = [];
 
+      for (var owner in allOwners) {
+        if (owner['ownershipEndDate'] == null || owner['ownershipEndDate'].toString().trim().isEmpty) {
+          currentOwner = owner;
+        } else {
+          pastOwners.add(owner);
+        }
+      }
+
+      final String verificationUrl = _getVerificationUrl(_workflowId!);
       final double watermarkOpacity = 0.08;
 
       final ByteData headerImageByteData = await rootBundle.load('assets/logo_S.png');
@@ -381,6 +391,18 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                         style: pw.TextStyle(
                             fontSize: 14, fontWeight: pw.FontWeight.bold)),
                     pw.Divider(thickness: 0.5),
+
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                            'Current Owner: ${_sanitizePdfText(currentOwner?['ownerName'] ?? 'Unknown')}'),
+                        pw.Text(
+                            'Owned Since: ${currentOwner?['ownershipStartDate'] != null ? currentOwner!['ownershipStartDate'].toString().split('T').first : 'N/A'}'),
+                      ],
+                    ),
+                    pw.SizedBox(height: 4),
+
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
@@ -440,7 +462,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                             _sanitizePdfText(p['description'] ?? 'No notes'),
                           ];
                         }).toList(),
-                        // Fixed Table Alignments & Widths
                         columnWidths: {
                           0: const pw.FlexColumnWidth(1.2),
                           1: const pw.FlexColumnWidth(1.2),
@@ -489,7 +510,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 pw.SizedBox(height: 16),
               ],
 
-              pw.Text('Ownership History',
+              pw.Text('Previous Ownership History',
                   style: pw.TextStyle(
                       fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 8),
@@ -497,7 +518,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(vertical: 8),
                   child: pw.Text(
-                      'No previous ownership changes reported on platform.',
+                      'No previous ownership changes reported before the current owner.',
                       style: const pw.TextStyle(
                           fontSize: 11, color: PdfColors.grey700)),
                 )
@@ -617,7 +638,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
               ),
 
               // ==========================================
-              // BOUND TERMS BLOCK
+              // BOUND TERMS BLOCK using pw.Container
               // ==========================================
               pw.Container(
                   child: pw.Column(
@@ -704,7 +725,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   ),
                 _buildGenerateButton(),
               ] else if (_workflowStatus == 'processing') ...[
-                // NEW: Luxury Processing Animation
                 const Expanded(child: AIProcessingAnimation()),
               ] else if (_workflowStatus == 'pending_approval') ...[
                 _buildPendingReviewUI(),
