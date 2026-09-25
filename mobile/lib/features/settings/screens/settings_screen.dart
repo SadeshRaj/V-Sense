@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/config/env_config.dart';
@@ -31,10 +32,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
 
+  // Snapshot of the loaded values, used to restore the form on Cancel.
+  String _originalName = '';
+  String _originalEmail = '';
+  String _originalPhone = '';
+
+  String? _nic;
+  String _role = 'Client';
+  DateTime? _memberSince;
+
   File? _pickedImage;
   String? _profilePictureUrl;
 
   bool _isLoading = true;
+  bool _isEditing = false;
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
 
@@ -52,13 +63,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------
-  // TODO (backend): GET /users/me
-  // Should return the current authenticated user's profile, e.g.:
-  // { "fullName": "...", "email": "...", "phoneNumber": "...",
-  //   "profilePictureUrl": "..." }
-  // ---------------------------------------------------------------------
   Future<void> _loadProfile() async {
+    setState(() => _isLoading = true);
     try {
       final token = await _storage.read(key: 'jwt_token');
       if (token == null) {
@@ -73,18 +79,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _nameController.text = data['fullName'] ?? '';
-        _emailController.text = data['email'] ?? '';
-        _phoneController.text = data['phoneNumber'] ?? '';
+        _originalName = data['fullName'] ?? '';
+        _originalEmail = data['email'] ?? '';
+        _originalPhone = data['phoneNumber'] ?? '';
+        _nic = data['nic'];
+        _role = data['role'] ?? 'Client';
         _profilePictureUrl = data['profilePictureUrl'];
+        if (data['createdAt'] != null) {
+          _memberSince = DateTime.tryParse(data['createdAt']);
+        }
+
+        _nameController.text = _originalName;
+        _emailController.text = _originalEmail;
+        _phoneController.text = _originalPhone;
+      } else {
+        if (mounted) _showSnackBar('Could not load your profile.', isError: true);
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar('Could not load your profile. Pull to refresh or try again.', isError: true);
+        _showSnackBar('Could not load your profile. Check your connection and try again.', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _enterEditMode() {
+    setState(() => _isEditing = true);
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _nameController.text = _originalName;
+      _emailController.text = _originalEmail;
+      _phoneController.text = _originalPhone;
+      _pickedImage = null;
+      _isEditing = false;
+    });
   }
 
   void _showImageSourceSheet() {
@@ -115,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Take a photo', style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.camera);
+                    _pickAndCropImage(ImageSource.camera);
                   },
                 ),
                 ListTile(
@@ -123,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Choose from gallery', style: TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.gallery);
+                    _pickAndCropImage(ImageSource.gallery);
                   },
                 ),
               ],
@@ -134,26 +165,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickAndCropImage(ImageSource source) async {
     try {
       final XFile? file = await _picker.pickImage(
         source: source,
-        maxWidth: 1024,
-        imageQuality: 85,
+        maxWidth: 1600,
+        imageQuality: 90,
       );
-      if (file != null) {
-        setState(() => _pickedImage = File(file.path));
+      if (file == null) return;
+
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: file.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressQuality: 90,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Photo',
+            toolbarColor: navyDeep,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: accentBlue,
+            initAspectRatio: CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+            cropStyle: CropStyle.circle,
+            hideBottomControls: false,
+          ),
+          IOSUiSettings(
+            title: 'Crop Photo',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+            cropStyle: CropStyle.circle,
+          ),
+        ],
+      );
+
+      if (croppedFile != null) {
+        setState(() => _pickedImage = File(croppedFile.path));
       }
     } catch (e) {
-      _showSnackBar('Could not open the ${source == ImageSource.camera ? 'camera' : 'gallery'}.', isError: true);
+      _showSnackBar('Could not process that photo. Please try another.', isError: true);
     }
   }
 
-  // ---------------------------------------------------------------------
-  // TODO (backend): POST /uploads/profile-picture  (multipart/form-data,
-  // field name "file"). Reuses the existing CloudinaryService. Should
-  // return: { "url": "https://res.cloudinary.com/..." }
-  // ---------------------------------------------------------------------
+  // Uploads the cropped photo to the generic image endpoint and returns
+  // its Cloudinary URL. Returns the existing URL unchanged if no new photo
+  // was picked.
   Future<String?> _uploadPickedImage(String token) async {
     if (_pickedImage == null) return _profilePictureUrl;
 
@@ -161,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('${EnvConfig.apiUrl}/uploads/profile-picture'),
+        Uri.parse('${EnvConfig.apiUrl}/uploads/image'),
       );
       request.headers['Authorization'] = 'Bearer $token';
       request.files.add(await http.MultipartFile.fromPath('file', _pickedImage!.path));
@@ -172,19 +227,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['url'] as String?;
-      } else {
-        throw Exception('Upload failed (${response.statusCode})');
       }
+      final message = _extractErrorMessage(response.body) ?? 'Photo upload failed.';
+      throw Exception(message);
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
   }
 
-  // ---------------------------------------------------------------------
-  // TODO (backend): PUT /users/me
-  // Body: { "fullName": "...", "email": "...", "phoneNumber": "...",
-  //         "profilePictureUrl": "..." }
-  // ---------------------------------------------------------------------
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -196,7 +246,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
 
-      final uploadedUrl = await _uploadPickedImage(token);
+      String? uploadedUrl;
+      try {
+        uploadedUrl = await _uploadPickedImage(token);
+      } catch (e) {
+        _showSnackBar(e.toString().replaceFirst('Exception: ', ''), isError: true);
+        return;
+      }
 
       final response = await http.put(
         Uri.parse('${EnvConfig.apiUrl}/users/me'),
@@ -213,12 +269,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         setState(() {
-          _profilePictureUrl = uploadedUrl;
+          _originalName = data['fullName'] ?? _nameController.text.trim();
+          _originalEmail = data['email'] ?? _emailController.text.trim();
+          _originalPhone = data['phoneNumber'] ?? _phoneController.text.trim();
+          _profilePictureUrl = data['profilePictureUrl'];
           _pickedImage = null;
+          _isEditing = false;
         });
-        // Keep the locally cached display name in sync with the dashboard.
-        await _storage.write(key: 'user_name', value: _nameController.text.trim());
+        await _storage.write(key: 'user_name', value: _originalName);
         if (mounted) _showSnackBar('Your profile has been updated.');
       } else {
         final message = _extractErrorMessage(response.body) ?? 'Could not save your changes.';
@@ -367,38 +427,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 : _buildAvatarImage(),
                           ),
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: InkWell(
-                            onTap: _showImageSourceSheet,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: accentBlue,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
+                        if (_isEditing)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: _showImageSourceSheet,
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: accentBlue,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                ),
+                                child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                               ),
-                              child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: TextButton(
-                      onPressed: _showImageSourceSheet,
-                      child: const Text(
-                        'Change photo',
-                        style: TextStyle(color: accentBlue, fontWeight: FontWeight.w700, fontSize: 13),
+                  if (_isEditing) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: TextButton(
+                        onPressed: _showImageSourceSheet,
+                        child: const Text(
+                          'Change photo',
+                          style: TextStyle(color: accentBlue, fontWeight: FontWeight.w700, fontSize: 13),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-
+                  ] else
+                    const SizedBox(height: 16),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -406,15 +468,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: accentBlue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'CLIENT ACCOUNT',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentBlue),
+                      child: Text(
+                        '${_role.toUpperCase()} ACCOUNT',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentBlue),
                       ),
                     ),
                   ),
                   const SizedBox(height: 28),
 
-                  // Form card
+                  // Personal information card
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -432,13 +494,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Personal Information',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: navyDeep),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Personal Information',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: navyDeep),
+                            ),
+                            if (!_isEditing)
+                              InkWell(
+                                onTap: _enterEditMode,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: accentBlue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.edit_outlined, size: 18, color: accentBlue),
+                                ),
+                              )
+                            else
+                              InkWell(
+                                onTap: _isSaving ? null : _cancelEdit,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.close_rounded, size: 18, color: textGrey),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         _buildLabel('Full Name'),
-                        _buildTextField(
+                        _isEditing
+                            ? _buildTextField(
                           controller: _nameController,
                           hint: 'Enter your full name',
                           icon: Icons.person_outline_rounded,
@@ -448,10 +542,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             }
                             return null;
                           },
-                        ),
+                        )
+                            : _buildReadOnlyRow(_originalName, Icons.person_outline_rounded),
                         const SizedBox(height: 16),
                         _buildLabel('Email Address'),
-                        _buildTextField(
+                        _isEditing
+                            ? _buildTextField(
                           controller: _emailController,
                           hint: 'Enter your email',
                           icon: Icons.email_outlined,
@@ -466,10 +562,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             }
                             return null;
                           },
-                        ),
+                        )
+                            : _buildReadOnlyRow(_originalEmail, Icons.email_outlined),
                         const SizedBox(height: 16),
                         _buildLabel('Phone Number'),
-                        _buildTextField(
+                        _isEditing
+                            ? _buildTextField(
                           controller: _phoneController,
                           hint: 'Enter your phone number',
                           icon: Icons.phone_outlined,
@@ -484,38 +582,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             }
                             return null;
                           },
+                        )
+                            : _buildReadOnlyRow(_originalPhone, Icons.phone_outlined),
+                      ],
+                    ),
+                  ),
+
+                  if (_isEditing) ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _isSaving ? null : _cancelEdit,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: textGrey,
+                              side: const BorderSide(color: Color(0xFFE2E8F0)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: const Text('Cancel', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: (_isSaving || _isUploadingPhoto) ? null : _saveChanges,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accentBlue,
+                              disabledBackgroundColor: accentBlue.withOpacity(0.5),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
+                            ),
+                            child: (_isSaving || _isUploadingPhoto)
+                                ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            )
+                                : const Text(
+                              'Save Changes',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // Account details (read-only, always)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Account Details',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: navyDeep),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabel('NIC'),
+                        _buildReadOnlyRow(
+                          (_nic == null || _nic!.isEmpty) ? 'Not provided' : _nic!,
+                          Icons.badge_outlined,
+                        ),
+                        if (_memberSince != null) ...[
+                          const SizedBox(height: 16),
+                          _buildLabel('Member Since'),
+                          _buildReadOnlyRow(_formatDate(_memberSince!), Icons.calendar_today_outlined),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Save button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (_isSaving || _isUploadingPhoto) ? null : _saveChanges,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accentBlue,
-                        disabledBackgroundColor: accentBlue.withOpacity(0.5),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                      )
-                          : const Text(
-                        'Save Changes',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
 
                   // Logout
                   InkWell(
@@ -559,6 +708,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
   Widget _buildAvatarImage() {
     if (_pickedImage != null) {
       return Image.file(_pickedImage!, fit: BoxFit.cover);
@@ -586,6 +743,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         text,
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: textGrey),
+      ),
+    );
+  }
+
+  // Read-only display for view mode — same shape as the editable field so
+  // nothing shifts visually when toggling edit mode.
+  Widget _buildReadOnlyRow(String value, IconData icon) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: textGrey),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '—' : value,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: navyDeep),
+            ),
+          ),
+        ],
       ),
     );
   }
