@@ -24,6 +24,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = '';
+  String? _profilePictureUrl;
   int _vehicleCount = 0;
   bool _isLoadingVehicles = true;
   final _storage = const FlutterSecureStorage();
@@ -86,6 +87,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) {
       setState(() => _userName = name ?? 'Client');
     }
+    await _fetchProfilePicture();
+  }
+
+  // Fetches the current profile picture URL from the same endpoint Settings
+  // uses. Kept as its own request since secure storage only caches the
+  // display name, not the avatar URL.
+  Future<void> _fetchProfilePicture() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${EnvConfig.apiUrl}/users/me'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (mounted) {
+          setState(() => _profilePictureUrl = data['profilePictureUrl']);
+        }
+      }
+    } catch (e) {
+      // Silently ignore — avatar just falls back to the placeholder icon
+    }
   }
 
   Future<void> _fetchVehicleCount() async {
@@ -139,6 +165,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context,
       MaterialPageRoute(builder: (_) => const MyGarageScreen()),
     ).then((_) => _fetchVehicleCount());
+  }
+
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+    ).then((_) => _loadUserData()); // refresh name/avatar in case they changed
   }
 
   @override
@@ -307,22 +340,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          getGreeting(),
-                          style: const TextStyle(fontSize: 16, color: textGrey, fontWeight: FontWeight.w500),
+                        // Profile picture avatar — tapping it jumps straight
+                        // to Settings, same as the bottom nav Settings tab.
+                        GestureDetector(
+                          onTap: _navigateToSettings,
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: navyDeep.withOpacity(0.12),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: (_profilePictureUrl != null && _profilePictureUrl!.isNotEmpty)
+                                  ? Image.network(
+                                _profilePictureUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: accentBlue.withOpacity(0.1),
+                                  child: const Icon(Icons.person_rounded, color: accentBlue),
+                                ),
+                              )
+                                  : Container(
+                                color: accentBlue.withOpacity(0.1),
+                                child: const Icon(Icons.person_rounded, color: accentBlue),
+                              ),
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _userName,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            color: navyDeep,
-                            letterSpacing: -0.5,
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                getGreeting(),
+                                style: const TextStyle(fontSize: 16, color: textGrey, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _userName,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  color: navyDeep,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -597,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _navigateToGarage();
                 }
                 if (index == 3) {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                  _navigateToSettings();
                 }
               }
             },
