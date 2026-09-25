@@ -13,6 +13,7 @@ import '../../notifications/services/notification_service.dart';
 import 'digital_certs_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'report_info_screen.dart';
+import '../../../features/settings/screens/settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -162,51 +163,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               // Header
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Image.asset(
-                    'assets/logo_S.png',
-                    height: 40,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: navyDeep.withOpacity(0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+                  // FIX: logo wrapped in Flexible so it shrinks instead of
+                  // pushing the icon cluster off-screen (was causing the
+                  // yellow/black RenderFlex overflow banner near the logo).
+                  Flexible(
+                    child: Image.asset(
+                      'assets/logo_S.png',
+                      height: 40,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.centerLeft,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: navyDeep.withOpacity(0.06),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
+                            ),
+                            const SizedBox(width: 12),
+                            const Flexible(
+                              child: Text(
+                                'V-SENSE',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: navyDeep,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2.5,
                                 ),
-                              ],
+                              ),
                             ),
-                            child: const Icon(Icons.verified_outlined, size: 22, color: accentBlue),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'V-SENSE',
-                            style: TextStyle(
-                              color: navyDeep,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 2.5,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  // FIX: icon cluster given a fixed minimal footprint
+                  // (mainAxisSize.min + tighter padding/spacing) so it never
+                  // competes for space with the logo above.
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Notifications Bell Icon WITH MERGED TOTAL ALERTS
                       Stack(
                         alignment: Alignment.topRight,
                         children: [
                           IconButton(
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(),
                             icon: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
@@ -228,8 +245,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           if (totalAlerts > 0)
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: 4,
+                              right: 4,
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: const BoxDecoration(
@@ -244,9 +261,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                         ],
                       ),
+                      const SizedBox(width: 4),
 
                       // Support Headset Button
                       IconButton(
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(),
                         icon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
@@ -266,8 +286,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         },
                         tooltip: 'Support Chat',
                       ),
+                      const SizedBox(width: 4),
 
                       IconButton(
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(),
                         icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
                         onPressed: _logout,
                         tooltip: 'Logout',
@@ -283,25 +306,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        getGreeting(),
-                        style: const TextStyle(fontSize: 16, color: textGrey, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _userName,
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          color: navyDeep,
-                          letterSpacing: -0.5,
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          getGreeting(),
+                          style: const TextStyle(fontSize: 16, color: textGrey, fontWeight: FontWeight.w500),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          _userName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                            color: navyDeep,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -325,20 +352,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
 
               // Status Chips
+              // FIX: each chip is now Flexible with ellipsis text so the row
+              // shrinks to fit the screen instead of overflowing (was
+              // causing the yellow/black banner near "Account Verified").
               Row(
                 children: [
-                  GestureDetector(
-                    onTap: _navigateToGarage,
-                    child: _buildStatusChip(
-                      Icons.directions_car_outlined,
-                      _isLoadingVehicles
-                          ? 'Loading...'
-                          : '$_vehicleCount Active ${_vehicleCount == 1 ? 'Vehicle' : 'Vehicles'}',
-                      accentBlue,
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: _navigateToGarage,
+                      child: _buildStatusChip(
+                        Icons.directions_car_outlined,
+                        _isLoadingVehicles
+                            ? 'Loading...'
+                            : '$_vehicleCount Active ${_vehicleCount == 1 ? 'Vehicle' : 'Vehicles'}',
+                        accentBlue,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _buildStatusChip(Icons.shield_outlined, 'Account Verified', accentEmerald),
+                  Flexible(
+                    child: _buildStatusChip(Icons.shield_outlined, 'Account Verified', accentEmerald),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -462,6 +496,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: navyDeep, letterSpacing: 0.5),
               ),
               const SizedBox(height: 16),
+
+              // REDESIGNED LAYOUT: "Settings" tile removed. With 5 tools
+              // remaining, a lone 5th tile in a 2-column grid looked
+              // unbalanced, so "My Garage" (the most-used tool, and the one
+              // duplicated in the bottom nav) is promoted to a wide feature
+              // tile, and the other 4 tools sit in a clean 2x2 grid below.
+              _buildFeatureToolCard(
+                Icons.garage_outlined,
+                'My Garage',
+                'View and manage your linked vehicles',
+                accentBlue,
+                0,
+                _navigateToGarage,
+              ),
+              const SizedBox(height: 16),
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -470,8 +519,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
-                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, 0, _navigateToGarage),
-
                   // Digital Certs Screen Link
                   _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, 0, () {
                     Navigator.push(
@@ -480,7 +527,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   }),
 
-                  // Replaced "Upload Receipts" with "Partnered Garages"
+                  // Partnered Garages
                   _buildToolCard(
                     Icons.store_mall_directory_outlined,
                     'Partnered Garages',
@@ -511,7 +558,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       MaterialPageRoute(builder: (_) => const ReportInfoScreen()),
                     );
                   }),
-                  _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, 0, () {}),
+                  // "Settings" tile removed from here — now lives in the
+                  // bottom navigation bar instead.
                 ],
               ),
               const SizedBox(height: 24),
@@ -548,6 +596,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (index == 1) {
                   _navigateToGarage();
                 }
+                if (index == 3) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                }
               }
             },
             backgroundColor: Colors.white,
@@ -571,9 +622,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.qr_code_scanner)),
                 label: 'Scan',
               ),
+              // Replaced "Profile" with "Settings"
               BottomNavigationBarItem(
-                icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)),
-                label: 'Profile',
+                icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.settings_outlined)),
+                label: 'Settings',
               ),
             ],
           ),
@@ -598,9 +650,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color.withOpacity(0.9)),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color.withOpacity(0.9)),
+            ),
           ),
         ],
       ),
@@ -641,6 +697,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 12),
                 Text(
                   title,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Color(0xFF0A1930),
                     fontWeight: FontWeight.w800,
@@ -669,6 +726,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // NEW: wide "feature" variant of the tool card, used to give "My Garage"
+  // visual priority now that the grid holds only 4 secondary tools.
+  Widget _buildFeatureToolCard(
+      IconData icon,
+      String title,
+      String subtitle,
+      Color iconColor,
+      int badgeCount,
+      VoidCallback onTap,
+      ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0A1930).withOpacity(0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, size: 28, color: iconColor),
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Text(
+                        badgeCount > 99 ? '99+' : badgeCount.toString(),
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF0A1930),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
           ],
         ),
       ),
