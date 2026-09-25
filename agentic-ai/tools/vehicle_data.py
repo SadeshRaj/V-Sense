@@ -7,7 +7,6 @@ from state.persistence import get_supabase_client
 def get_vehicle_profile(vehicle_id: str) -> dict:
     """
     Read-only query to fetch core vehicle, ownership history, and legal data.
-    Must be used to gather facts before handing off to Agent 2.
     """
     if not vehicle_id:
         return {"error": "Validation failed: vehicle_id is missing."}
@@ -20,7 +19,6 @@ def get_vehicle_profile(vehicle_id: str) -> dict:
 
         vehicle = veh_res.data[0]
 
-        # 1. Fetch Current Owner
         own_res = supabase.table("VehicleOwnerships").select("*, Users(*)").eq("VehicleId", vehicle_id).execute()
         current_owner = {}
         if own_res.data:
@@ -32,11 +30,11 @@ def get_vehicle_profile(vehicle_id: str) -> dict:
                 "ownership_since": active_owner.get("CreatedAt")
             }
 
-        # 2. NEW: Fetch Legal/Insurance Status
+        # Fetch Legal/Insurance Status based on verified public."VehicleHistory" table
         hist_res = supabase.table("VehicleHistory").select("*").eq("VehicleId", vehicle_id).execute()
         legal_status = hist_res.data[0] if hist_res.data else {}
 
-        # 3. NEW: Fetch Past Ownership History
+        # Fetch Past Ownership History based on verified public."VehicleOwnershipHistory" table
         past_own_res = supabase.table("VehicleOwnershipHistory").select("*").eq("VehicleId", vehicle_id).execute()
         ownership_history = past_own_res.data if past_own_res.data else []
 
