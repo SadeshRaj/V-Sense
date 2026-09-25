@@ -11,4 +11,8 @@ public class User
     public string Role { get; set; } = "Client";
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // NEW: Cloudinary secure URL for the user's profile picture.
+    // Column already exists in the DB (nullable text) — this just maps it.
+    public string? ProfilePictureUrl { get; set; }
 }
