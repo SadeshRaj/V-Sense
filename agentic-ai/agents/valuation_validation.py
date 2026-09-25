@@ -23,9 +23,9 @@ def agent_4_validation(state: WorkflowState) -> dict:
         You MUST provide EXACTLY 7 detailed bullet points in this specific order:
 
         1. Police & Accident History: Detail any police reports, theft/recovery incidents, accident records, or confirm a completely clean criminal/accident record.
-        2. Legal & Ownership Evaluation: Detail registration date, license expiry, insurance type and validity, and explicitly name all previous owners (with transfer dates) from ownership history.
+        2. Legal & Ownership Evaluation: Detail registration date, license expiry, and insurance validity. SUMMARIZE the ownership history: state the total number of past owners. Name only the most recent 1 or 2 owners. If there is a high turnover (e.g., >3 owners in a short period), you MUST flag this as a potential concern.
         3. Overall Condition Assessment: High-level condition verdict based on mileage, service consistency, fraud flags, and police records.
-        4. Deep Service History Analysis: Thoroughly analyze service logs. You MUST explicitly cite specific dates, odometer readings (e.g., 50,000 km, 55,000 km, 60,000 km), and quote exact descriptions (including valid repairs and placeholder/suspicious text like 'test test test').
+        4. Deep Service History Analysis: SUMMARIZE the service history intelligently. Do NOT regurgitate every single record. Describe the general maintenance pattern, highlight the most recent major repair (e.g., collision damage or part replacements), but you MUST explicitly quote any suspicious/placeholder descriptions (like 'test test test') if they appear.
         5. Anomaly Detection: Detail all anomalies including same-day mileage spikes (e.g., 10,000 km logged on the same day), odometer rollbacks, and unverified/suspicious garage entries.
         6. Future Predictions: Predict upcoming maintenance milestones and mechanical risks (including ignition/electrical concerns if stolen, timing belts, fluid changes).
         7. Final Buyer Recommendation: Definitive recommendation (e.g., STRONGLY REJECT or PROCEED WITH CAUTION) with clear justification based on the combined evidence.
@@ -60,8 +60,7 @@ def agent_4_validation(state: WorkflowState) -> dict:
         5. Police & Accident Records: {vehicle_profile.get('police_records')}
 
         Generate the 'ai_insight' adhering strictly to the 7 required bullet points.
-        Do NOT omit the Legal & Ownership Evaluation.
-        Ensure you quote the exact service descriptions and cite the specific previous owners by name.
+        Intelligently summarize the ownership and service history so it is highly readable for a buyer. Do not write a massive block of raw data.
         """
 
     response = llm_with_tools.invoke([HumanMessage(content=prompt)])

@@ -10,6 +10,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/config/env_config.dart';
+import '../widgets/ai_processing_animation.dart'; // Import the new animation
 
 class DigitalCertsScreen extends StatefulWidget {
   const DigitalCertsScreen({super.key});
@@ -404,7 +405,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
               ),
               pw.SizedBox(height: 16),
 
-              // NEW: Accident & Police History Block
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
@@ -440,6 +440,21 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                             _sanitizePdfText(p['description'] ?? 'No notes'),
                           ];
                         }).toList(),
+                        // Fixed Table Alignments & Widths
+                        columnWidths: {
+                          0: const pw.FlexColumnWidth(1.2),
+                          1: const pw.FlexColumnWidth(1.2),
+                          2: const pw.FlexColumnWidth(1.0),
+                          3: const pw.FlexColumnWidth(1.5),
+                          4: const pw.FlexColumnWidth(3.0),
+                        },
+                        cellAlignments: {
+                          0: pw.Alignment.centerLeft,
+                          1: pw.Alignment.centerLeft,
+                          2: pw.Alignment.centerLeft,
+                          3: pw.Alignment.centerLeft,
+                          4: pw.Alignment.topLeft,
+                        },
                         headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),
                         cellStyle: const pw.TextStyle(fontSize: 8),
                         headerDecoration: const pw.BoxDecoration(color: PdfColors.red900),
@@ -601,18 +616,29 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 ],
               ),
 
-              pw.SizedBox(height: 32),
-              pw.Divider(thickness: 0.5, color: PdfColors.grey400),
-              pw.SizedBox(height: 8),
-              pw.Text('TERMS OF USE & LEGAL DISCLAIMER',
-                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
-              pw.SizedBox(height: 6),
-              pw.Text(
-                '1. Data Limitations: This V-Sense certificate is generated based on historical data provided by affiliated garages, insurers, and users. V-Sense does not guarantee that this report contains the complete history of the vehicle, as independent repairs, collisions, or modifications may not have been reported to our network.\n\n'
-                    '2. AI Insights Advisory: The V-Sense Agentic AI insights, condition assessments, and future predictions are advisory only, generated via algorithmic analysis of service intervals. They do not constitute a warranty or guarantee, and they do not replace a physical inspection by a qualified mechanic. V-Sense accepts no liability for mechanical failures or undisclosed defects.\n\n'
-                    '3. Legal & Ownership Status: Registration, licensing, and insurance statuses are snapshot references provided at the time of certificate generation. This document does not constitute legal proof of ownership or guarantee the absence of outstanding financial liens.',
-                style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600, lineSpacing: 1.5),
+              // ==========================================
+              // BOUND TERMS BLOCK
+              // ==========================================
+              pw.Container(
+                  child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.SizedBox(height: 32),
+                        pw.Divider(thickness: 0.5, color: PdfColors.grey400),
+                        pw.SizedBox(height: 8),
+                        pw.Text('TERMS OF USE & LEGAL DISCLAIMER',
+                            style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                        pw.SizedBox(height: 6),
+                        pw.Text(
+                          '1. Data Limitations: This V-Sense certificate is generated based on historical data provided by affiliated garages, insurers, and users. V-Sense does not guarantee that this report contains the complete history of the vehicle, as independent repairs, collisions, or modifications may not have been reported to our network.\n\n'
+                              '2. AI Insights Advisory: The V-Sense Agentic AI insights, condition assessments, and future predictions are advisory only, generated via algorithmic analysis of service intervals. They do not constitute a warranty or guarantee, and they do not replace a physical inspection by a qualified mechanic. V-Sense accepts no liability for mechanical failures or undisclosed defects.\n\n'
+                              '3. Legal & Ownership Status: Registration, licensing, and insurance statuses are snapshot references provided at the time of certificate generation. This document does not constitute legal proof of ownership or guarantee the absence of outstanding financial liens.',
+                          style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600, lineSpacing: 1.5),
+                        ),
+                      ]
+                  )
               ),
+              // ==========================================
 
             ];
           },
@@ -678,7 +704,8 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   ),
                 _buildGenerateButton(),
               ] else if (_workflowStatus == 'processing') ...[
-                _buildProcessingUI(),
+                // NEW: Luxury Processing Animation
+                const Expanded(child: AIProcessingAnimation()),
               ] else if (_workflowStatus == 'pending_approval') ...[
                 _buildPendingReviewUI(),
               ] else if (_workflowStatus == 'completed') ...[
@@ -842,33 +869,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildProcessingUI() {
-    return Expanded(
-      child: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(
-                  color: accentGold, strokeWidth: 3),
-              const SizedBox(height: 32),
-              const Text('AI Agents at Work',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: navyDeep)),
-              const SizedBox(height: 12),
-              const Text(
-                  'Agent 2 is pulling records...\nAgent 3 is checking for odometer rollbacks...\nAgent 4 is validating condition...',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, height: 1.8)),
-            ],
-          ),
-        ),
       ),
     );
   }
