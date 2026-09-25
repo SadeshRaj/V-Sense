@@ -12,6 +12,7 @@ import '../../notifications/screens/notifications_screen.dart';
 import '../../notifications/services/notification_service.dart';
 import 'digital_certs_screen.dart';
 import 'qr_scanner_screen.dart';
+import 'report_info_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -504,7 +505,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     });
                   }),
 
-                  _buildToolCard(Icons.payments_outlined, 'Buy Report', accentGold, 0, () {}),
+                  _buildToolCard(Icons.info_outline_rounded, 'Quick Guide', accentGold, 0, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ReportInfoScreen()),
+                    );
+                  }),
                   _buildToolCard(Icons.settings_outlined, 'Settings', textGrey, 0, () {}),
                 ],
               ),
