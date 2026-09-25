@@ -5,8 +5,10 @@ from supabase import create_client, Client, ClientOptions
 from state.schema import WorkflowState
 
 def get_supabase_client() -> Client:
-    url = os.environ.get("SUPABASE_URL", "")
-    key = os.environ.get("SUPABASE_KEY", "")
+    # Explicitly strip any accidental whitespaces or quotes from Render env vars
+    url = os.environ.get("SUPABASE_URL", "").strip().strip("\"'")
+    key = os.environ.get("SUPABASE_KEY", "").strip().strip("\"'")
+
     if not url or not key:
         raise ValueError("Supabase credentials not found in environment.")
 
