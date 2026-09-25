@@ -37,6 +37,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _originalEmail = '';
   String _originalPhone = '';
 
+  // The exact phone number the backend has confirmed via OTP for this
+  // editing session. Reset whenever the number changes again, or the user
+  // cancels edit mode, so a stale verification can never sneak into a save.
+  String? _verifiedPhoneNumber;
+
   String? _nic;
   String _role = 'Client';
   DateTime? _memberSince;
@@ -48,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isEditing = false;
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
+  bool _isVerifyingPhone = false;
 
   @override
   void initState() {
@@ -92,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _nameController.text = _originalName;
         _emailController.text = _originalEmail;
         _phoneController.text = _originalPhone;
+        _verifiedPhoneNumber = null;
       } else {
         if (mounted) _showSnackBar('Could not load your profile.', isError: true);
       }
@@ -114,6 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _emailController.text = _originalEmail;
       _phoneController.text = _originalPhone;
       _pickedImage = null;
+      _verifiedPhoneNumber = null;
       _isEditing = false;
     });
   }
@@ -235,8 +243,133 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // Runs the full OTP round trip for a new phone number: sends the code to
+  // `newPhone`, shows the entry dialog, then verifies it with the backend.
+  // Returns true only once the backend has confirmed the code, at which
+  // point `_verifiedPhoneNumber` is set so `_saveChanges` can proceed.
+  Future<bool> _verifyPhoneNumberFlow(String newPhone) async {
+    final token = await _storage.read(key: 'jwt_token');
+    if (token == null) {
+      _showSnackBar('Your session expired. Please log in again.', isError: true);
+      return false;
+    }
+
+    setState(() => _isVerifyingPhone = true);
+    try {
+      final sendResponse = await http.post(
+        Uri.parse('${EnvConfig.apiUrl}/users/me/phone/send-otp'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'newPhoneNumber': newPhone}),
+      );
+
+      if (sendResponse.statusCode != 200) {
+        final message = _extractErrorMessage(sendResponse.body) ?? 'Could not send the OTP.';
+        _showSnackBar(message, isError: true);
+        return false;
+      }
+    } catch (e) {
+      _showSnackBar('Could not send the OTP. Check your connection and try again.', isError: true);
+      return false;
+    } finally {
+      if (mounted) setState(() => _isVerifyingPhone = false);
+    }
+
+    if (!mounted) return false;
+
+    final otp = await _showOtpDialog(newPhone);
+    if (otp == null || otp.trim().isEmpty) return false; // user cancelled
+
+    setState(() => _isVerifyingPhone = true);
+    try {
+      final verifyResponse = await http.post(
+        Uri.parse('${EnvConfig.apiUrl}/users/me/phone/verify-otp'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'newPhoneNumber': newPhone, 'otp': otp.trim()}),
+      );
+
+      if (verifyResponse.statusCode == 200) {
+        setState(() => _verifiedPhoneNumber = newPhone);
+        return true;
+      }
+      final message = _extractErrorMessage(verifyResponse.body) ?? 'Invalid or expired OTP.';
+      _showSnackBar(message, isError: true);
+      return false;
+    } catch (e) {
+      _showSnackBar('Could not verify the OTP. Check your connection and try again.', isError: true);
+      return false;
+    } finally {
+      if (mounted) setState(() => _isVerifyingPhone = false);
+    }
+  }
+
+  Future<String?> _showOtpDialog(String phoneNumber) {
+    final otpController = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Verify New Number', style: TextStyle(fontWeight: FontWeight.w800)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Enter the code sent to $phoneNumber.', style: const TextStyle(color: textGrey)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: otpController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                autofocus: true,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 8),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '0000',
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Cancel', style: TextStyle(color: textGrey, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, otpController.text),
+              child: const Text('Verify', style: TextStyle(color: accentBlue, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final newPhone = _phoneController.text.trim();
+    final phoneChanged = newPhone != _originalPhone;
+
+    // Only run the OTP round trip if the number actually changed AND it
+    // hasn't already been verified in this editing session.
+    if (phoneChanged && newPhone != _verifiedPhoneNumber) {
+      final verified = await _verifyPhoneNumberFlow(newPhone);
+      if (!verified || !mounted) return; // cancelled or failed — don't save
+    }
 
     setState(() => _isSaving = true);
     try {
@@ -263,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: jsonEncode({
           'fullName': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phoneNumber': _phoneController.text.trim(),
+          'phoneNumber': newPhone,
           'profilePictureUrl': uploadedUrl,
         }),
       );
@@ -273,9 +406,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         setState(() {
           _originalName = data['fullName'] ?? _nameController.text.trim();
           _originalEmail = data['email'] ?? _emailController.text.trim();
-          _originalPhone = data['phoneNumber'] ?? _phoneController.text.trim();
+          _originalPhone = data['phoneNumber'] ?? newPhone;
           _profilePictureUrl = data['profilePictureUrl'];
           _pickedImage = null;
+          _verifiedPhoneNumber = null;
           _isEditing = false;
         });
         await _storage.write(key: 'user_name', value: _originalName);
@@ -346,6 +480,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = _isSaving || _isUploadingPhoto || _isVerifyingPhone;
+
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
@@ -516,7 +652,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               )
                             else
                               InkWell(
-                                onTap: _isSaving ? null : _cancelEdit,
+                                onTap: isBusy ? null : _cancelEdit,
                                 borderRadius: BorderRadius.circular(10),
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
@@ -567,21 +703,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 16),
                         _buildLabel('Phone Number'),
                         _isEditing
-                            ? _buildTextField(
-                          controller: _phoneController,
-                          hint: 'Enter your phone number',
-                          icon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your phone number';
-                            }
-                            final phonePattern = RegExp(r'^0[0-9]{9}$');
-                            if (!phonePattern.hasMatch(value.trim())) {
-                              return 'Enter a valid 10-digit phone number';
-                            }
-                            return null;
-                          },
+                            ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildTextField(
+                              controller: _phoneController,
+                              hint: 'Enter your phone number',
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              onChanged: (_) {
+                                // Any further edit invalidates a prior
+                                // verification tied to the old value.
+                                if (_verifiedPhoneNumber != null) {
+                                  setState(() => _verifiedPhoneNumber = null);
+                                }
+                              },
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter your phone number';
+                                }
+                                final phonePattern = RegExp(r'^0[0-9]{9}$');
+                                if (!phonePattern.hasMatch(value.trim())) {
+                                  return 'Enter a valid 10-digit phone number';
+                                }
+                                return null;
+                              },
+                            ),
+                            // Small inline hint that changing the number
+                            // will require OTP verification on save.
+                            if (_phoneController.text.trim() != _originalPhone &&
+                                _phoneController.text.trim() != _verifiedPhoneNumber)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6, left: 4),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded, size: 14, color: textGrey),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'We\'ll text a code to this number to confirm it\'s yours.',
+                                        style: const TextStyle(fontSize: 11, color: textGrey, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_phoneController.text.trim() == _verifiedPhoneNumber)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 6, left: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Verified',
+                                      style: TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         )
                             : _buildReadOnlyRow(_originalPhone, Icons.phone_outlined),
                       ],
@@ -594,7 +775,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: _isSaving ? null : _cancelEdit,
+                            onPressed: isBusy ? null : _cancelEdit,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: textGrey,
                               side: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -608,7 +789,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Expanded(
                           flex: 2,
                           child: ElevatedButton(
-                            onPressed: (_isSaving || _isUploadingPhoto) ? null : _saveChanges,
+                            onPressed: isBusy ? null : _saveChanges,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: accentBlue,
                               disabledBackgroundColor: accentBlue.withOpacity(0.5),
@@ -617,7 +798,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               elevation: 0,
                             ),
-                            child: (_isSaving || _isUploadingPhoto)
+                            child: isBusy
                                 ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -780,11 +961,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: navyDeep),
       decoration: InputDecoration(
         hintText: hint,
