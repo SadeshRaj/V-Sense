@@ -184,12 +184,11 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     return '$base/verify/$workflowId';
   }
 
-  // Sanitizes text to prevent Helvetica WinAnsi encoding crashes in PDF
   String _sanitizePdfText(String text) {
     return text
-        .replaceAll('—', '-') // Em-dash
-        .replaceAll('–', '-') // En-dash
-        .replaceAll('“', '"') // Curly quotes
+        .replaceAll('—', '-')
+        .replaceAll('–', '-')
+        .replaceAll('“', '"')
         .replaceAll('”', '"')
         .replaceAll('‘', "'")
         .replaceAll('’', "'")
@@ -240,7 +239,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     setState(() => _isGeneratingPdf = true);
 
     try {
-      // 1. Fetch AI Report Data
       final token = await _storage.read(key: 'jwt_token');
       final reportResponse = await http.get(
         Uri.parse('${EnvConfig.apiUrl}/workflows/report-data/$_selectedVehicleId'),
@@ -259,16 +257,12 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
       final List<dynamic> records = reportData['records'] ?? [];
       final legalStatus = reportData['legalStatus'] ?? {};
       final List<dynamic> pastOwners = reportData['pastOwners'] ?? [];
+      final List<dynamic> policeRecords = reportData['policeRecords'] ?? [];
 
       final String verificationUrl = _getVerificationUrl(_workflowId!);
 
-      // ==========================================
-      // WATERMARK TRANSPARENCY ADJUSTMENT
-      // ==========================================
-      // Change this value from 0.0 (fully invisible) to 1.0 (fully solid)
       final double watermarkOpacity = 0.08;
 
-      // 2. Load the App Logos for PDF Generation
       final ByteData headerImageByteData = await rootBundle.load('assets/logo_S.png');
       final Uint8List headerImageBytes = headerImageByteData.buffer.asUint8List();
       final pdfHeaderLogo = pw.MemoryImage(headerImageBytes);
@@ -278,7 +272,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
       final pdfWatermarkLogo = pw.MemoryImage(watermarkBytes);
 
       final pdf = pw.Document();
-
       final String generateDate = DateTime.now().toString().substring(0, 16);
 
       pdf.addPage(
@@ -286,7 +279,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           pageTheme: pw.PageTheme(
             pageFormat: PdfPageFormat.a4,
             margin: const pw.EdgeInsets.all(36),
-            // NEW: Background Watermark implementation
             buildBackground: (pw.Context context) {
               return pw.FullPage(
                 ignoreMargins: false,
@@ -299,7 +291,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
               );
             },
           ),
-          // NEW: Professional Page Footer
           footer: (pw.Context context) {
             return pw.Container(
               alignment: pw.Alignment.centerRight,
@@ -408,6 +399,52 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                             'Ins Expiry: ${legalStatus['insuranceExpiryDate'] != null ? legalStatus['insuranceExpiryDate'].toString().split('T').first : 'N/A'}'),
                       ],
                     ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 16),
+
+              // NEW: Accident & Police History Block
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: policeRecords.isEmpty ? PdfColors.green50 : PdfColors.red50,
+                  border: pw.Border.all(color: policeRecords.isEmpty ? PdfColors.green200 : PdfColors.red200),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Police & Accident Records',
+                        style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                            color: policeRecords.isEmpty ? PdfColors.green900 : PdfColors.red900)),
+                    pw.Divider(thickness: 0.5, color: policeRecords.isEmpty ? PdfColors.green200 : PdfColors.red200),
+
+                    if (policeRecords.isEmpty)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                        child: pw.Text('No Stolen or Accident records found on the V-Sense Network.',
+                            style: const pw.TextStyle(fontSize: 11, color: PdfColors.green800)),
+                      )
+                    else
+                      pw.TableHelper.fromTextArray(
+                        headers: ['Incident Date', 'Type', 'Severity', 'Police Station', 'Notes'],
+                        data: policeRecords.map((p) {
+                          return [
+                            p['incidentDate'] != null ? p['incidentDate'].toString().split('T').first : '',
+                            _sanitizePdfText(p['incidentType'] ?? 'Unknown'),
+                            _sanitizePdfText(p['severity'] ?? 'Unknown'),
+                            _sanitizePdfText(p['policeStation'] ?? 'N/A'),
+                            _sanitizePdfText(p['description'] ?? 'No notes'),
+                          ];
+                        }).toList(),
+                        headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),
+                        cellStyle: const pw.TextStyle(fontSize: 8),
+                        headerDecoration: const pw.BoxDecoration(color: PdfColors.red900),
+                        cellHeight: 25,
+                      ),
                   ],
                 ),
               ),
@@ -564,9 +601,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 ],
               ),
 
-              // ==========================================
-              // NEW: REAL-WORLD LEGAL & POLICY DISCLAIMER
-              // ==========================================
               pw.SizedBox(height: 32),
               pw.Divider(thickness: 0.5, color: PdfColors.grey400),
               pw.SizedBox(height: 8),
@@ -579,7 +613,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                     '3. Legal & Ownership Status: Registration, licensing, and insurance statuses are snapshot references provided at the time of certificate generation. This document does not constitute legal proof of ownership or guarantee the absence of outstanding financial liens.',
                 style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600, lineSpacing: 1.5),
               ),
-              // ==========================================
 
             ];
           },

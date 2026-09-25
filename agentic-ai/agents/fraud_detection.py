@@ -17,20 +17,37 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
     service_records = history_summary.get("service_records", [])
     vehicle_profile = state.get("vehicle_profile", {})
     ownership_history = vehicle_profile.get("ownership_history", [])
+    police_records = vehicle_profile.get("police_records", []) # Pull in police data
 
     @tool
     def audit_vehicle_history(vehicle_id: str) -> list:
-        """Single deterministic tool to run ALL fraud checks (mileage, records, ownership)."""
+        """Single deterministic tool to run ALL fraud checks (mileage, records, ownership, police)."""
         flags = []
         max_mileage_seen = -1
         date_to_mileages = {}
 
-        # 1. Mileage & Date Checks
+        # 1. Police & Accident Flags (Highest Priority)
+        for record in police_records:
+            severity = record.get("Severity", "Minor")
+            i_type = record.get("IncidentType", "Incident")
+            # Automatically flag Stolen or Critical accidents as highest severity
+            if i_type.lower() == "stolen" or severity.lower() == "critical":
+                flags.append({
+                    "type": "police_alert",
+                    "detail": f"CRITICAL: Vehicle reported {i_type} on {record.get('IncidentDate')}. {record.get('Description', '')}",
+                    "severity": "high"
+                })
+            else:
+                flags.append({
+                    "type": "police_record",
+                    "detail": f"{severity} {i_type} logged on {record.get('IncidentDate')}. Station: {record.get('PoliceStation')}",
+                    "severity": "medium"
+                })
+
+        # 2. Mileage & Date Checks
         for entry in mileage_timeline:
             current_mileage = entry.get("mileage", 0)
             date_str = entry.get("date", "")
-
-            # Extract just the YYYY-MM-DD part from the ISO timestamp
             calendar_date = str(date_str)[:10] if date_str else ""
 
             if current_mileage < max_mileage_seen:
@@ -46,7 +63,6 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
         for cal_date, mileages in date_to_mileages.items():
             if len(mileages) > 1:
                 mileage_diff = max(mileages) - min(mileages)
-                # Flag if a vehicle logs more than 500km of service intervals on the exact same calendar day
                 if mileage_diff > 500:
                     flags.append({
                         "type": "date_anomaly",
@@ -54,7 +70,7 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
                         "severity": "high"
                     })
 
-        # 2. Record Integrity Checks
+        # 3. Record Integrity Checks
         seen_records = set()
         for record in service_records:
             is_verified = record.get("garage_verified", False)
@@ -66,7 +82,7 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
             else:
                 seen_records.add(record_hash)
 
-        # 3. Ownership Checks
+        # 4. Ownership Checks
         if len(ownership_history) > 3:
             flags.append({
                 "type": "ownership_anomaly",
@@ -91,10 +107,22 @@ def agent_3_fraud_detection(state: WorkflowState) -> dict:
     all_flags = audit_vehicle_history.invoke(args)
 
     risk_score = 0.0
+    has_police_critical = False
+
     for flag in all_flags:
-        if flag["severity"] == "high": risk_score += 0.5
-        elif flag["severity"] == "medium": risk_score += 0.2
-        elif flag["severity"] == "low": risk_score += 0.1
+        if flag["severity"] == "high":
+            risk_score += 0.5
+        elif flag["severity"] == "medium":
+            risk_score += 0.2
+        elif flag["severity"] == "low":
+            risk_score += 0.1
+
+        if flag["type"] == "police_alert":
+            has_police_critical = True
+
+    # Immediate max risk if a critical police or stolen record exists
+    if has_police_critical:
+        risk_score = 1.0
 
     state["fraud_flags"] = all_flags
     state["risk_score"] = min(risk_score, 1.0)

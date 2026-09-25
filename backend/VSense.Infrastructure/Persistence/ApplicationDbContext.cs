@@ -21,21 +21,28 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
     public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
     public DbSet<AIWorkflow> AIWorkflows { get; set; }
-
     public DbSet<VehicleHistory> VehicleHistories => Set<VehicleHistory>();
     public DbSet<VehicleOwnershipHistory> VehicleOwnershipHistories => Set<VehicleOwnershipHistory>();
+
+    // NEW: Police Records Table
+    public DbSet<VehiclePoliceRecord> VehiclePoliceRecords => Set<VehiclePoliceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Explicitly map lowercase 'id' for the new tables
         modelBuilder.Entity<VehicleHistory>(entity =>
         {
             entity.Property(e => e.Id).HasColumnName("id");
         });
 
         modelBuilder.Entity<VehicleOwnershipHistory>(entity =>
+        {
+            entity.Property(e => e.Id).HasColumnName("id");
+        });
+
+        // NEW: Map the lowercase id for Postgres
+        modelBuilder.Entity<VehiclePoliceRecord>(entity =>
         {
             entity.Property(e => e.Id).HasColumnName("id");
         });

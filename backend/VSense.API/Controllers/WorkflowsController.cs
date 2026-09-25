@@ -155,57 +155,69 @@ public class WorkflowsController : ControllerBase
     }
 
     [HttpGet("report-data/{vehicleId}")]
-        [Authorize]
-        public async Task<IActionResult> GetReportData(Guid vehicleId)
-        {
-            var vehicle = await _context.Vehicles.FindAsync(vehicleId);
-            if (vehicle == null) return NotFound("Vehicle not found");
+    [Authorize]
+    public async Task<IActionResult> GetReportData(Guid vehicleId)
+    {
+        var vehicle = await _context.Vehicles.FindAsync(vehicleId);
+        if (vehicle == null) return NotFound("Vehicle not found");
 
-            var serviceRecords = await _context.ServiceRecords
-                .Include(s => s.Organization)
-                .Where(s => s.VehicleId == vehicleId)
-                .OrderByDescending(s => s.CreatedAt)
-                .Select(s => new {
-                    s.Id,
-                    s.Title,
-                    s.Description,
-                    s.OdometerReading,
-                    s.CreatedAt,
-                    GarageName = s.Organization != null ? s.Organization.Name : "Independent Garage",
-                    GarageVerified = s.Organization != null && s.Organization.IsVerified == true
-                })
-                .ToListAsync();
+        var serviceRecords = await _context.ServiceRecords
+            .Include(s => s.Organization)
+            .Where(s => s.VehicleId == vehicleId)
+            .OrderByDescending(s => s.CreatedAt)
+            .Select(s => new {
+                s.Id,
+                s.Title,
+                s.Description,
+                s.OdometerReading,
+                s.CreatedAt,
+                GarageName = s.Organization != null ? s.Organization.Name : "Independent Garage",
+                GarageVerified = s.Organization != null && s.Organization.IsVerified == true
+            })
+            .ToListAsync();
 
-            // NEW: Fetch Legal/Insurance History
-            var vehicleHistory = await _context.VehicleHistories
-                .FirstOrDefaultAsync(vh => vh.VehicleId == vehicleId);
+        var vehicleHistory = await _context.VehicleHistories
+            .FirstOrDefaultAsync(vh => vh.VehicleId == vehicleId);
 
-            // NEW: Fetch Past Ownership History
-            var ownershipHistory = await _context.VehicleOwnershipHistories
-                .Where(o => o.VehicleId == vehicleId)
-                .OrderByDescending(o => o.OwnershipStartDate)
-                .Select(o => new {
-                    o.OwnerName,
-                    o.OwnershipStartDate,
-                    o.OwnershipEndDate
-                })
-                .ToListAsync();
+        var ownershipHistory = await _context.VehicleOwnershipHistories
+            .Where(o => o.VehicleId == vehicleId)
+            .OrderByDescending(o => o.OwnershipStartDate)
+            .Select(o => new {
+                o.OwnerName,
+                o.OwnershipStartDate,
+                o.OwnershipEndDate
+            })
+            .ToListAsync();
 
-            return Ok(new {
-                vehicle = new {
-                    vehicle.Id,
-                    vehicle.Make,
-                    vehicle.Model,
-                    vehicle.RegistrationNumber,
-                    vehicle.VIN,
-                    vehicle.ManufacturingYear,
-                    vehicle.FuelType
-                },
-                records = serviceRecords,
-                legalStatus = vehicleHistory,
-                pastOwners = ownershipHistory
-            });
-        }
+        // NEW: Fetch Police & Accident Records
+        var policeRecords = await _context.VehiclePoliceRecords
+            .Where(p => p.VehicleId == vehicleId)
+            .OrderByDescending(p => p.IncidentDate)
+            .Select(p => new {
+                p.IncidentDate,
+                p.IncidentType,
+                p.Description,
+                p.Severity,
+                p.PoliceStation
+            })
+            .ToListAsync();
+
+        return Ok(new {
+            vehicle = new {
+                vehicle.Id,
+                vehicle.Make,
+                vehicle.Model,
+                vehicle.RegistrationNumber,
+                vehicle.VIN,
+                vehicle.ManufacturingYear,
+                vehicle.FuelType
+            },
+            records = serviceRecords,
+            legalStatus = vehicleHistory,
+            pastOwners = ownershipHistory,
+            policeRecords = policeRecords
+        });
+    }
 
     [HttpPost("{id}/approve")]
     [Authorize(Roles = "Administrator")]
@@ -243,8 +255,6 @@ public class WorkflowsController : ControllerBase
         return Ok(new { message = "Report rejected safely. User will be notified." });
     }
 
-    // UPDATED: Now fetches the full vehicle profile, AI insight, and service history
-    // so the public React page can perfectly mirror the PDF contents.
     [HttpGet("verify/{workflowId}")]
     [AllowAnonymous]
     public async Task<IActionResult> VerifyCertificate(Guid workflowId)
@@ -258,6 +268,7 @@ public class WorkflowsController : ControllerBase
 
         object vehicleData = null;
         object serviceRecords = null;
+        object policeRecords = null;
 
         if (!string.IsNullOrEmpty(workflow.VehicleId) && Guid.TryParse(workflow.VehicleId, out Guid vId))
         {
@@ -286,6 +297,18 @@ public class WorkflowsController : ControllerBase
                     GarageVerified = s.Organization != null && s.Organization.IsVerified == true
                 })
                 .ToListAsync();
+
+            policeRecords = await _context.VehiclePoliceRecords
+                .Where(p => p.VehicleId == vId)
+                .OrderByDescending(p => p.IncidentDate)
+                .Select(p => new {
+                    p.IncidentDate,
+                    p.IncidentType,
+                    p.Description,
+                    p.Severity,
+                    p.PoliceStation
+                })
+                .ToListAsync();
         }
 
         return Ok(new {
@@ -296,7 +319,8 @@ public class WorkflowsController : ControllerBase
             message = "This is a V-Sense verified vehicle history certificate.",
             aiInsight = workflow.AiInsight,
             vehicle = vehicleData,
-            records = serviceRecords ?? new List<object>()
+            records = serviceRecords ?? new List<object>(),
+            policeRecords = policeRecords ?? new List<object>()
         });
     }
 }

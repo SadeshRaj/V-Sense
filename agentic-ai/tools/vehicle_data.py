@@ -30,13 +30,15 @@ def get_vehicle_profile(vehicle_id: str) -> dict:
                 "ownership_since": active_owner.get("CreatedAt")
             }
 
-        # Fetch Legal/Insurance Status based on verified public."VehicleHistory" table
         hist_res = supabase.table("VehicleHistory").select("*").eq("VehicleId", vehicle_id).execute()
         legal_status = hist_res.data[0] if hist_res.data else {}
 
-        # Fetch Past Ownership History based on verified public."VehicleOwnershipHistory" table
         past_own_res = supabase.table("VehicleOwnershipHistory").select("*").eq("VehicleId", vehicle_id).execute()
         ownership_history = past_own_res.data if past_own_res.data else []
+
+        # NEW: Fetch Police and Accident Records
+        police_res = supabase.table("VehiclePoliceRecords").select("*").eq("VehicleId", vehicle_id).execute()
+        police_records = police_res.data if police_res.data else []
 
         return {
             "vehicle_id": vehicle_id,
@@ -47,7 +49,8 @@ def get_vehicle_profile(vehicle_id: str) -> dict:
             "vin": vehicle.get("VIN", ""),
             "current_owner": current_owner,
             "legal_status": legal_status,
-            "ownership_history": ownership_history
+            "ownership_history": ownership_history,
+            "police_records": police_records
         }
     except Exception as e:
         return {"error": f"Database execution failure: {str(e)}"}
