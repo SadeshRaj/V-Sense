@@ -176,6 +176,32 @@ public class WorkflowsController : ControllerBase
             })
             .ToListAsync();
 
+        var vehicleHistory = await _context.VehicleHistories
+            .FirstOrDefaultAsync(vh => vh.VehicleId == vehicleId);
+
+        var ownershipHistory = await _context.VehicleOwnershipHistories
+            .Where(o => o.VehicleId == vehicleId)
+            .OrderByDescending(o => o.OwnershipStartDate)
+            .Select(o => new {
+                o.OwnerName,
+                o.OwnershipStartDate,
+                o.OwnershipEndDate
+            })
+            .ToListAsync();
+
+        // NEW: Fetch Police & Accident Records
+        var policeRecords = await _context.VehiclePoliceRecords
+            .Where(p => p.VehicleId == vehicleId)
+            .OrderByDescending(p => p.IncidentDate)
+            .Select(p => new {
+                p.IncidentDate,
+                p.IncidentType,
+                p.Description,
+                p.Severity,
+                p.PoliceStation
+            })
+            .ToListAsync();
+
         return Ok(new {
             vehicle = new {
                 vehicle.Id,
@@ -186,7 +212,10 @@ public class WorkflowsController : ControllerBase
                 vehicle.ManufacturingYear,
                 vehicle.FuelType
             },
-            records = serviceRecords
+            records = serviceRecords,
+            legalStatus = vehicleHistory,
+            pastOwners = ownershipHistory,
+            policeRecords = policeRecords
         });
     }
 
@@ -226,8 +255,6 @@ public class WorkflowsController : ControllerBase
         return Ok(new { message = "Report rejected safely. User will be notified." });
     }
 
-    // UPDATED: Now fetches the full vehicle profile, AI insight, and service history
-    // so the public React page can perfectly mirror the PDF contents.
     [HttpGet("verify/{workflowId}")]
     [AllowAnonymous]
     public async Task<IActionResult> VerifyCertificate(Guid workflowId)
@@ -241,6 +268,7 @@ public class WorkflowsController : ControllerBase
 
         object vehicleData = null;
         object serviceRecords = null;
+        object policeRecords = null;
 
         if (!string.IsNullOrEmpty(workflow.VehicleId) && Guid.TryParse(workflow.VehicleId, out Guid vId))
         {
@@ -269,6 +297,18 @@ public class WorkflowsController : ControllerBase
                     GarageVerified = s.Organization != null && s.Organization.IsVerified == true
                 })
                 .ToListAsync();
+
+            policeRecords = await _context.VehiclePoliceRecords
+                .Where(p => p.VehicleId == vId)
+                .OrderByDescending(p => p.IncidentDate)
+                .Select(p => new {
+                    p.IncidentDate,
+                    p.IncidentType,
+                    p.Description,
+                    p.Severity,
+                    p.PoliceStation
+                })
+                .ToListAsync();
         }
 
         return Ok(new {
@@ -279,7 +319,8 @@ public class WorkflowsController : ControllerBase
             message = "This is a V-Sense verified vehicle history certificate.",
             aiInsight = workflow.AiInsight,
             vehicle = vehicleData,
-            records = serviceRecords ?? new List<object>()
+            records = serviceRecords ?? new List<object>(),
+            policeRecords = policeRecords ?? new List<object>()
         });
     }
 }

@@ -9,7 +9,9 @@ class VehicleProfile(TypedDict, total=False):
     registration_no: str
     vin: str
     current_owner: Dict[str, Any]
+    legal_status: Dict[str, Any]
     ownership_history: List[Dict[str, Any]]
+    police_records: List[Dict[str, Any]] # NEW: Schema definition
 
 class WorkflowState(TypedDict):
     messages: Annotated[list, add_messages]
