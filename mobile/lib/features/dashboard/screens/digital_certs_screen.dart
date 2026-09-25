@@ -1,7 +1,9 @@
 // lib/features/dashboard/screens/digital_certs_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:pdf/pdf.dart';
@@ -182,8 +184,21 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     return '$base/verify/$workflowId';
   }
 
+  // NEW: Sanitizes text to prevent Helvetica WinAnsi encoding crashes in PDF
+  String _sanitizePdfText(String text) {
+    return text
+        .replaceAll('—', '-') // Em-dash
+        .replaceAll('–', '-') // En-dash
+        .replaceAll('“', '"') // Curly quotes
+        .replaceAll('”', '"')
+        .replaceAll('‘', "'")
+        .replaceAll('’', "'")
+        .replaceAll('•', '-');
+  }
+
   List<pw.Widget> _buildBulletPoints(String text) {
-    List<String> lines = text.split('\n');
+    final sanitizedText = _sanitizePdfText(text);
+    List<String> lines = sanitizedText.split('\n');
     List<pw.Widget> widgets = [];
 
     for (String line in lines) {
@@ -205,7 +220,12 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   shape: pw.BoxShape.circle,
                 ),
               ),
-              pw.Expanded(child: pw.Text(cleanLine, style: const pw.TextStyle(fontSize: 11, color: PdfColors.blue900, lineSpacing: 1.3))),
+              pw.Expanded(
+                  child: pw.Text(cleanLine,
+                      style: const pw.TextStyle(
+                          fontSize: 11,
+                          color: PdfColors.blue900,
+                          lineSpacing: 1.3))),
             ],
           ),
         ),
@@ -220,6 +240,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     setState(() => _isGeneratingPdf = true);
 
     try {
+      // 1. Fetch AI Report Data
       final token = await _storage.read(key: 'jwt_token');
       final reportResponse = await http.get(
         Uri.parse('${EnvConfig.apiUrl}/workflows/report-data/$_selectedVehicleId'),
@@ -241,6 +262,11 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
 
       final String verificationUrl = _getVerificationUrl(_workflowId!);
 
+      // 2. Load the App Logo for the PDF Header
+      final ByteData imageByteData = await rootBundle.load('assets/logo_S.png');
+      final Uint8List imageBytes = imageByteData.buffer.asUint8List();
+      final pdfLogo = pw.MemoryImage(imageBytes);
+
       final pdf = pw.Document();
 
       pdf.addPage(
@@ -249,14 +275,31 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           margin: const pw.EdgeInsets.all(36),
           build: (pw.Context context) {
             return [
+              // UPDATED HEADER: Resized Logo and adjusted spacing
               pw.Header(
                 level: 0,
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text('V-SENSE VEHICLE HISTORY CERTIFICATE',
-                        style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                    pw.Text('CERTIFIED', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                    pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        // Reduced height from 40 to 22 so the wide logo fits perfectly
+                        pw.Image(pdfLogo, height: 22),
+                        pw.SizedBox(width: 16),
+                        pw.Text('VEHICLE HISTORY CERTIFICATE',
+                            style: pw.TextStyle(
+                                fontSize: 16,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.blue900)),
+                      ],
+                    ),
+                    pw.Text('CERTIFIED',
+                        style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.green800)),
                   ],
                 ),
               ),
@@ -271,21 +314,26 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Vehicle Information', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Vehicle Information',
+                        style: pw.TextStyle(
+                            fontSize: 14, fontWeight: pw.FontWeight.bold)),
                     pw.Divider(thickness: 0.5),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Make/Model: ${vehicle['make'] ?? 'N/A'} ${vehicle['model'] ?? ''}'),
-                        pw.Text('Year: ${vehicle['manufacturingYear'] ?? 'N/A'}'),
+                        pw.Text(
+                            'Make/Model: ${_sanitizePdfText(vehicle['make'] ?? 'N/A')} ${_sanitizePdfText(vehicle['model'] ?? '')}'),
+                        pw.Text(
+                            'Year: ${vehicle['manufacturingYear'] ?? 'N/A'}'),
                       ],
                     ),
                     pw.SizedBox(height: 4),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Reg No: ${vehicle['registrationNumber'] ?? 'N/A'}'),
-                        pw.Text('VIN: ${vehicle['vin'] ?? 'N/A'}'),
+                        pw.Text(
+                            'Reg No: ${_sanitizePdfText(vehicle['registrationNumber'] ?? 'N/A')}'),
+                        pw.Text('VIN: ${_sanitizePdfText(vehicle['vin'] ?? 'N/A')}'),
                       ],
                     ),
                   ],
@@ -302,21 +350,27 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Legal & Insurance Status', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Legal & Insurance Status',
+                        style: pw.TextStyle(
+                            fontSize: 14, fontWeight: pw.FontWeight.bold)),
                     pw.Divider(thickness: 0.5),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Reg Status: ${legalStatus['registrationStatus'] ?? 'Unknown'}'),
-                        pw.Text('License Expiry: ${legalStatus['revenueLicenseExpiryDate'] != null ? legalStatus['revenueLicenseExpiryDate'].toString().split('T').first : 'N/A'}'),
+                        pw.Text(
+                            'Reg Status: ${_sanitizePdfText(legalStatus['registrationStatus'] ?? 'Unknown')}'),
+                        pw.Text(
+                            'License Expiry: ${legalStatus['revenueLicenseExpiryDate'] != null ? legalStatus['revenueLicenseExpiryDate'].toString().split('T').first : 'N/A'}'),
                       ],
                     ),
                     pw.SizedBox(height: 4),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('Insurance: ${legalStatus['insuranceStatus'] ?? 'Unknown'} (${legalStatus['insuranceType'] ?? '-'})'),
-                        pw.Text('Ins Expiry: ${legalStatus['insuranceExpiryDate'] != null ? legalStatus['insuranceExpiryDate'].toString().split('T').first : 'N/A'}'),
+                        pw.Text(
+                            'Insurance: ${_sanitizePdfText(legalStatus['insuranceStatus'] ?? 'Unknown')} (${_sanitizePdfText(legalStatus['insuranceType'] ?? '-')})'),
+                        pw.Text(
+                            'Ins Expiry: ${legalStatus['insuranceExpiryDate'] != null ? legalStatus['insuranceExpiryDate'].toString().split('T').first : 'N/A'}'),
                       ],
                     ),
                   ],
@@ -335,8 +389,13 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('AI Condition Insight & Evidence (Agent 4)', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                      pw.Text('AI Condition Insight & Evidence',
+                          style: pw.TextStyle(
+                              fontSize: 12,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blue900)),
                       pw.SizedBox(height: 8),
+                      // Bullet points are automatically sanitized inside _buildBulletPoints
                       ..._buildBulletPoints(_aiInsight)
                     ],
                   ),
@@ -344,57 +403,85 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 pw.SizedBox(height: 16),
               ],
 
-              pw.Text('Ownership History', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Ownership History',
+                  style: pw.TextStyle(
+                      fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 8),
               if (pastOwners.isEmpty)
                 pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(vertical: 8),
-                  child: pw.Text('No previous ownership changes reported on platform.',
-                      style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                  child: pw.Text(
+                      'No previous ownership changes reported on platform.',
+                      style: const pw.TextStyle(
+                          fontSize: 11, color: PdfColors.grey700)),
                 )
               else
                 pw.TableHelper.fromTextArray(
                   headers: ['Owner Name', 'Start Date', 'End Date'],
                   data: pastOwners.map((o) {
                     return [
-                      o['ownerName'] ?? 'Unknown',
-                      o['ownershipStartDate'] != null ? o['ownershipStartDate'].toString().split('T').first : '',
-                      o['ownershipEndDate'] != null ? o['ownershipEndDate'].toString().split('T').first : 'Present',
+                      _sanitizePdfText(o['ownerName'] ?? 'Unknown'),
+                      o['ownershipStartDate'] != null
+                          ? o['ownershipStartDate'].toString().split('T').first
+                          : '',
+                      o['ownershipEndDate'] != null
+                          ? o['ownershipEndDate'].toString().split('T').first
+                          : 'Present',
                     ];
                   }).toList(),
-                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                  headerStyle: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      fontSize: 10),
                   cellStyle: const pw.TextStyle(fontSize: 9),
-                  headerDecoration: const pw.BoxDecoration(color: PdfColors.grey800),
+                  headerDecoration:
+                  const pw.BoxDecoration(color: PdfColors.grey800),
                   cellHeight: 25,
                 ),
 
               pw.SizedBox(height: 16),
 
-              pw.Text('Detailed Maintenance & Service Timeline', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Detailed Maintenance & Service Timeline',
+                  style: pw.TextStyle(
+                      fontSize: 14, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 8),
 
               if (records.isEmpty)
                 pw.Padding(
                   padding: const pw.EdgeInsets.symmetric(vertical: 8),
-                  child: pw.Text('No previous maintenance records reported on platform.',
-                      style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                  child: pw.Text(
+                      'No previous maintenance records reported on platform.',
+                      style: const pw.TextStyle(
+                          fontSize: 11, color: PdfColors.grey700)),
                 )
               else
                 pw.TableHelper.fromTextArray(
-                  headers: ['Date', 'Service', 'Details / Repairs Done', 'Mileage', 'Garage'],
+                  headers: [
+                    'Date',
+                    'Service',
+                    'Details / Repairs Done',
+                    'Mileage',
+                    'Garage'
+                  ],
                   data: records.map((r) {
-                    final dateStr = r['createdAt'] != null ? r['createdAt'].toString().split('T').first : '';
+                    final dateStr = r['createdAt'] != null
+                        ? r['createdAt'].toString().split('T').first
+                        : '';
                     return [
                       dateStr,
-                      r['title'] ?? '',
-                      r['description'] ?? 'No details provided',
+                      _sanitizePdfText(r['title'] ?? ''),
+                      _sanitizePdfText(r['description'] ?? 'No details provided'),
                       '${r['odometerReading']} km',
-                      '${r['garageName'] ?? 'Independent'}\n(${r['garageVerified'] == true ? 'Verified' : 'Unverified'})',
+                      '${_sanitizePdfText(r['garageName'] ?? 'Independent')}\n(${r['garageVerified'] == true ? 'Verified' : 'Unverified'})',
                     ];
                   }).toList(),
-                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 10),
+                  headerStyle: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      fontSize: 10),
                   cellStyle: const pw.TextStyle(fontSize: 9),
-                  headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+                  headerDecoration:
+                  const pw.BoxDecoration(color: PdfColors.blue900),
                   cellHeight: 30,
                   columnWidths: {
                     0: const pw.FlexColumnWidth(1.2),
@@ -422,10 +509,16 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('Scan QR to verify authenticity online:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                      pw.Text('Scan QR to verify authenticity online:',
+                          style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold, fontSize: 10)),
                       pw.SizedBox(height: 4),
-                      pw.Text('Workflow ID: $_workflowId', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
-                      pw.Text('Anti-Tamper Cryptographic Audit Trail Active', style: const pw.TextStyle(fontSize: 8, color: PdfColors.green800)),
+                      pw.Text('Workflow ID: $_workflowId',
+                          style: const pw.TextStyle(
+                              fontSize: 8, color: PdfColors.grey700)),
+                      pw.Text('Anti-Tamper Cryptographic Audit Trail Active',
+                          style: const pw.TextStyle(
+                              fontSize: 8, color: PdfColors.green800)),
                     ],
                   ),
                   pw.BarcodeWidget(
@@ -464,7 +557,8 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: navyDeep),
-        title: const Text('Digital Certificates', style: TextStyle(color: navyDeep, fontWeight: FontWeight.bold)),
+        title: const Text('Digital Certificates',
+            style: TextStyle(color: navyDeep, fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
         child: Padding(
@@ -472,7 +566,8 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_workflowStatus == 'idle' || _workflowStatus == 'failed') ...[
+              if (_workflowStatus == 'idle' ||
+                  _workflowStatus == 'failed') ...[
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -517,13 +612,19 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: accentGold.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.workspace_premium, color: accentGold, size: 32),
+          decoration: BoxDecoration(
+              color: accentGold.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12)),
+          child:
+          const Icon(Icons.workspace_premium, color: accentGold, size: 32),
         ),
         const SizedBox(height: 16),
-        const Text('Generate V-Sense Report', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: navyDeep)),
+        const Text('Generate V-Sense Report',
+            style: TextStyle(
+                fontSize: 24, fontWeight: FontWeight.w900, color: navyDeep)),
         const SizedBox(height: 8),
-        const Text('Our Agentic AI will analyze your vehicle\'s history, cross-check for fraud, and issue a cryptographically verifiable certificate.',
+        const Text(
+            'Our Agentic AI will analyze your vehicle\'s history, cross-check for fraud, and issue a cryptographically verifiable certificate.',
             style: TextStyle(color: Colors.grey, height: 1.5)),
       ],
     );
@@ -536,7 +637,12 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: navyDeep.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: navyDeep.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -547,8 +653,10 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           items: _vehicles.map((v) {
             return DropdownMenuItem<String>(
               value: v['id'],
-              child: Text('${v['make']} ${v['model']} (${v['registrationNumber']})',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: navyDeep)),
+              child: Text(
+                  '${v['make']} ${v['model']} (${v['registrationNumber']})',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: navyDeep)),
             );
           }).toList(),
           onChanged: (val) {
@@ -568,13 +676,16 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     if (_pastWorkflows.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Text('No previous reports found for this vehicle.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+        child: Text('No previous reports found for this vehicle.',
+            textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Previous Reports', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: navyDeep)),
+        const Text('Previous Reports',
+            style: TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 16, color: navyDeep)),
         const SizedBox(height: 12),
         ..._pastWorkflows.map((w) {
           final isCompleted = w['status'] == 'completed';
@@ -582,15 +693,25 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
 
           return Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.grey.shade200)),
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: Icon(
-                isCompleted ? Icons.verified : (isPending ? Icons.pending_actions : Icons.error),
-                color: isCompleted ? Colors.green : (isPending ? Colors.orange : Colors.red),
+                isCompleted
+                    ? Icons.verified
+                    : (isPending ? Icons.pending_actions : Icons.error),
+                color: isCompleted
+                    ? Colors.green
+                    : (isPending ? Colors.orange : Colors.red),
               ),
-              title: Text('Report ID: ${w['id'].toString().substring(0,8)}...', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: Text(isCompleted ? 'Ready to Download' : (isPending ? 'Under Admin Review' : 'Failed')),
+              title: Text('Report ID: ${w['id'].toString().substring(0, 8)}...',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13)),
+              subtitle: Text(isCompleted
+                  ? 'Ready to Download'
+                  : (isPending ? 'Under Admin Review' : 'Failed')),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
                 setState(() {
@@ -627,7 +748,11 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           Flexible(
             child: Text(
               'Request New AI Report',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.2),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -643,12 +768,19 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(color: accentGold, strokeWidth: 3),
+              const CircularProgressIndicator(
+                  color: accentGold, strokeWidth: 3),
               const SizedBox(height: 32),
-              const Text('AI Agents at Work', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: navyDeep)),
+              const Text('AI Agents at Work',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: navyDeep)),
               const SizedBox(height: 12),
-              const Text('Agent 2 is pulling records...\nAgent 3 is checking for odometer rollbacks...\nAgent 4 is validating condition...',
-                  textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, height: 1.8)),
+              const Text(
+                  'Agent 2 is pulling records...\nAgent 3 is checking for odometer rollbacks...\nAgent 4 is validating condition...',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, height: 1.8)),
             ],
           ),
         ),
@@ -665,10 +797,16 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
             children: [
               const Icon(Icons.gavel_rounded, size: 64, color: Colors.orange),
               const SizedBox(height: 24),
-              const Text('Manual Review Required', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: navyDeep)),
+              const Text('Manual Review Required',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: navyDeep)),
               const SizedBox(height: 12),
-              const Text('All reports require manual approval before generating a verifiable certificate. An admin will review this shortly.',
-                  textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, height: 1.5)),
+              const Text(
+                  'All reports require manual approval before generating a verifiable certificate. An admin will review this shortly.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, height: 1.5)),
               const SizedBox(height: 40),
               OutlinedButton.icon(
                 onPressed: _checkApprovalStatus,
@@ -676,14 +814,18 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 label: const Text('Check Approval Status'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: navyDeep,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => setState(() => _workflowStatus = 'idle'),
-                child: const Text('Back to Dashboard', style: TextStyle(color: accentBlue, fontWeight: FontWeight.bold)),
+                child: const Text('Back to Dashboard',
+                    style: TextStyle(
+                        color: accentBlue, fontWeight: FontWeight.bold)),
               )
             ],
           ),
@@ -710,7 +852,12 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: navyDeep.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: navyDeep.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10))
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -719,26 +866,40 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                       children: [
                         Icon(Icons.verified, color: accentGold, size: 28),
                         SizedBox(width: 8),
-                        Text('V-SENSE CERTIFIED', style: TextStyle(color: accentGold, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                        Text('V-SENSE CERTIFIED',
+                            style: TextStyle(
+                                color: accentGold,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2)),
                       ],
                     ),
                     const SizedBox(height: 32),
                     Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16)),
                       child: QrImageView(
                         data: verificationUrl,
                         version: QrVersions.auto,
                         size: 200.0,
                         backgroundColor: Colors.white,
-                        eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: navyDeep),
-                        dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: navyDeep),
+                        eyeStyle: const QrEyeStyle(
+                            eyeShape: QrEyeShape.square, color: navyDeep),
+                        dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: navyDeep),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text('Scan to Verify Authenticity', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text('Scan to Verify Authenticity',
+                        style: TextStyle(color: Colors.white70, fontSize: 14)),
                     const SizedBox(height: 8),
-                    Text(_workflowId ?? '', style: const TextStyle(color: Colors.white30, fontSize: 10, fontFamily: 'monospace')),
+                    Text(_workflowId ?? '',
+                        style: const TextStyle(
+                            color: Colors.white30,
+                            fontSize: 10,
+                            fontFamily: 'monospace')),
                   ],
                 ),
               ),
@@ -746,22 +907,33 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
               ElevatedButton.icon(
                 onPressed: _isGeneratingPdf ? null : _downloadPDFCertificate,
                 icon: _isGeneratingPdf
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.picture_as_pdf, color: Colors.white),
                 label: Text(
-                  _isGeneratingPdf ? 'Generating PDF...' : 'Download PDF Certificate',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  _isGeneratingPdf
+                      ? 'Generating PDF...'
+                      : 'Download PDF Certificate',
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accentBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => setState(() => _workflowStatus = 'idle'),
-                child: const Text('Back to Dashboard', style: TextStyle(color: accentBlue, fontWeight: FontWeight.bold)),
+                child: const Text('Back to Dashboard',
+                    style: TextStyle(
+                        color: accentBlue, fontWeight: FontWeight.bold)),
               )
             ],
           ),
