@@ -97,6 +97,33 @@ public class VehiclesController : ControllerBase
         return Ok(myVehicles);
     }
 
+    // ─── DELETE /api/Vehicles/my-vehicles/{vehicleId} ─────────────────────────
+    [HttpDelete("my-vehicles/{vehicleId:guid}")]
+    public async Task<IActionResult> RemoveMyVehicle(Guid vehicleId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                       ?? User.FindFirst("sub")?.Value 
+                       ?? User.FindFirst("id")?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { message = "Invalid token or user context missing." });
+        }
+
+        var ownership = await _context.VehicleOwnerships
+            .FirstOrDefaultAsync(vo => vo.UserId == userId && vo.VehicleId == vehicleId);
+
+        if (ownership == null)
+        {
+            return NotFound(new { message = "Vehicle assignment record not found." });
+        }
+
+        _context.VehicleOwnerships.Remove(ownership);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Vehicle removed from your garage successfully." });
+    }
+
     // ─── GET /api/Vehicles/search?vehicleNumber=WP CAQ-5834 ──────────────────
     // ─── GET /api/Vehicles/search?chassisNumber=... ──────────────────────────
     [HttpGet("search")]
