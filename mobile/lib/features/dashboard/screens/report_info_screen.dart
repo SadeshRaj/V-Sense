@@ -194,38 +194,42 @@ class ReportInfoScreen extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo display with fallback
-              Container(
-                height: 60,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/logo_L2.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.asset(
-                      'assets/logo_S.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.workspace_premium,
-                        color: accentGold,
-                        size: 36,
+              // FIX: Wrapped the logo in a Flexible widget to prevent RenderFlex overflow
+              Flexible(
+                child: Container(
+                  height: 60,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    );
-                  },
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/logo_L2.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/logo_S.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.workspace_premium,
+                          color: accentGold,
+                          size: 36,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -318,6 +322,7 @@ class ReportInfoScreen extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: navyDeep),
                 ),
               ),
+              const SizedBox(width: 8),
               Icon(icon, color: color, size: 24),
             ],
           ),
@@ -330,17 +335,20 @@ class ReportInfoScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: onAction,
-                icon: Text(
-                  actionLabel,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-                label: Icon(Icons.arrow_forward_rounded, color: color, size: 16),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  backgroundColor: color.withOpacity(0.08),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: TextButton.icon(
+                  onPressed: onAction,
+                  icon: Text(
+                    actionLabel,
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  label: Icon(Icons.arrow_forward_rounded, color: color, size: 16),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    backgroundColor: color.withOpacity(0.08),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ),
