@@ -9,7 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { getCurrentUser } from './api/auth';
 import PublicVerification from './pages/PublicVerification';
 
-import AdminLayout from './layouts/AdminLayout';
+import AdminLayout from './Layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CustomerSupport from './pages/admin/CustomerSupport';
 import HITLReviewQueue from "./pages/admin/HITLReviewQueue.jsx";
