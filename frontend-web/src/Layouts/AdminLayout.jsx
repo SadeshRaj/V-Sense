@@ -41,9 +41,8 @@ export default function AdminLayout() {
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm z-10">
                 <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-lg">
-                        V
-                    </div>
+                    {/* Replace the div containing 'V' with this img tag */}
+                    <img src="/logo_S.png" alt="V-Sense Logo" className="w-8 h-8 object-contain" />
                     <span className="text-xl font-bold tracking-tight text-slate-900">V-Sense</span>
                 </div>
 

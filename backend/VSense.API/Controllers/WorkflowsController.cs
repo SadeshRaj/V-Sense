@@ -24,13 +24,22 @@ public class WorkflowsController : ControllerBase
     private readonly IConfiguration _configuration;
 
     public WorkflowsController(IHttpClientFactory httpClientFactory, ApplicationDbContext context, IConfiguration configuration)
-    {
-        _httpClient = httpClientFactory.CreateClient();
-        _httpClient.BaseAddress = new Uri("http://localhost:8000/");
-        _httpClient.Timeout = TimeSpan.FromMinutes(5);
-        _context = context;
-        _configuration = configuration;
-    }
+        {
+            _httpClient = httpClientFactory.CreateClient();
+
+            // Fetch from appsettings.json OR fallback to your Render URL
+            var aiBaseUrl = configuration["AiAgentUrl"];
+
+            if (string.IsNullOrWhiteSpace(aiBaseUrl))
+            {
+                throw new InvalidOperationException("AiAgentUrl configuration is missing or empty.");
+            }
+
+            _httpClient.BaseAddress = new Uri(aiBaseUrl);
+            _httpClient.Timeout = TimeSpan.FromMinutes(5);
+            _context = context;
+            _configuration = configuration;
+        }
 
     [HttpPost("vehicle-report")]
     [Authorize]
