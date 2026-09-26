@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout } from '../api/auth';
 import { IconShield, IconBuilding, IconLogOut } from './Icons';
+import logo from '/logo_L2.png';
 
 export default function Navbar({ onOpenLogin, onOpenRegister }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -27,12 +28,16 @@ export default function Navbar({ onOpenLogin, onOpenRegister }) {
 
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2.5 group focus:outline-none">
-                        <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center font-black text-xl text-white tracking-tighter shadow-md shadow-blue-500/20 group-hover:bg-blue-500 transition">
-                            V
-                        </div>
+                        {/* Replace the div containing 'V' with this img tag */}
+                        <img
+                            src={logo}
+                            alt="V-Sense Logo"
+                            // Added: bg-white, rounded-lg, and p-1 for padding
+                            className="w-9 h-9 object-contain bg-white rounded-lg p-1 shadow-md shadow-blue-500/20 transition-transform group-hover:scale-105"
+                        />
                         <span className="text-2xl font-bold tracking-tight text-white group-hover:text-slate-200 transition">
-                            V-SENSE
-                        </span>
+        V-SENSE
+    </span>
                     </Link>
 
                     {/* Navigation Links */}
