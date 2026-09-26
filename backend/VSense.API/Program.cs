@@ -147,21 +147,23 @@ using (var scope = app.Services.CreateScope())
     // Apply any pending migrations automatically
     dbContext.Database.Migrate();
 
-    // Seed default Admin if table is empty
     if (!dbContext.Users.Any())
     {
+        var adminEmail = builder.Configuration["AdminSeed:Email"];
+        var adminPassword = builder.Configuration["AdminSeed:Password"];
+
         dbContext.Users.Add(new User
         {
             Id = Guid.NewGuid(),
             FullName = "System Administrator",
-            Email = "admin@v-sense.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
+            Email = adminEmail,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
             Role = "Administrator",
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         });
         dbContext.SaveChanges();
-        Console.WriteLine("[INFO] Seeded default admin user: admin@v-sense.com");
+        Console.WriteLine($"[INFO] Seeded default admin user: {adminEmail}");
     }
 }
 
