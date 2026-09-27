@@ -29,6 +29,18 @@ public class CheckupRequestsController : ControllerBase
         return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 
+    // Garage/ServiceCenter accounts don't have a separate staff->organization
+    // mapping table — the logged-in user's id IS the organization id, taken
+    // from the JWT. Mirrors the exact pattern used in ServiceRecordsController.
+    private Guid? GetOrganizationId()
+    {
+        var orgIdClaim = User.FindFirst("organizationId")?.Value
+                       ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                       ?? User.FindFirst("id")?.Value;
+
+        return Guid.TryParse(orgIdClaim, out var organizationId) ? organizationId : null;
+    }
+
     // POST /api/CheckupRequests
     [HttpPost]
     public async Task<IActionResult> CreateRequest([FromBody] CreateCheckupRequestDto request)
@@ -136,5 +148,97 @@ public class CheckupRequestsController : ControllerBase
             cr.CreatedAt,
             cr.UpdatedAt
         ));
+    }
+
+    // ─── GARAGE-SIDE ENDPOINTS ─────────────────────────────────────────
+
+    // GET /api/CheckupRequests/organization-requests
+    [HttpGet("organization-requests")]
+    [Authorize(Roles = "Garage,ServiceCenter")]
+    public async Task<IActionResult> GetOrganizationRequests()
+    {
+        var organizationId = GetOrganizationId();
+        if (organizationId == null)
+            return Unauthorized(new { message = "Invalid authentication token." });
+
+        var requests = await _context.CheckupRequests
+            .AsNoTracking()
+            .Where(cr => cr.OrganizationId == organizationId)
+            .Include(cr => cr.Vehicle)
+            .Include(cr => cr.Organization)
+            .OrderByDescending(cr => cr.CreatedAt)
+            .Select(cr => new CheckupRequestDto(
+                cr.Id,
+                cr.VehicleId,
+                cr.Vehicle != null ? cr.Vehicle.RegistrationNumber : null,
+                cr.OrganizationId,
+                cr.Organization != null ? cr.Organization.Name : null,
+                cr.RequestedDate,
+                cr.RequestedTime,
+                cr.Status,
+                cr.OwnerMessage,
+                cr.GarageResponse,
+                cr.CreatedAt,
+                cr.UpdatedAt
+            ))
+            .ToListAsync();
+
+        return Ok(requests);
+    }
+
+    // PUT /api/CheckupRequests/{id}/accept
+    [HttpPut("{id:guid}/accept")]
+    [Authorize(Roles = "Garage,ServiceCenter")]
+    public async Task<IActionResult> AcceptRequest(Guid id)
+    {
+        var organizationId = GetOrganizationId();
+        if (organizationId == null)
+            return Unauthorized(new { message = "Invalid authentication token." });
+
+        var cr = await _context.CheckupRequests
+            .FirstOrDefaultAsync(x => x.Id == id && x.OrganizationId == organizationId);
+
+        if (cr == null)
+            return NotFound(new { message = "Checkup request not found." });
+
+        if (cr.Status != CheckupRequestStatus.Pending)
+            return BadRequest(new { message = $"Only pending requests can be accepted (current status: {cr.Status})." });
+
+        cr.Status = CheckupRequestStatus.Confirmed;
+        cr.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { id = cr.Id, status = cr.Status, message = "Checkup request confirmed." });
+    }
+
+    // PUT /api/CheckupRequests/{id}/suggest-alternative
+    [HttpPut("{id:guid}/suggest-alternative")]
+    [Authorize(Roles = "Garage,ServiceCenter")]
+    public async Task<IActionResult> SuggestAlternative(Guid id, [FromBody] SuggestAlternativeRequestDto request)
+    {
+        var organizationId = GetOrganizationId();
+        if (organizationId == null)
+            return Unauthorized(new { message = "Invalid authentication token." });
+
+        if (string.IsNullOrWhiteSpace(request.GarageResponse))
+            return BadRequest(new { message = "Please describe the alternative availability." });
+
+        var cr = await _context.CheckupRequests
+            .FirstOrDefaultAsync(x => x.Id == id && x.OrganizationId == organizationId);
+
+        if (cr == null)
+            return NotFound(new { message = "Checkup request not found." });
+
+        if (cr.Status != CheckupRequestStatus.Pending)
+            return BadRequest(new { message = $"Only pending requests can receive an alternative suggestion (current status: {cr.Status})." });
+
+        cr.Status = CheckupRequestStatus.AlternativeSuggested;
+        cr.GarageResponse = request.GarageResponse.Trim();
+        cr.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { id = cr.Id, status = cr.Status, garageResponse = cr.GarageResponse, message = "Alternative availability sent to the owner." });
     }
 }

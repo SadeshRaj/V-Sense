@@ -26,6 +26,10 @@ public record CheckupRequestDto(
     DateTime? UpdatedAt
 );
 
+// Sent by the garage (web portal) when they can't do the requested slot
+// and want to propose different availability instead
+public record SuggestAlternativeRequestDto(string GarageResponse);
+
 public static class CheckupRequestStatus
 {
     public const string Pending = "Pending";
