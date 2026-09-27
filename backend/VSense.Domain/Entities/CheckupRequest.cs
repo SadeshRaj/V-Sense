@@ -23,6 +23,11 @@ public class CheckupRequest
     public string? OwnerMessage { get; set; }
     public string? GarageResponse { get; set; }
 
+    // Set to true once the "your checkup is today" reminder email has been
+    // sent, so the daily background job never emails the owner twice for
+    // the same request.
+    public bool ReminderSent { get; set; } = false;
+
     public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
