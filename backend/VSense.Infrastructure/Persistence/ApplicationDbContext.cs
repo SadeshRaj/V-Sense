@@ -23,6 +23,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<AIWorkflow> AIWorkflows { get; set; }
     public DbSet<VehicleHistory> VehicleHistories => Set<VehicleHistory>();
     public DbSet<VehicleOwnershipHistory> VehicleOwnershipHistories => Set<VehicleOwnershipHistory>();
+    
+    public DbSet<CheckupRequest> CheckupRequests { get; set; }
 
     // NEW: Police Records Table
     public DbSet<VehiclePoliceRecord> VehiclePoliceRecords => Set<VehiclePoliceRecord>();
@@ -40,6 +42,30 @@ public class ApplicationDbContext : DbContext
         {
             entity.Property(e => e.Id).HasColumnName("id");
         });
+        
+        
+        
+        modelBuilder.Entity<CheckupRequest>(entity =>
+        {
+            entity.ToTable("CheckupRequests");
+
+            entity.HasOne(cr => cr.Vehicle)
+                .WithMany()
+                .HasForeignKey(cr => cr.VehicleId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(cr => cr.Owner)
+                .WithMany()
+                .HasForeignKey(cr => cr.OwnerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(cr => cr.Organization)
+                .WithMany()
+                .HasForeignKey(cr => cr.OrganizationId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        
+        
 
         // NEW: Map the lowercase id for Postgres
         modelBuilder.Entity<VehiclePoliceRecord>(entity =>
