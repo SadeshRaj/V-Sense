@@ -6,6 +6,7 @@ import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
 import 'my_garage_screen.dart';
 import 'partnered_garages_screen.dart'; // <-- Added import for Partnered Garages Screen
+import 'request_checkup_screen.dart'; // <-- Added import for Request Checkup Screen
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
@@ -172,6 +173,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
     ).then((_) => _loadUserData()); // refresh name/avatar in case they changed
+  }
+
+  void _navigateToRequestCheckup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RequestCheckupScreen()),
+    );
   }
 
   @override
@@ -572,20 +580,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
 
-              // REDESIGNED LAYOUT: "Settings" tile removed. With 5 tools
-              // remaining, a lone 5th tile in a 2-column grid looked
-              // unbalanced, so "My Garage" (the most-used tool, and the one
-              // duplicated in the bottom nav) is promoted to a wide feature
-              // tile, and the other 4 tools sit in a clean 2x2 grid below.
-              _buildFeatureToolCard(
-                Icons.garage_outlined,
-                'My Garage',
-                'View and manage your linked vehicles',
-                accentBlue,
-                0,
-                _navigateToGarage,
-              ),
-              const SizedBox(height: 16),
+              // UPDATED LAYOUT: uniform 2x2(x3) grid of 6 small tool cards.
+              // "My Garage" is no longer a wide feature tile — it's now a
+              // regular tool card, same size as the rest, and "Request
+              // Checkup" joins it right after. Order: My Garage, Request
+              // Checkup, Digital Certs, Partnered Garages, Support Chat,
+              // Quick Guide.
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -594,6 +594,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.15,
                 children: [
+                  // My Garage
+                  _buildToolCard(Icons.garage_outlined, 'My Garage', accentBlue, 0, _navigateToGarage),
+
+                  // Request Checkup
+                  _buildToolCard(Icons.event_available_outlined, 'Request Checkup', accentEmerald, 0, _navigateToRequestCheckup),
+
                   // Digital Certs Screen Link
                   _buildToolCard(Icons.workspace_premium_outlined, 'Digital Certs', accentGold, 0, () {
                     Navigator.push(
@@ -633,8 +639,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       MaterialPageRoute(builder: (_) => const ReportInfoScreen()),
                     );
                   }),
-                  // "Settings" tile removed from here — now lives in the
-                  // bottom navigation bar instead.
                 ],
               ),
               const SizedBox(height: 24),
@@ -801,100 +805,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // NEW: wide "feature" variant of the tool card, used to give "My Garage"
-  // visual priority now that the grid holds only 4 secondary tools.
-  Widget _buildFeatureToolCard(
-      IconData icon,
-      String title,
-      String subtitle,
-      Color iconColor,
-      int badgeCount,
-      VoidCallback onTap,
-      ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0A1930).withOpacity(0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, size: 28, color: iconColor),
-                ),
-                if (badgeCount > 0)
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: Text(
-                        badgeCount > 99 ? '99+' : badgeCount.toString(),
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Color(0xFF0A1930),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
           ],
         ),
       ),
