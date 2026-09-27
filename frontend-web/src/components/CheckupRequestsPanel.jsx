@@ -48,10 +48,16 @@ function StatusBadge({ status }) {
     );
 }
 
+// NOTE: the backend stores RequestedDate/RequestedTime as "labeled UTC"
+// wall-clock values — it does NOT convert local time to true UTC, it just
+// tags the original local (Colombo) value with a UTC marker. So we must
+// read them back with the UTC getters (timeZone: 'UTC'), not the browser's
+// local timezone, or the displayed time shifts by the local offset.
 function formatDate(value) {
     if (!value) return '—';
     try {
         return new Date(value).toLocaleDateString(undefined, {
+            timeZone: 'UTC',
             weekday: 'short',
             year: 'numeric',
             month: 'short',
@@ -66,6 +72,7 @@ function formatTime(value) {
     if (!value) return '—';
     try {
         return new Date(value).toLocaleTimeString(undefined, {
+            timeZone: 'UTC',
             hour: '2-digit',
             minute: '2-digit',
         });
