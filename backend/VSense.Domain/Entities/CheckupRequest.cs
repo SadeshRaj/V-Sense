@@ -7,6 +7,7 @@ namespace VSense.Domain.Entities;
 public class CheckupRequest
 {
     [Key]
+    [Column("id")]
     public Guid Id { get; set; } = Guid.NewGuid();
 
     public Guid? VehicleId { get; set; }
