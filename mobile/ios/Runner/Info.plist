@@ -4,6 +4,8 @@
 <dict>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We need your location to find nearby partnered garages.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>V-Sense uses Face ID to securely authenticate you without requiring your password each time.</string>
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
