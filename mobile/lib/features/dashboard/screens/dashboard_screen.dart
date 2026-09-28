@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
 import 'my_garage_screen.dart';
-import 'partnered_garages_screen.dart'; // <-- Added import for Partnered Garages Screen
-import 'request_checkup_screen.dart'; // <-- Added import for Request Checkup Screen
+import 'partnered_garages_screen.dart';
+import 'request_checkup_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
@@ -91,9 +91,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _fetchProfilePicture();
   }
 
-  // Fetches the current profile picture URL from the same endpoint Settings
-  // uses. Kept as its own request since secure storage only caches the
-  // display name, not the avatar URL.
   Future<void> _fetchProfilePicture() async {
     try {
       final token = await _storage.read(key: 'jwt_token');
@@ -172,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
-    ).then((_) => _loadUserData()); // refresh name/avatar in case they changed
+    ).then((_) => _loadUserData());
   }
 
   void _navigateToRequestCheckup() {
@@ -191,9 +188,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Color accentEmerald = Color(0xFF10B981);
     const Color textGrey = Color(0xFF64748B);
 
-    // MERGED BADGE COUNT: Combine System Notifications + Unread Support Messages
-    int totalAlerts = _unreadNotificationsCount + _unreadSupportCount;
-
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
@@ -205,9 +199,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Header
               Row(
                 children: [
-                  // FIX: logo wrapped in Flexible so it shrinks instead of
-                  // pushing the icon cluster off-screen (was causing the
-                  // yellow/black RenderFlex overflow banner near the logo).
                   Flexible(
                     child: Image.asset(
                       'assets/logo_S.png',
@@ -252,13 +243,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // FIX: icon cluster given a fixed minimal footprint
-                  // (mainAxisSize.min + tighter padding/spacing) so it never
-                  // competes for space with the logo above.
+
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Notifications Bell Icon WITH MERGED TOTAL ALERTS
+                      // Notifications Bell Icon
                       Stack(
                         alignment: Alignment.topRight,
                         children: [
@@ -284,7 +273,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             },
                             tooltip: 'Notifications',
                           ),
-                          if (totalAlerts > 0)
+                          if (_unreadNotificationsCount > 0)
                             Positioned(
                               top: 4,
                               right: 4,
@@ -295,7 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
-                                  totalAlerts > 9 ? '9+' : totalAlerts.toString(),
+                                  _unreadNotificationsCount > 9 ? '9+' : _unreadNotificationsCount.toString(),
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -304,28 +293,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(width: 4),
 
-                      // Support Headset Button
-                      IconButton(
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(),
-                        icon: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: accentBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
+                      // Support Headset Button WITH BADGE
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          IconButton(
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(),
+                            icon: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: accentBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.headset_mic_rounded, color: accentBlue, size: 20),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+                              ).then((_) {
+                                _fetchUnreadSupportCount();
+                                _fetchUnreadCount();
+                              });
+                            },
+                            tooltip: 'Support Chat',
                           ),
-                          child: const Icon(Icons.headset_mic_rounded, color: accentBlue, size: 20),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const SupportChatScreen()),
-                          ).then((_) {
-                            _fetchUnreadSupportCount();
-                            _fetchUnreadCount();
-                          });
-                        },
-                        tooltip: 'Support Chat',
+                          if (_unreadSupportCount > 0)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  _unreadSupportCount > 9 ? '9+' : _unreadSupportCount.toString(),
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(width: 4),
 
@@ -350,8 +360,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Flexible(
                     child: Row(
                       children: [
-                        // Profile picture avatar — tapping it jumps straight
-                        // to Settings, same as the bottom nav Settings tab.
                         GestureDetector(
                           onTap: _navigateToSettings,
                           child: Container(
@@ -435,9 +443,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
 
               // Status Chips
-              // FIX: each chip is now Flexible with ellipsis text so the row
-              // shrinks to fit the screen instead of overflowing (was
-              // causing the yellow/black banner near "Account Verified").
               Row(
                 children: [
                   Flexible(
@@ -580,12 +585,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
 
-              // UPDATED LAYOUT: uniform 2x2(x3) grid of 6 small tool cards.
-              // "My Garage" is no longer a wide feature tile — it's now a
-              // regular tool card, same size as the rest, and "Request
-              // Checkup" joins it right after. Order: My Garage, Request
-              // Checkup, Digital Certs, Partnered Garages, Support Chat,
-              // Quick Guide.
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -701,7 +700,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.qr_code_scanner)),
                 label: 'Scan',
               ),
-              // Replaced "Profile" with "Settings"
               BottomNavigationBarItem(
                 icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.settings_outlined)),
                 label: 'Settings',

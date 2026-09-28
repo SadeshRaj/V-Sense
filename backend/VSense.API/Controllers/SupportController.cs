@@ -128,7 +128,6 @@ public class SupportController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        // 1. Fetch newest messages first (so pagination grabs the most recent 30)
         var messages = await _context.SupportMessages
             .Where(m => m.UserId == userId)
             .OrderByDescending(m => m.CreatedAt)
@@ -139,7 +138,6 @@ public class SupportController : ControllerBase
             ))
             .ToListAsync();
 
-        // 2. Flip the array back to chronological order so your Flutter app renders Newest at the bottom
         messages.Reverse();
 
         if (!messages.Any() && skip == 0)
@@ -304,30 +302,6 @@ public class SupportController : ControllerBase
         };
 
         _context.SupportMessages.Add(msg);
-
-        var supportNotification = new Notification
-        {
-            Id = Guid.NewGuid(),
-            Title = "Support Update",
-            Message = string.IsNullOrWhiteSpace(dto.Message)
-                ? "An admin attached a file to your support inquiry."
-                : (dto.Message.Length > 80 ? dto.Message.Substring(0, 77) + "..." : dto.Message),
-            Category = "System",
-            IsBroadcast = false,
-            CreatedAt = DateTimeOffset.UtcNow,
-            CreatedBy = adminId == Guid.Empty ? null : adminId
-        };
-
-        var userNotification = new UserNotification
-        {
-            Id = Guid.NewGuid(),
-            UserId = dto.UserId,
-            NotificationId = supportNotification.Id,
-            IsRead = false
-        };
-
-        _context.Notifications.Add(supportNotification);
-        _context.UserNotifications.Add(userNotification);
 
         await _context.SaveChangesAsync();
 
