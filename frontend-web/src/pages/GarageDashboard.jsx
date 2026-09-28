@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout } from '../api/auth';
 import { searchVehicle } from '../api/vehicleApi';
 import { createServiceRecord, getVehicleServiceRecords, getMyServiceRecords } from '../api/garageApi';
+import CheckupRequestsPanel from '../components/CheckupRequestsPanel';
 import {
     IconCar,
     IconWrench,
@@ -25,7 +26,7 @@ export default function GarageDashboard() {
     const [user, setUser] = useState(null);
 
     // Navigation sub-tab
-    const [viewTab, setViewTab] = useState('search'); // 'search' | 'my-records'
+    const [viewTab, setViewTab] = useState('search'); // 'search' | 'checkup-requests' | 'my-records'
 
     // Search state
     const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +56,9 @@ export default function GarageDashboard() {
     // Lightbox / Image modal
     const [previewImage, setPreviewImage] = useState(null);
     const [notification, setNotification] = useState(null);
+
+    // Pending checkup-request count, shown as a badge on the tab
+    const [pendingCheckupCount, setPendingCheckupCount] = useState(0);
 
     useEffect(() => {
         const currentUser = getCurrentUser();
@@ -278,8 +282,8 @@ export default function GarageDashboard() {
             <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
                 {/* Sub-Tab Navigation Bar */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                    <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl w-fit">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                    <div className="flex flex-wrap items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl w-fit">
                         <button
                             onClick={() => setViewTab('search')}
                             className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
@@ -290,6 +294,22 @@ export default function GarageDashboard() {
                         >
                             <IconSearch className="w-3.5 h-3.5" />
                             Vehicle Search & Log Service
+                        </button>
+                        <button
+                            onClick={() => setViewTab('checkup-requests')}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
+                                viewTab === 'checkup-requests'
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                        >
+                            <IconClock className="w-3.5 h-3.5" />
+                            Checkup Requests
+                            {pendingCheckupCount > 0 && (
+                                <span className="text-[10px] bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 font-bold">
+                                    {pendingCheckupCount}
+                                </span>
+                            )}
                         </button>
                         <button
                             onClick={() => setViewTab('my-records')}
@@ -757,7 +777,12 @@ export default function GarageDashboard() {
                     </div>
                 )}
 
-                {/* ─── TAB 2: WORKSHOP'S OWN LOGGED RECORDS ────────────────── */}
+                {/* ─── TAB 2: CHECKUP REQUESTS ──────────────────────────────── */}
+                {viewTab === 'checkup-requests' && (
+                    <CheckupRequestsPanel showToast={showToast} onCountsChange={setPendingCheckupCount} />
+                )}
+
+                {/* ─── TAB 3: WORKSHOP'S OWN LOGGED RECORDS ────────────────── */}
                 {viewTab === 'my-records' && (
                     <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
                         <div className="flex items-center justify-between pb-4 border-b border-slate-200">

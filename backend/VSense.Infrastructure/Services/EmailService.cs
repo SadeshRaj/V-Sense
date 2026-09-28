@@ -74,6 +74,41 @@ public class EmailService : IEmailService
         await SendEmailAsync(toEmail, subject, htmlBody);
     }
 
+    public async Task SendCheckupReminderEmailAsync(
+        string toEmail,
+        string ownerName,
+        string garageName,
+        DateTime checkupDate,
+        string checkupTimeDisplay)
+    {
+        var subject = "Reminder: Your Vehicle Checkup Is Today 🔧";
+        var dateDisplay = checkupDate.ToString("dddd, dd MMMM yyyy");
+
+        var htmlBody = $@"
+            <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
+                <div style='background:#1e3a5f;padding:24px;text-align:center;border-radius:8px 8px 0 0;'>
+                    <h1 style='color:#ffffff;margin:0;font-size:24px;'>V-SENSE</h1>
+                    <p style='color:#90cdf4;margin:4px 0 0;font-size:13px;'>Vehicle History &amp; Valuation Authority</p>
+                </div>
+                <div style='background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;'>
+                    <h2 style='color:#1a202c;'>Your Checkup Is Today</h2>
+                    <p style='color:#4a5568;'>Dear <strong>{ownerName}</strong>,</p>
+                    <p style='color:#4a5568;'>This is a friendly reminder that your vehicle checkup is scheduled for <strong>today, {dateDisplay}</strong>.</p>
+                    <div style='background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:20px 0;'>
+                        <p style='color:#1a202c;margin:0 0 8px;'><strong>Garage:</strong> {garageName}</p>
+                        <p style='color:#1a202c;margin:0;'><strong>Time:</strong> {checkupTimeDisplay}</p>
+                    </div>
+                    <p style='color:#4a5568;'>Please make sure to arrive on time with your vehicle.</p>
+                    <p style='color:#718096;font-size:13px;'>If your plans have changed, please contact the garage directly.</p>
+                </div>
+                <div style='background:#f7fafc;padding:16px;text-align:center;border-radius:0 0 8px 8px;border:1px solid #e2e8f0;border-top:none;'>
+                    <p style='color:#a0aec0;font-size:12px;margin:0;'>© 2024 V-Sense. All rights reserved.</p>
+                </div>
+            </div>";
+
+        await SendEmailAsync(toEmail, subject, htmlBody);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
     {
         var host = _config["Email:Host"] ?? "smtp.gmail.com";
