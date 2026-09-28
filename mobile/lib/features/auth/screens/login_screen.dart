@@ -222,7 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Remember my email for future sign-ins',
+                                  'Skip this screen automatically next time',
                                   style: TextStyle(fontSize: 11, color: textGrey),
                                 ),
                               ],
