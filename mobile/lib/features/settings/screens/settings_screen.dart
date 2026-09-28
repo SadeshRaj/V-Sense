@@ -6,6 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../auth/screens/login_screen.dart';
@@ -55,10 +57,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isUploadingPhoto = false;
   bool _isVerifyingPhone = false;
 
+  // Biometric authentication preference
+  bool _biometricEnabled = false;
+  bool _biometricAvailable = false;
+  final _localAuth = LocalAuthentication();
+
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadBiometricPreference();
   }
 
   @override
@@ -109,6 +117,67 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Loads biometric availability from the device and the user preference
+  /// from SharedPreferences.
+  Future<void> _loadBiometricPreference() async {
+    try {
+      final canCheck = await _localAuth.canCheckBiometrics;
+      final isSupported = await _localAuth.isDeviceSupported();
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool('biometric_enabled') ?? false;
+      if (mounted) {
+        setState(() {
+          _biometricAvailable = canCheck && isSupported;
+          _biometricEnabled = enabled && _biometricAvailable;
+        });
+      }
+    } catch (_) {
+      // Device does not support biometrics — leave defaults (false)
+    }
+  }
+
+  /// Toggles the biometric preference. When enabling, ensures the user has
+  /// a saved login (email) and that the device actually supports biometrics.
+  Future<void> _toggleBiometric(bool value) async {
+    if (value) {
+      // Verify device actually supports biometrics before enabling
+      if (!_biometricAvailable) {
+        _showSnackBar('Your device does not support biometric authentication.', isError: true);
+        return;
+      }
+      // Ensure the user has a saved login
+      final savedEmail = await _storage.read(key: 'saved_email');
+      if (savedEmail == null || savedEmail.isEmpty) {
+        _showSnackBar(
+          'Enable "Save my login" on the Login screen first.',
+          isError: true,
+        );
+        return;
+      }
+      // Do a quick biometric challenge so the user confirms they can authenticate
+      try {
+        final authenticated = await _localAuth.authenticate(
+          localizedReason: 'Confirm your identity to enable biometric login',
+          options: const AuthenticationOptions(
+            stickyAuth: true,
+            biometricOnly: false,
+          ),
+        );
+        if (!authenticated) return;
+      } catch (_) {
+        _showSnackBar('Biometric verification failed. Please try again.', isError: true);
+        return;
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', value);
+    if (mounted) setState(() => _biometricEnabled = value);
+    _showSnackBar(
+      value ? 'Biometric login enabled.' : 'Biometric login disabled.',
+    );
   }
 
   void _enterEditMode() {
@@ -845,6 +914,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20),
+
+                  // ── Biometric Authentication Card ─────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: navyDeep.withOpacity(0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Security',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: navyDeep),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Manage how you access V-Sense',
+                          style: TextStyle(fontSize: 12, color: textGrey),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: _biometricEnabled
+                                    ? accentBlue.withOpacity(0.1)
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                _biometricAvailable
+                                    ? Icons.fingerprint_rounded
+                                    : Icons.fingerprint_rounded,
+                                color: _biometricEnabled ? accentBlue : textGrey,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Biometric Authentication',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: navyDeep,
+                                    ),
+                                  ),
+                                  Text(
+                                    _biometricAvailable
+                                        ? 'Use Face ID or fingerprint to sign in'
+                                        : 'Not supported on this device',
+                                    style: const TextStyle(fontSize: 11, color: textGrey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _biometricEnabled,
+                              activeColor: accentBlue,
+                              onChanged: _biometricAvailable
+                                  ? (val) => _toggleBiometric(val)
+                                  : null,
+                            ),
+                          ],
+                        ),
+                        if (_biometricEnabled) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: accentBlue.withOpacity(0.06),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline_rounded, size: 14, color: accentBlue.withOpacity(0.8)),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'You will be asked for biometrics the next time you open the app.',
+                                    style: TextStyle(fontSize: 11, color: accentBlue, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // ──────────────────────────────────────────────────────────
+
                   const SizedBox(height: 20),
 
                   // Logout

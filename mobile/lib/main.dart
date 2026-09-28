@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_theme.dart';
-import 'features/landing/screens/landing_screen.dart';
+import 'features/auth/screens/auth_gate_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ class VSenseApp extends StatelessWidget {
       title: 'V-Sense Premium',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LandingScreen(),
+      home: const AuthGateScreen(),
     );
   }
 }
