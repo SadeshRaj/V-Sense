@@ -75,29 +75,47 @@ def agent_4_validation(state: WorkflowState) -> dict:
     else:
         valuation_result = calculate_valuation.invoke({"ai_insight": "- AI insight generation failed. Defaulting to baseline mechanical metrics."})
 
-    validation_result = {
-        "passed": False,
-        "requires_approval": True,
-        "reason": "All V-Sense certificate generations require manual admin verification."
-    }
+    # Evaluate if the vehicle requires manual admin verification
+    is_clean_history = (risk_score == 0.0) and (len(fraud_flags) == 0)
+
+    if is_clean_history:
+        validation_result = {
+            "passed": True,
+            "requires_approval": False,
+            "reason": "Clean vehicle history with no fraud detected. Auto-approved."
+        }
+        state["status"] = "completed"
+        state["approval"] = {
+            "required": False,
+            "status": "approved",
+            "reviewed_by": "V-Sense System",
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "comment": "Auto-approved by system."
+        }
+    else:
+        validation_result = {
+            "passed": False,
+            "requires_approval": True,
+            "reason": "Fraud flags or risks detected. Requires manual admin verification."
+        }
+        state["status"] = "pending_approval"
+        state["approval"] = {
+            "required": True,
+            "status": "pending",
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "comment": None
+        }
 
     state["valuation"] = valuation_result
     state["validation_result"] = validation_result
-    state["status"] = "pending_approval"
-    state["approval"] = {
-        "required": True,
-        "status": "pending",
-        "reviewed_by": None,
-        "reviewed_at": None,
-        "comment": None
-    }
 
     state["final_report"] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "vehicle": vehicle_profile,
         "history": history_summary,
         "condition": valuation_result,
-        "certified": False
+        "certified": is_clean_history
     }
 
     save_workflow_state(state)
