@@ -24,22 +24,20 @@ public class WorkflowsController : ControllerBase
     private readonly IConfiguration _configuration;
 
     public WorkflowsController(IHttpClientFactory httpClientFactory, ApplicationDbContext context, IConfiguration configuration)
+    {
+        _httpClient = httpClientFactory.CreateClient();
+
+        var aiBaseUrl = configuration["AiAgentUrl"];
+        if (string.IsNullOrWhiteSpace(aiBaseUrl))
         {
-            _httpClient = httpClientFactory.CreateClient();
-
-            // Fetch from appsettings.json OR fallback to your Render URL
-            var aiBaseUrl = configuration["AiAgentUrl"];
-
-            if (string.IsNullOrWhiteSpace(aiBaseUrl))
-            {
-                throw new InvalidOperationException("AiAgentUrl configuration is missing or empty.");
-            }
-
-            _httpClient.BaseAddress = new Uri(aiBaseUrl);
-            _httpClient.Timeout = TimeSpan.FromMinutes(5);
-            _context = context;
-            _configuration = configuration;
+            throw new InvalidOperationException("AiAgentUrl configuration is missing or empty.");
         }
+
+        _httpClient.BaseAddress = new Uri(aiBaseUrl);
+        _httpClient.Timeout = TimeSpan.FromMinutes(5);
+        _context = context;
+        _configuration = configuration;
+    }
 
     [HttpPost("vehicle-report")]
     [Authorize]
@@ -60,13 +58,17 @@ public class WorkflowsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetMyWorkflows(string vehicleId)
     {
+        var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+
         var workflows = await _context.Set<AIWorkflow>()
             .Where(w => w.VehicleId == vehicleId)
             .OrderByDescending(w => w.CreatedAt)
             .Select(w => new {
                 id = w.Id,
                 status = w.Status,
-                createdAt = w.CreatedAt
+                createdAt = w.CreatedAt,
+                rejectionReason = w.RejectionReason,
+                qrPayload = w.Status == "completed" ? $"{frontendUrl.TrimEnd('/')}/verify/{w.Id}" : null
             })
             .ToListAsync();
 
@@ -89,6 +91,18 @@ public class WorkflowsController : ControllerBase
             .Where(v => vehicleIds.Contains(v.Id))
             .ToDictionaryAsync(v => v.Id.ToString(), v => v.RegistrationNumber);
 
+        var userIds = workflows.Where(w => !string.IsNullOrEmpty(w.RequestedBy))
+                               .Select(w => {
+                                   Guid.TryParse(w.RequestedBy, out Guid parsed);
+                                   return parsed;
+                               })
+                               .Where(g => g != Guid.Empty)
+                               .Distinct().ToList();
+
+        var users = await _context.Users
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.FullName, u.ProfilePictureUrl, u.Email });
+
         var result = workflows.Select(w => new {
             id = w.Id,
             status = w.Status,
@@ -96,9 +110,13 @@ public class WorkflowsController : ControllerBase
             vehicleId = w.VehicleId,
             vehicleReg = !string.IsNullOrEmpty(w.VehicleId) && vehicles.ContainsKey(w.VehicleId)
                             ? vehicles[w.VehicleId] : "N/A",
+            requesterName = !string.IsNullOrEmpty(w.RequestedBy) && users.ContainsKey(w.RequestedBy) ? users[w.RequestedBy].FullName : "Unknown",
+            requesterEmail = !string.IsNullOrEmpty(w.RequestedBy) && users.ContainsKey(w.RequestedBy) ? users[w.RequestedBy].Email : "N/A",
+            requesterAvatar = !string.IsNullOrEmpty(w.RequestedBy) && users.ContainsKey(w.RequestedBy) ? users[w.RequestedBy].ProfilePictureUrl : null,
             aiInsight = w.AiInsight,
             fraudFlags = w.FraudFlags,
-            historySummary = w.HistorySummary
+            historySummary = w.HistorySummary,
+            rejectionReason = w.RejectionReason
         });
 
         return Ok(result);
@@ -121,13 +139,29 @@ public class WorkflowsController : ControllerBase
             .Where(v => vehicleIds.Contains(v.Id))
             .ToDictionaryAsync(v => v.Id.ToString(), v => v.RegistrationNumber);
 
+        var userIds = pendingWorkflows.Where(w => !string.IsNullOrEmpty(w.RequestedBy))
+                                      .Select(w => {
+                                          Guid.TryParse(w.RequestedBy, out Guid parsed);
+                                          return parsed;
+                                      })
+                                      .Where(g => g != Guid.Empty)
+                                      .Distinct().ToList();
+
+        var users = await _context.Users
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id.ToString(), u => new { u.FullName, u.ProfilePictureUrl, u.Email });
+
         var result = pendingWorkflows.Select(w => new {
             id = w.Id,
             status = w.Status,
             createdAt = w.CreatedAt,
             vehicleId = w.VehicleId,
             vehicleReg = !string.IsNullOrEmpty(w.VehicleId) && vehicles.ContainsKey(w.VehicleId)
-                            ? vehicles[w.VehicleId] : "N/A"
+                            ? vehicles[w.VehicleId] : "N/A",
+            requesterName = !string.IsNullOrEmpty(w.RequestedBy) && users.ContainsKey(w.RequestedBy) ? users[w.RequestedBy].FullName : "Unknown",
+            requesterEmail = !string.IsNullOrEmpty(w.RequestedBy) && users.ContainsKey(w.RequestedBy) ? users[w.RequestedBy].Email : "N/A",
+            requesterAvatar = !string.IsNullOrEmpty(w.RequestedBy) && users.ContainsKey(w.RequestedBy) ? users[w.RequestedBy].ProfilePictureUrl : null,
+            rejectionReason = w.RejectionReason
         });
 
         return Ok(result);
@@ -140,10 +174,15 @@ public class WorkflowsController : ControllerBase
         var workflow = await _context.Set<AIWorkflow>().FindAsync(id);
         if (workflow == null) return NotFound(new { message = "Workflow not found." });
 
+        var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+        var qrVerificationUrl = $"{frontendUrl.TrimEnd('/')}/verify/{workflow.Id}";
+
         return Ok(new {
             workflowId = workflow.Id,
             status = workflow.Status,
-            aiInsight = workflow.AiInsight
+            aiInsight = workflow.AiInsight,
+            rejectionReason = workflow.RejectionReason,
+            qrPayload = workflow.Status == "completed" ? qrVerificationUrl : null
         });
     }
 
@@ -158,6 +197,7 @@ public class WorkflowsController : ControllerBase
             workflowId = workflow.Id,
             status = workflow.Status,
             aiInsight = workflow.AiInsight,
+            rejectionReason = workflow.RejectionReason,
             fraudFlags = string.IsNullOrEmpty(workflow.FraudFlags) ? "[]" : workflow.FraudFlags,
             historySummary = string.IsNullOrEmpty(workflow.HistorySummary) ? "{}" : workflow.HistorySummary
         });
@@ -198,7 +238,6 @@ public class WorkflowsController : ControllerBase
             })
             .ToListAsync();
 
-        // NEW: Fetch Police & Accident Records
         var policeRecords = await _context.VehiclePoliceRecords
             .Where(p => p.VehicleId == vehicleId)
             .OrderByDescending(p => p.IncidentDate)
@@ -258,7 +297,11 @@ public class WorkflowsController : ControllerBase
         var workflow = await _context.Set<AIWorkflow>().FindAsync(id);
         if (workflow == null) return NotFound("Workflow not found.");
 
-        workflow.Status = "failed";
+        if (string.IsNullOrWhiteSpace(request.Comment))
+            return BadRequest("A reason must be provided when rejecting a certificate.");
+
+        workflow.Status = "rejected";
+        workflow.RejectionReason = request.Comment;
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Report rejected safely. User will be notified." });

@@ -31,6 +31,8 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
   String? _workflowId;
   String _errorMessage = '';
   String _aiInsight = '';
+  String _rejectionReason = '';
+  String? _qrPayload; // New variable to safely hold backend-defined UI
   bool _isGeneratingPdf = false;
 
   static const Color navyDeep = Color(0xFF0A1930);
@@ -102,6 +104,8 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
       _workflowStatus = 'processing';
       _errorMessage = '';
       _aiInsight = '';
+      _rejectionReason = '';
+      _qrPayload = null;
     });
 
     try {
@@ -157,8 +161,21 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           _aiInsight = data['aiInsight'];
         }
 
+        // Properly fetch the rejection reason to show to customer
+        if (data['rejectionReason'] != null) {
+          _rejectionReason = data['rejectionReason'];
+        }
+
+        // Overwrite the dynamic internal generation with the pure backend payload
+        // to prevent redirecting to the .NET URL
+        if (data['qrPayload'] != null) {
+          _qrPayload = data['qrPayload'];
+        }
+
         if (status == 'completed') {
           setState(() => _workflowStatus = 'completed');
+        } else if (status == 'rejected' || status == 'failed') {
+          setState(() => _workflowStatus = 'rejected');
         } else {
           setState(() => _workflowStatus = 'pending_approval');
           if (mounted) {
@@ -173,16 +190,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     } catch (e) {
       setState(() => _workflowStatus = 'pending_approval');
     }
-  }
-
-  String _getVerificationUrl(String workflowId) {
-    String base = EnvConfig.apiUrl.replaceAll(RegExp(r'/api/?$'), '');
-    if (base.contains('5000')) {
-      base = base.replaceAll('5000', '5173');
-    } else if (base.contains('7193')) {
-      base = base.replaceAll('7193', '5173');
-    }
-    return '$base/verify/$workflowId';
   }
 
   String _sanitizePdfText(String text) {
@@ -271,7 +278,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
         }
       }
 
-      final String verificationUrl = _getVerificationUrl(_workflowId!);
       final double watermarkOpacity = 0.08;
 
       final ByteData headerImageByteData = await rootBundle.load('assets/logo_S.png');
@@ -630,16 +636,13 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                   ),
                   pw.BarcodeWidget(
                     barcode: pw.Barcode.qrCode(),
-                    data: verificationUrl,
+                    data: _qrPayload ?? 'Generating secure verification link...',
                     width: 70,
                     height: 70,
                   ),
                 ],
               ),
 
-              // ==========================================
-              // BOUND TERMS BLOCK using pw.Container
-              // ==========================================
               pw.Container(
                   child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -659,7 +662,6 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                       ]
                   )
               ),
-              // ==========================================
 
             ];
           },
@@ -698,8 +700,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_workflowStatus == 'idle' ||
-                  _workflowStatus == 'failed') ...[
+              if (_workflowStatus == 'idle' || (_workflowStatus == 'failed' && _workflowId == null)) ...[
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -728,6 +729,8 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                 const Expanded(child: AIProcessingAnimation()),
               ] else if (_workflowStatus == 'pending_approval') ...[
                 _buildPendingReviewUI(),
+              ] else if (_workflowStatus == 'rejected' || (_workflowStatus == 'failed' && _workflowId != null)) ...[
+                _buildRejectedUI(),
               ] else if (_workflowStatus == 'completed') ...[
                 _buildCertificateUI(),
               ]
@@ -822,6 +825,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
         ..._pastWorkflows.map((w) {
           final isCompleted = w['status'] == 'completed';
           final isPending = w['status'] == 'pending_approval';
+          final isRejected = w['status'] == 'rejected' || w['status'] == 'failed';
 
           return Card(
             elevation: 0,
@@ -843,14 +847,22 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                       fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: Text(isCompleted
                   ? 'Ready to Download'
-                  : (isPending ? 'Under Admin Review' : 'Failed')),
+                  : (isPending ? 'Under Admin Review' : 'Rejected')),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () {
                 setState(() {
                   _workflowId = w['id'];
                   _workflowStatus = w['status'];
+
+                  if (isRejected && w['rejectionReason'] != null) {
+                    _rejectionReason = w['rejectionReason'];
+                  }
+                  if (w['qrPayload'] != null) {
+                    _qrPayload = w['qrPayload'];
+                  }
                 });
-                if (isCompleted || isPending) {
+
+                if (isCompleted || isPending || isRejected) {
                   _checkApprovalStatus();
                 }
               },
@@ -939,9 +951,77 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
     );
   }
 
-  Widget _buildCertificateUI() {
-    final String verificationUrl = _getVerificationUrl(_workflowId!);
+  Widget _buildRejectedUI() {
+    return Expanded(
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  border: Border.all(color: Colors.red.shade200),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, size: 56, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text('Certificate Rejected',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red)),
+                    const SizedBox(height: 12),
+                    const Text(
+                        'An administrator has rejected the generation of this certificate due to suspicious fraud flags or policy violations.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red, fontSize: 13, height: 1.5)),
 
+                    if (_rejectionReason.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade100),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('REJECTION REASON:', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.red)),
+                            const SizedBox(height: 6),
+                            Text(_rejectionReason, style: const TextStyle(fontSize: 14, color: navyDeep, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ]
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextButton.icon(
+                onPressed: () => setState(() {
+                  _workflowStatus = 'idle';
+                  _workflowId = null;
+                }),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Return to Dashboard',
+                    style: TextStyle(
+                        color: navyDeep, fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCertificateUI() {
     return Expanded(
       child: Center(
         child: SingleChildScrollView(
@@ -985,7 +1065,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16)),
                       child: QrImageView(
-                        data: verificationUrl,
+                        data: _qrPayload ?? 'Processing URL...',
                         version: QrVersions.auto,
                         size: 200.0,
                         backgroundColor: Colors.white,
