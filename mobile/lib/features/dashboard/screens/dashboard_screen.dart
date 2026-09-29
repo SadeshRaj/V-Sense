@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import '../../../core/config/env_config.dart';
 import 'search_vehicle_screen.dart';
 import 'my_garage_screen.dart';
-import 'partnered_garages_screen.dart'; // <-- Added import for Partnered Garages Screen
-import 'request_checkup_screen.dart'; // <-- Added import for Request Checkup Screen
+import 'partnered_garages_screen.dart';
+import 'request_checkup_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
@@ -26,8 +26,17 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = '';
   String? _profilePictureUrl;
+
+  // Vehicle State
+  List<dynamic> _vehiclesList = [];
   int _vehicleCount = 0;
   bool _isLoadingVehicles = true;
+
+  // Workflow/Certificate State
+  bool _isLoadingWorkflows = true;
+  int _pendingWorkflowsCount = 0;
+  int _completedWorkflowsCount = 0;
+
   final _storage = const FlutterSecureStorage();
   int _currentIndex = 0;
 
@@ -91,9 +100,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await _fetchProfilePicture();
   }
 
-  // Fetches the current profile picture URL from the same endpoint Settings
-  // uses. Kept as its own request since secure storage only caches the
-  // display name, not the avatar URL.
   Future<void> _fetchProfilePicture() async {
     try {
       final token = await _storage.read(key: 'jwt_token');
@@ -111,14 +117,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
     } catch (e) {
-      // Silently ignore — avatar just falls back to the placeholder icon
+      // Silently ignore
     }
   }
 
   Future<void> _fetchVehicleCount() async {
     try {
       final token = await _storage.read(key: 'jwt_token');
-      if (token == null) return;
+      if (token == null) {
+        if (mounted) {
+          setState(() {
+            _isLoadingVehicles = false;
+            _isLoadingWorkflows = false;
+          });
+        }
+        return;
+      }
 
       final response = await http.get(
         Uri.parse('${EnvConfig.apiUrl}/vehicles/my-vehicles'),
@@ -129,18 +143,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> vehicles = jsonDecode(response.body);
+        // SAFE PARSING: Prevent null lists from breaking Flutter Web
+        final decoded = jsonDecode(response.body);
+        final List<dynamic> vehicles = decoded != null ? List<dynamic>.from(decoded) : [];
+
         if (mounted) {
           setState(() {
+            _vehiclesList = vehicles;
             _vehicleCount = vehicles.length;
             _isLoadingVehicles = false;
           });
         }
+        await _fetchAllWorkflows();
       } else {
-        if (mounted) setState(() => _isLoadingVehicles = false);
+        if (mounted) setState(() {
+          _isLoadingVehicles = false;
+          _isLoadingWorkflows = false;
+        });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoadingVehicles = false);
+      if (mounted) setState(() {
+        _isLoadingVehicles = false;
+        _isLoadingWorkflows = false;
+      });
+    }
+  }
+
+  Future<void> _fetchAllWorkflows() async {
+    int pending = 0;
+    int completed = 0;
+
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
+
+      for (var vehicle in _vehiclesList) {
+        final response = await http.get(
+          Uri.parse('${EnvConfig.apiUrl}/workflows/my-workflows/${vehicle['id']}'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          // SAFE PARSING: Prevent null lists from breaking Flutter Web
+          final decoded = jsonDecode(response.body);
+          final List<dynamic> workflows = decoded != null ? List<dynamic>.from(decoded) : [];
+
+          for (var w in workflows) {
+            if (w['status'] == 'pending_approval') pending++;
+            if (w['status'] == 'completed') completed++;
+          }
+        }
+      }
+    } catch (e) {
+      // Fail silently to keep the dashboard usable
+    }
+
+    if (mounted) {
+      setState(() {
+        _pendingWorkflowsCount = pending;
+        _completedWorkflowsCount = completed;
+        _isLoadingWorkflows = false;
+      });
     }
   }
 
@@ -172,7 +238,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
-    ).then((_) => _loadUserData()); // refresh name/avatar in case they changed
+    ).then((_) => _loadUserData());
   }
 
   void _navigateToRequestCheckup() {
@@ -191,9 +257,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Color accentEmerald = Color(0xFF10B981);
     const Color textGrey = Color(0xFF64748B);
 
-    // MERGED BADGE COUNT: Combine System Notifications + Unread Support Messages
-    int totalAlerts = _unreadNotificationsCount + _unreadSupportCount;
-
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
@@ -205,9 +268,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Header
               Row(
                 children: [
-                  // FIX: logo wrapped in Flexible so it shrinks instead of
-                  // pushing the icon cluster off-screen (was causing the
-                  // yellow/black RenderFlex overflow banner near the logo).
                   Flexible(
                     child: Image.asset(
                       'assets/logo_S.png',
@@ -252,13 +312,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // FIX: icon cluster given a fixed minimal footprint
-                  // (mainAxisSize.min + tighter padding/spacing) so it never
-                  // competes for space with the logo above.
+
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Notifications Bell Icon WITH MERGED TOTAL ALERTS
+                      // Notifications Bell Icon
                       Stack(
                         alignment: Alignment.topRight,
                         children: [
@@ -284,7 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             },
                             tooltip: 'Notifications',
                           ),
-                          if (totalAlerts > 0)
+                          if (_unreadNotificationsCount > 0)
                             Positioned(
                               top: 4,
                               right: 4,
@@ -295,7 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
-                                  totalAlerts > 9 ? '9+' : totalAlerts.toString(),
+                                  _unreadNotificationsCount > 9 ? '9+' : _unreadNotificationsCount.toString(),
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -304,28 +362,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(width: 4),
 
-                      // Support Headset Button
-                      IconButton(
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(),
-                        icon: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: accentBlue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
+                      // Support Headset Button WITH BADGE
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          IconButton(
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(),
+                            icon: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: accentBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.headset_mic_rounded, color: accentBlue, size: 20),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+                              ).then((_) {
+                                _fetchUnreadSupportCount();
+                                _fetchUnreadCount();
+                              });
+                            },
+                            tooltip: 'Support Chat',
                           ),
-                          child: const Icon(Icons.headset_mic_rounded, color: accentBlue, size: 20),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const SupportChatScreen()),
-                          ).then((_) {
-                            _fetchUnreadSupportCount();
-                            _fetchUnreadCount();
-                          });
-                        },
-                        tooltip: 'Support Chat',
+                          if (_unreadSupportCount > 0)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  _unreadSupportCount > 9 ? '9+' : _unreadSupportCount.toString(),
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(width: 4),
 
@@ -350,8 +429,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Flexible(
                     child: Row(
                       children: [
-                        // Profile picture avatar — tapping it jumps straight
-                        // to Settings, same as the bottom nav Settings tab.
                         GestureDetector(
                           onTap: _navigateToSettings,
                           child: Container(
@@ -435,9 +512,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 20),
 
               // Status Chips
-              // FIX: each chip is now Flexible with ellipsis text so the row
-              // shrinks to fit the screen instead of overflowing (was
-              // causing the yellow/black banner near "Account Verified").
               Row(
                 children: [
                   Flexible(
@@ -531,46 +605,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Workflow Alert Tile
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFFECACA)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEF4444).withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Verification Status', style: TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.bold, fontSize: 14)),
-                          SizedBox(height: 2),
-                          Text('1 report pending inspector validation', style: TextStyle(color: Color(0xFFB91C1C), fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Color(0xFFEF4444)),
-                  ],
-                ),
-              ),
+              // DYNAMIC: Workflow / Certificate Alert Tile
+              _buildWorkflowAlertTile(),
               const SizedBox(height: 28),
 
               // Portal Tools Grid
@@ -580,12 +616,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 16),
 
-              // UPDATED LAYOUT: uniform 2x2(x3) grid of 6 small tool cards.
-              // "My Garage" is no longer a wide feature tile — it's now a
-              // regular tool card, same size as the rest, and "Request
-              // Checkup" joins it right after. Order: My Garage, Request
-              // Checkup, Digital Certs, Partnered Garages, Support Chat,
-              // Quick Guide.
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -605,7 +635,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
-                    );
+                    ).then((_) => _fetchAllWorkflows());
                   }),
 
                   // Partnered Garages
@@ -701,7 +731,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.qr_code_scanner)),
                 label: 'Scan',
               ),
-              // Replaced "Profile" with "Settings"
               BottomNavigationBarItem(
                 icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.settings_outlined)),
                 label: 'Settings',
@@ -805,6 +834,126 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Dynamic Workflow Status Tile Logic ---
+
+  Widget _buildWorkflowAlertTile() {
+    if (_isLoadingWorkflows) {
+      return _buildStatusTileContainer(
+        icon: Icons.hourglass_empty_rounded,
+        iconColor: Colors.grey.shade600,
+        bgColor: Colors.grey.shade100,
+        borderColor: Colors.grey.shade300,
+        title: 'Checking Status...',
+        subtitle: 'Loading your certificate data',
+        titleColor: Colors.grey.shade800,
+        subtitleColor: Colors.grey.shade600,
+      );
+    }
+
+    if (_vehiclesList.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Priority 1: Pending Approvals
+    if (_pendingWorkflowsCount > 0) {
+      return _buildStatusTileContainer(
+        icon: Icons.warning_amber_rounded,
+        iconColor: const Color(0xFFEF4444),
+        bgColor: const Color(0xFFFEF2F2),
+        borderColor: const Color(0xFFFECACA),
+        title: 'Verification Pending',
+        subtitle: '$_pendingWorkflowsCount report(s) pending admin validation',
+        titleColor: const Color(0xFF991B1B),
+        subtitleColor: const Color(0xFFB91C1C),
+      );
+    }
+    // Priority 2: Ready Certificates
+    else if (_completedWorkflowsCount > 0) {
+      return _buildStatusTileContainer(
+        icon: Icons.verified_rounded,
+        iconColor: const Color(0xFF10B981),
+        bgColor: const Color(0xFFECFDF5),
+        borderColor: const Color(0xFFA7F3D0),
+        title: 'Certificates Ready',
+        subtitle: '$_completedWorkflowsCount verified report(s) ready to download',
+        titleColor: const Color(0xFF065F46),
+        subtitleColor: const Color(0xFF047857),
+      );
+    }
+    // Default Action: Prompt to Generate
+    else {
+      return _buildStatusTileContainer(
+        icon: Icons.auto_awesome_rounded,
+        iconColor: const Color(0xFF2563EB),
+        bgColor: const Color(0xFFEFF6FF),
+        borderColor: const Color(0xFFBFDBFE),
+        title: 'Generate AI Report',
+        subtitle: 'Request a verified certificate for your vehicle',
+        titleColor: const Color(0xFF1E3A8A),
+        subtitleColor: const Color(0xFF1D4ED8),
+      );
+    }
+  }
+
+  Widget _buildStatusTileContainer({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required Color borderColor,
+    required String title,
+    required String subtitle,
+    required Color titleColor,
+    required Color subtitleColor,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DigitalCertsScreen()),
+        ).then((_) => _fetchAllWorkflows());
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: iconColor.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(color: subtitleColor, fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: iconColor),
           ],
         ),
       ),

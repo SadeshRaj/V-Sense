@@ -11,7 +11,7 @@
     <application
         android:label="V-Sense"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true"
         tools:replace="android:label">
 
