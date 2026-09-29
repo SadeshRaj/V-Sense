@@ -23,7 +23,6 @@ public class AIWorkflow
     [Column("history_summary")]
     public string? HistorySummary { get; set; }
 
-    // NEW HISTORY TRACKING FIELDS
     [Column("vehicle_id")]
     public string? VehicleId { get; set; }
 
@@ -32,4 +31,8 @@ public class AIWorkflow
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Added to support rejection reasons and fix CS1061
+    [Column("rejection_reason")]
+    public string? RejectionReason { get; set; }
 }
