@@ -71,11 +71,12 @@ public class SupportController : ControllerBase
         return Ok(new { status = ticket?.Status ?? "Open" });
     }
 
-    [HttpPost("upload-attachment")]
-    public async Task<IActionResult> UploadAttachment([FromForm] IFormFile? file)
-    {
-        if (file == null || file.Length == 0) return BadRequest("No file was uploaded.");
-        if (file.Length > 15 * 1024 * 1024) return BadRequest("File size exceeds 15MB limit.");
+[HttpPost("upload-attachment")]
+[ApiExplorerSettings(IgnoreApi = true)] // Add this line to hide it from Swagger
+public async Task<IActionResult> UploadAttachment([FromForm] IFormFile? file)
+{
+    if (file == null || file.Length == 0) return BadRequest("No file was uploaded.");
+    if (file.Length > 15 * 1024 * 1024) return BadRequest("File size exceeds 15MB limit.");
 
         var isImage = file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
         await using var stream = file.OpenReadStream();
