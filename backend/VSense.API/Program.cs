@@ -145,26 +145,33 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    // Apply any pending migrations automatically
-    dbContext.Database.Migrate();
+    // Migrate() only works on relational providers (Postgres), not InMemory
+    if (dbContext.Database.IsRelational())
+    {
+        dbContext.Database.Migrate();
+    }
 
     if (!dbContext.Users.Any())
     {
         var adminEmail = builder.Configuration["AdminSeed:Email"];
         var adminPassword = builder.Configuration["AdminSeed:Password"];
 
-        dbContext.Users.Add(new User
+        // Skip seeding when no admin credentials are configured (e.g. in tests)
+        if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
         {
-            Id = Guid.NewGuid(),
-            FullName = "System Administrator",
-            Email = adminEmail,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
-            Role = "Administrator",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
-        });
-        dbContext.SaveChanges();
-        Console.WriteLine($"[INFO] Seeded default admin user: {adminEmail}");
+            dbContext.Users.Add(new User
+            {
+                Id = Guid.NewGuid(),
+                FullName = "System Administrator",
+                Email = adminEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+                Role = "Administrator",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+            dbContext.SaveChanges();
+            Console.WriteLine($"[INFO] Seeded default admin user: {adminEmail}");
+        }
     }
 }
 
