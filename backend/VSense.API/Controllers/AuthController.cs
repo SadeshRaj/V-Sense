@@ -117,6 +117,9 @@ public class AuthController : ControllerBase
         [FromForm] GarageRegisterRequestDto request,
         IFormFile brDocument)
     {
+        if (string.IsNullOrWhiteSpace(request.Phone) || !Regex.IsMatch(request.Phone, @"^(\+94\s?\d{2}\s?\d{3}\s?\d{4}|0\d{9})$"))
+            return BadRequest(new { message = "Invalid phone number format." });
+
         if (brDocument == null || brDocument.Length == 0)
             return BadRequest(new { message = "Business Registration document is required." });
 
