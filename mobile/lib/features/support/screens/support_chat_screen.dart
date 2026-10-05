@@ -27,13 +27,11 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   bool _isUploadingAttachment = false;
   bool _showScrollDown = false;
 
-  // Pagination State
   int _skip = 0;
   final int _take = 30;
   bool _hasMore = true;
   bool _isLoadingOlder = false;
 
-  // Ticket Status State
   String _ticketStatus = "Open";
 
   String? _stagedAttachmentUrl;
@@ -44,7 +42,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
   static const Color navyDeep = Color(0xFF0A1930);
   static const Color accentBlue = Color(0xFF2563EB);
-  static const Color backgroundLight = Color(0xFFF8FAFC);
+  static const Color backgroundLight = Color(0xFFE5E7EB);
 
   @override
   void initState() {
@@ -91,6 +89,24 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     } catch (_) {}
   }
 
+  // --- FIX FOR FLUTTER WEB JWT PADDING ---
+  String _normalizeBase64(String input) {
+    String output = input.replaceAll('-', '+').replaceAll('_', '/');
+    switch (output.length % 4) {
+      case 0:
+        break;
+      case 2:
+        output += '==';
+        break;
+      case 3:
+        output += '=';
+        break;
+      default:
+        throw Exception('Illegal base64url string!');
+    }
+    return output;
+  }
+
   Future<void> _initSignalR() async {
     final token = await _storage.read(key: 'jwt_token');
     if (token == null) return;
@@ -119,7 +135,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
       final parts = token.split('.');
       if (parts.length == 3) {
-        final payload = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+        // Fix: Use correct base64 padding so it doesn't fail silently on Flutter Web
+        final String payloadBase64 = _normalizeBase64(parts[1]);
+        final payload = jsonDecode(utf8.decode(base64Decode(payloadBase64)));
         final userId = payload['sub'] ?? payload['nameid'] ?? payload['id'];
 
         if (userId != null) {
@@ -170,7 +188,6 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        // Reverse incoming data to match the inverted ListView requirement
         final reversedData = data.reversed.toList();
 
         if (mounted) {
@@ -283,7 +300,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       final token = await _storage.read(key: 'jwt_token');
       if (token == null) return;
 
-      await http.post(
+      final response = await http.post(
         Uri.parse('${EnvConfig.apiUrl}/support/send'),
         headers: {
           'Content-Type': 'application/json',
@@ -294,6 +311,16 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
           'attachmentUrl': attachmentUrl,
         }),
       );
+
+      if (response.statusCode == 200) {
+        final savedMsg = jsonDecode(response.body);
+        if (!_messages.any((m) => m['id'] == savedMsg['id'])) {
+          setState(() {
+            _messages.insert(0, savedMsg);
+          });
+          _scrollToBottom();
+        }
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -302,15 +329,13 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 150), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            0.0,
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOutCubic,
-          );
-        }
-      });
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
     });
   }
 
@@ -331,7 +356,6 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         url.contains('/image/upload/');
   }
 
-  // --- Date Helper Methods ---
   DateTime? _parseDateTime(dynamic dateStr) {
     if (dateStr == null) return null;
     final rawTime = dateStr.toString();
@@ -375,41 +399,41 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             Stack(
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: _ticketStatus == 'Resolved' ? Colors.grey.shade400 : navyDeep,
+                    color: _ticketStatus == 'Resolved' ? Colors.grey.shade400 : accentBlue,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.headset_mic_rounded, color: Colors.white, size: 18),
+                  child: const Icon(Icons.headset_mic_rounded, color: Colors.white, size: 20),
                 ),
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: Container(
-                    width: 12,
-                    height: 12,
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
                       color: _ticketStatus == 'Resolved' ? Colors.grey.shade500 : const Color(0xFF10B981),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      border: Border.all(color: Colors.white, width: 2.5),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'V-Sense Support',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: navyDeep),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: navyDeep),
                 ),
                 Text(
                   _ticketStatus == 'Resolved' ? 'Ticket Resolved' : 'Official Helpdesk • Online',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: _ticketStatus == 'Resolved' ? Colors.grey.shade600 : const Color(0xFF10B981),
                       fontWeight: FontWeight.w600
                   ),
@@ -430,12 +454,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 6),
+                      Icon(Icons.check_circle_outline, size: 16, color: Colors.grey.shade700),
+                      const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           'This ticket is marked as resolved. Send a message to reopen.',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade800, fontWeight: FontWeight.w600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -445,16 +469,16 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
               else
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  color: const Color(0xFFEEF2F6),
+                  color: const Color(0xFFE2E8F0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.lock_outline, size: 14, color: Color(0xFF64748B)),
+                      const Icon(Icons.lock_outline, size: 14, color: Color(0xFF475569)),
                       const SizedBox(width: 6),
                       const Flexible(
                         child: Text(
                           'End-to-end verified authority channel',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          style: TextStyle(fontSize: 12, color: Color(0xFF475569), fontWeight: FontWeight.w600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -470,16 +494,16 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.mark_chat_read_rounded, size: 64, color: Colors.grey.shade300),
+                      Icon(Icons.mark_chat_read_rounded, size: 72, color: Colors.grey.shade300),
                       const SizedBox(height: 16),
                       const Text(
                         'How can we help you today?',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: navyDeep),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: navyDeep),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         'Send a message or attach documents.',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                        style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                       ),
                     ],
                   ),
@@ -487,7 +511,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     : ListView.builder(
                   controller: _scrollController,
                   reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                   itemCount: _messages.length + (_hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
 
@@ -506,7 +530,6 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     final displayMessage = replyData != null ? replyData['content'] : msg['message'];
                     final quoteMessage = replyData?['quote'];
 
-                    // --- Date Grouping Logic ---
                     final currentMsgDate = _parseDateTime(msg['createdAt']);
                     DateTime? previousMsgDate;
 
@@ -529,10 +552,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     }
 
                     final radius = BorderRadius.only(
-                      topLeft: const Radius.circular(20),
-                      topRight: const Radius.circular(20),
-                      bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(4),
-                      bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(20),
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(4),
+                      bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(16),
                     );
 
                     return Column(
@@ -540,30 +563,30 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                         if (showDateSeparator && currentMsgDate != null)
                           Container(
                             margin: const EdgeInsets.only(top: 24, bottom: 12),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.06),
+                              color: Colors.black.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               _getDateHeaderText(currentMsgDate),
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black54),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                             ),
                           ),
                         Align(
                           alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
-                              color: isUser ? accentBlue : Colors.white,
+                              color: isUser ? const Color(0xFFDCF8C6) : Colors.white,
                               borderRadius: radius,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
@@ -573,30 +596,30 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 if (quoteMessage != null)
                                   Container(
                                     margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: isUser ? Colors.white.withOpacity(0.2) : Colors.grey.shade100,
+                                      color: Colors.black.withOpacity(0.05),
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border(left: BorderSide(color: isUser ? Colors.white54 : accentBlue, width: 3)),
+                                      border: Border(left: BorderSide(color: isUser ? const Color(0xFF128C7E) : accentBlue, width: 4)),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Replying to:',
+                                          'Replying to',
                                           style: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 11,
                                             fontWeight: FontWeight.bold,
-                                            color: isUser ? Colors.white : accentBlue,
+                                            color: isUser ? const Color(0xFF128C7E) : accentBlue,
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: 4),
                                         Text(
                                           quoteMessage,
-                                          style: TextStyle(
-                                            fontSize: 12,
+                                          style: const TextStyle(
+                                            fontSize: 13,
                                             fontStyle: FontStyle.italic,
-                                            color: isUser ? Colors.white.withOpacity(0.9) : Colors.black87,
+                                            color: Colors.black87,
                                           ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
@@ -629,11 +652,11 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                         child: Image.network(
                                           attachmentUrl,
                                           fit: BoxFit.cover,
-                                          height: 180,
+                                          height: 200,
                                           width: double.infinity,
                                           loadingBuilder: (_, child, progress) {
                                             if (progress == null) return child;
-                                            return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+                                            return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
                                           },
                                         ),
                                       ),
@@ -648,76 +671,77 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                         }
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.all(10),
+                                        padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isUser ? Colors.white.withOpacity(0.15) : const Color(0xFFF1F5F9),
+                                          color: Colors.black.withOpacity(0.04),
                                           borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: Colors.black12),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.description_rounded, color: isUser ? Colors.white : accentBlue, size: 24),
-                                            const SizedBox(width: 8),
+                                            Icon(Icons.insert_drive_file_rounded, color: isUser ? const Color(0xFF128C7E) : accentBlue, size: 28),
+                                            const SizedBox(width: 10),
                                             Flexible(
                                               child: Text(
                                                 'View Document',
-                                                style: TextStyle(color: isUser ? Colors.white : navyDeep, fontWeight: FontWeight.bold, fontSize: 12),
+                                                style: TextStyle(color: navyDeep, fontWeight: FontWeight.bold, fontSize: 13),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            const SizedBox(width: 4),
-                                            Icon(Icons.open_in_new, color: isUser ? Colors.white : navyDeep, size: 12),
+                                            const SizedBox(width: 8),
+                                            Icon(Icons.open_in_new, color: navyDeep, size: 14),
                                           ],
                                         ),
                                       ),
                                     ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 8),
                                 ],
 
                                 if (displayMessage != null && (displayMessage as String).isNotEmpty)
                                   Text(
                                     displayMessage,
-                                    style: TextStyle(
-                                      color: isUser ? Colors.white : navyDeep,
-                                      fontSize: 14.5,
-                                      height: 1.35,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 15,
+                                      height: 1.3,
                                     ),
                                   ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
 
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      timeStr,
-                                      style: TextStyle(fontSize: 10, color: isUser ? Colors.white.withOpacity(0.8) : Colors.grey.shade500),
-                                    ),
-                                    if (isUser) ...[
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Icons.done_all,
-                                        size: 14,
-                                        color: (msg['isReadByAdmin'] == true) ? const Color(0xFF60A5FA) : Colors.white60,
-                                      ),
-                                    ],
-                                    const SizedBox(width: 8),
                                     GestureDetector(
                                       onTap: () => setState(() => _replyingToMessage = msg),
                                       child: Row(
                                         children: [
-                                          Icon(Icons.reply_rounded, size: 12, color: isUser ? Colors.white70 : accentBlue),
-                                          const SizedBox(width: 2),
+                                          Icon(Icons.reply_rounded, size: 14, color: Colors.black54),
+                                          const SizedBox(width: 4),
                                           Text(
                                               'Reply',
                                               style: TextStyle(
-                                                  fontSize: 10,
+                                                  fontSize: 11,
                                                   fontWeight: FontWeight.bold,
-                                                  color: isUser ? Colors.white70 : accentBlue
+                                                  color: Colors.black54
                                               )
                                           ),
                                         ],
                                       ),
                                     ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      timeStr,
+                                      style: TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w500),
+                                    ),
+                                    if (isUser) ...[
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.done_all,
+                                        size: 16,
+                                        color: (msg['isReadByAdmin'] == true) ? const Color(0xFF34B7F1) : Colors.black38,
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ],
@@ -732,14 +756,18 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
               if (_replyingToMessage != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                    color: const Color(0xFFF1F5F9),
+                    border: Border(top: BorderSide(color: Colors.grey.shade300)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.reply_rounded, color: accentBlue, size: 20),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: accentBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        child: Icon(Icons.reply_rounded, color: accentBlue, size: 22),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -749,9 +777,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                               'Replying to message',
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: accentBlue),
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               _parseReply(_replyingToMessage!['message'] ?? '')?['content'] ?? _replyingToMessage!['message'] ?? 'Attached Document',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -759,7 +788,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                        icon: const Icon(Icons.close_rounded, size: 24, color: Colors.grey),
                         onPressed: () => setState(() => _replyingToMessage = null),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -770,19 +799,19 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
               if (_stagedAttachmentUrl != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
-                    border: Border(top: BorderSide(color: Colors.blue.shade100)),
+                    border: Border(top: BorderSide(color: Colors.blue.shade200)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.attach_file, size: 18, color: accentBlue),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.attach_file_rounded, size: 22, color: accentBlue),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _stagedFileName ?? 'File Ready',
-                          style: const TextStyle(fontSize: 12, color: accentBlue, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 13, color: accentBlue, fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -791,65 +820,56 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                           _stagedAttachmentUrl = null;
                           _stagedFileName = null;
                         }),
-                        child: const Icon(Icons.close, size: 20, color: Colors.redAccent),
+                        child: const Icon(Icons.cancel_rounded, size: 24, color: Colors.redAccent),
                       ),
                     ],
                   ),
                 ),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 15,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
                 ),
                 child: SafeArea(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Container(
-                        margin: const EdgeInsets.only(right: 8, bottom: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: IconButton(
-                          onPressed: _isUploadingAttachment ? null : _pickAndUploadDocument,
-                          icon: _isUploadingAttachment
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.add_rounded, color: Color(0xFF64748B), size: 26),
-                          tooltip: 'Attach Document',
-                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-
                       Expanded(
                         child: Container(
                           constraints: const BoxConstraints(maxHeight: 120),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.only(left: 4, right: 16),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.transparent),
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                          child: TextField(
-                            controller: _messageController,
-                            textCapitalization: TextCapitalization.sentences,
-                            maxLines: null,
-                            keyboardType: TextInputType.multiline,
-                            decoration: InputDecoration(
-                              hintText: _ticketStatus == 'Resolved' ? 'Type to reopen ticket...' : 'Type your message...',
-                              hintStyle: const TextStyle(fontSize: 15, color: Color(0xFF94A3B8)),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                onPressed: _isUploadingAttachment ? null : _pickAndUploadDocument,
+                                icon: _isUploadingAttachment
+                                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
+                                    : const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF64748B), size: 28),
+                                tooltip: 'Attach',
+                                padding: const EdgeInsets.only(bottom: 10, left: 4),
+                                constraints: const BoxConstraints(),
+                              ),
+                              Expanded(
+                                child: TextField(
+                                  controller: _messageController,
+                                  textCapitalization: TextCapitalization.sentences,
+                                  maxLines: null,
+                                  keyboardType: TextInputType.multiline,
+                                  decoration: InputDecoration(
+                                    hintText: _ticketStatus == 'Resolved' ? 'Type to reopen...' : 'Message',
+                                    hintStyle: const TextStyle(fontSize: 16, color: Color(0xFF94A3B8)),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -859,18 +879,18 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                         margin: const EdgeInsets.only(bottom: 2),
                         child: InkWell(
                           onTap: _sendMessage,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(28),
                           child: Container(
-                            width: 44,
-                            height: 44,
+                            width: 50,
+                            height: 50,
                             decoration: const BoxDecoration(
-                                gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+                                color: Color(0xFF128C7E),
                                 shape: BoxShape.circle,
                                 boxShadow: [
-                                  BoxShadow(color: Color(0xFF2563EB), blurRadius: 8, spreadRadius: -2, offset: Offset(0, 4)),
+                                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
                                 ]
                             ),
-                            child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                            child: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
                           ),
                         ),
                       ),
@@ -891,7 +911,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 foregroundColor: accentBlue,
                 elevation: 4,
                 onPressed: _scrollToBottom,
-                child: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+                child: const Icon(Icons.keyboard_double_arrow_down_rounded, size: 24),
               ),
             ),
         ],

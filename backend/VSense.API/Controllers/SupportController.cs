@@ -251,9 +251,10 @@ public async Task<IActionResult> UploadAttachment([FromForm] IFormFile? file)
                 : conv.LastMessageObj.Message;
 
             result.Add(new SupportConversationSummaryDto(
-                user.Id, user.FullName ?? "Customer", user.Email ?? "", user.PhoneNumber ?? "N/A", user.NIC ?? "N/A",
-                summaryText, conv.LastMessageObj?.CreatedAt ?? DateTime.UtcNow, conv.UnreadCount, status
-            ));
+                            user.Id, user.FullName ?? "Customer", user.Email ?? "", user.PhoneNumber ?? "N/A", user.NIC ?? "N/A",
+                            user.ProfilePictureUrl,
+                            summaryText, conv.LastMessageObj?.CreatedAt ?? DateTime.UtcNow, conv.UnreadCount, status
+                        ));
         }
 
         return Ok(result);
