@@ -66,6 +66,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 
 // Configure Swagger to include the Bearer Authorize Button
 builder.Services.AddSwaggerGen(c =>
@@ -136,6 +137,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health"); // <--- ADD THIS LINE HERE
+
+// NEW: Map the SignalR Hub
+app.MapHub<VSense.API.Hubs.SupportHub>("/hubs/support");
 
 // NEW: Map the SignalR Hub
 app.MapHub<VSense.API.Hubs.SupportHub>("/hubs/support");
