@@ -87,13 +87,14 @@ export default function HITLReviewQueue() {
     };
 
     const filteredWorkflows = pendingWorkflows.filter(w =>
-        w.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (w.vehicleReg && w.vehicleReg.toLowerCase().includes(searchQuery.toLowerCase()))
+        (w.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (w.vehicleReg || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (w.requesterName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (w.requesterEmail || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
         <div className="space-y-6">
-            {/* Toast Notification */}
             {notification && (
                 <div className="fixed top-20 right-6 z-50 animate-bounce">
                     <div className={`px-4 py-3 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 border ${
@@ -126,7 +127,7 @@ export default function HITLReviewQueue() {
                     <IconSearch className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                         type="text"
-                        placeholder="Search by Workflow ID or Vehicle..."
+                        placeholder="Search ID, Vehicle, or User..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-2"
@@ -155,7 +156,8 @@ export default function HITLReviewQueue() {
                         <table className="w-full text-left text-xs">
                             <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4">Workflow ID</th>
+                                <th className="px-6 py-4">Workflow Info</th>
+                                <th className="px-6 py-4">Requested By</th>
                                 <th className="px-6 py-4">Vehicle</th>
                                 <th className="px-6 py-4">Status</th>
                                 <th className="px-6 py-4 text-right">Action</th>
@@ -165,10 +167,27 @@ export default function HITLReviewQueue() {
                             {filteredWorkflows.map((workflow) => (
                                 <tr key={workflow.id} className="hover:bg-slate-50/80 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-mono font-bold text-slate-900">{workflow.id}</div>
-                                        <div className="text-slate-500 text-[11px] mt-0.5 flex items-center gap-1">
-                                            <IconFileText className="w-3 h-3 text-slate-400" />
-                                            Report generation paused
+                                        <div className="font-mono font-bold text-slate-900">
+                                            {String(workflow.id).substring(0, 8)}...
+                                        </div>
+                                        <div className="text-slate-500 text-[10px] mt-0.5 flex items-center gap-1">
+                                            <IconClock className="w-3 h-3 text-slate-400" />
+                                            {new Date(workflow.createdAt).toLocaleString()}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            {workflow.requesterAvatar ? (
+                                                <img src={workflow.requesterAvatar} alt={workflow.requesterName} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs uppercase">
+                                                    {(workflow.requesterName || 'UN').substring(0, 2)}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="font-bold text-slate-800 text-[12px]">{workflow.requesterName || 'Unknown'}</div>
+                                                <div className="text-slate-500 text-[10px]">{workflow.requesterEmail || 'N/A'}</div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-bold text-[12px] text-slate-800">{workflow.vehicleReg || 'N/A'}</td>
@@ -220,7 +239,6 @@ export default function HITLReviewQueue() {
                                 </div>
                             ) : workflowDetails ? (
                                 <>
-                                    {/* AI Insight Section */}
                                     {workflowDetails.aiInsight && (
                                         <div className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
                                             <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-2">Agent 4 Condition Insight</h4>
@@ -230,7 +248,6 @@ export default function HITLReviewQueue() {
                                         </div>
                                     )}
 
-                                    {/* Fraud Flags Section */}
                                     <div>
                                         <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Agent 3 Detected Anomalies</h4>
                                         {workflowDetails.fraudFlags.length === 0 ? (
@@ -251,7 +268,6 @@ export default function HITLReviewQueue() {
                                         )}
                                     </div>
 
-                                    {/* Raw Data Reference */}
                                     <div>
                                         <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Raw History Summary (Agent 2)</h4>
                                         <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto">
@@ -295,7 +311,7 @@ export default function HITLReviewQueue() {
                                 </button>
                                 <button
                                     onClick={() => handleConfirmAction('approve')}
-                                    disabled={actionLoading || !comment.trim() || detailsLoading}
+                                    disabled={actionLoading || detailsLoading}
                                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
                                 >
                                     <IconCheckCircle className="w-4 h-4" /> Approve Certificate
