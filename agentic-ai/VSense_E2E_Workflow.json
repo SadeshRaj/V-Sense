@@ -1,0 +1,219 @@
+{
+  "info": {
+    "_postman_id": "efcdbfda-a960-4f20-bd7e-b154cd3549df",
+    "name": "VSense",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "50825061",
+    "_collection_link": "https://go.postman.co/collection/50825061-efcdbfda-a960-4f20-bd7e-b154cd3549df?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Customer Requests Vehicle Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "let jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Workflow ID is generated\", function () {",
+              "    pm.expect(jsonData.workflow_id).to.not.be.undefined;",
+              "    pm.environment.set(\"workflow_id\", jsonData.workflow_id); // Save for next steps",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{customer_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicle_id\": \"0cb63bf1-94ca-4255-bbf4-afe0af04dd4c\",\n  \"requested_by\": \"{{customer_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{api_url}}/api/workflows/vehicle-report",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "api",
+            "workflows",
+            "vehicle-report"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Admin Retrieves Pending Approvals",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "let workflows = pm.response.json();",
+              "pm.test(\"Newly created workflow is in pending list\", function () {",
+              "    let wf = workflows.find(w => w.id === pm.environment.get(\"workflow_id\"));",
+              "    pm.expect(wf).to.not.be.undefined;",
+              "    pm.expect(wf.status).to.eql(\"pending_approval\");",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{admin_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{api_url}}/api/workflows/pending-approval",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "api",
+            "workflows",
+            "pending-approval"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Admin Approves the Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Approval successful\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    let jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.eql(\"Report approved and finalized.\");",
+              "    pm.expect(jsonData.qrPayload).to.include(\"/verify/\");",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{admin_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"Comment\": \"All clear.\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{api_url}}/api/workflows/{{workflow_id}}/approve",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "api",
+            "workflows",
+            "{{workflow_id}}",
+            "approve"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Public QR Code Verification",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Certificate is valid and public\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    let jsonData = pm.response.json();",
+              "    pm.expect(jsonData.valid).to.be.true;",
+              "    pm.expect(jsonData.aiInsight).to.be.a(\"string\");",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{api_url}}/api/workflows/verify/{{workflow_id}}",
+          "host": [
+            "{{api_url}}"
+          ],
+          "path": [
+            "api",
+            "workflows",
+            "verify",
+            "{{workflow_id}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
