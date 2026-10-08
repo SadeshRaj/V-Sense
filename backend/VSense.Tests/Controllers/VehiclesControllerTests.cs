@@ -425,7 +425,7 @@ public class VehiclesControllerTests : IClassFixture<CustomWebApplicationFactory
             lastResponse = await client.PostAsJsonAsync($"{BaseUrl}/verify-lookup", payload);
         }
 
-        
+        // ❌ FAILS: Returns 404 NotFound instead of 429 TooManyRequests
         lastResponse.StatusCode.Should().Be(HttpStatusCode.TooManyRequests,
             "sensitive verification endpoints should rate-limit excessive brute-force attempts");
     }
@@ -438,7 +438,7 @@ public class VehiclesControllerTests : IClassFixture<CustomWebApplicationFactory
 
         var response = await client.GetAsync($"{BaseUrl}/search?vehicleNumber={oversizedVehicleNum}");
 
-        
+        // ❌ FAILS: Returns 404 NotFound instead of 400 BadRequest
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest,
             "search endpoint should validate query parameter length before executing database queries");
     }
