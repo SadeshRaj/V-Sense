@@ -31,6 +31,7 @@ public record SupportConversationSummaryDto(
     [property: JsonPropertyName("email")] string Email,
     [property: JsonPropertyName("phoneNumber")] string PhoneNumber,
     [property: JsonPropertyName("nic")] string NIC,
+    [property: JsonPropertyName("profilePictureUrl")] string? ProfilePictureUrl, // NEW FIELD
     [property: JsonPropertyName("lastMessage")] string LastMessage,
     [property: JsonPropertyName("lastMessageAt")] DateTime LastMessageAt,
     [property: JsonPropertyName("unreadCount")] int UnreadCount,
