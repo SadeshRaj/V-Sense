@@ -12,46 +12,56 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [errorType, setErrorType] = useState('generic'); // 'generic' | 'pending' | 'rejected'
+    const [errorType, setErrorType] = useState('generic');
     const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
 
     if (isModal && !isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (loading) return;
+
         setError('');
         setErrorType('generic');
         setLoading(true);
 
         try {
-            const user = await loginUser(email, password);
+            const user = await loginUser(email.trim(), password);
 
-            if (isModal && onClose) onClose();
+            const role = String(user.role || '')
+                .replace(/[\s_-]/g, '')
+                .toLowerCase();
 
-            if (user.role === 'Administrator') {
-                navigate('/admin');
+            if (isModal && onClose) {
+                onClose();
+            }
+
+            if (role === 'admin' || role === 'administrator') {
+                navigate('/admin', { replace: true });
             } else if (
-                user.role === 'Garage' ||
-                user.role === 'ServiceCenter'
+                role === 'garage' ||
+                role === 'servicecenter'
             ) {
-                navigate('/garage');
+                navigate('/garage', { replace: true });
             } else {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             }
         } catch (err) {
-            const msg = err.message || '';
+            const msg = err?.message || 'Unable to sign in. Please try again.';
+            const lowerMsg = msg.toLowerCase();
 
-            if (msg.toLowerCase().includes('pending')) {
+            if (lowerMsg.includes('pending')) {
                 setErrorType('pending');
-                setError(msg);
-            } else if (msg.toLowerCase().includes('rejected')) {
+            } else if (lowerMsg.includes('rejected')) {
                 setErrorType('rejected');
-                setError(msg);
             } else {
                 setErrorType('generic');
-                setError(msg || 'Invalid email or password.');
             }
+
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -59,10 +69,9 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
 
     const content = (
         <div className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl z-10 space-y-6">
-
-            {/* Close Button if modal */}
             {isModal && onClose && (
                 <button
+                    type="button"
                     onClick={onClose}
                     className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition"
                     aria-label="Close modal"
@@ -83,7 +92,6 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
                 </button>
             )}
 
-            {/* Header */}
             <div className="text-center space-y-2">
                 <div className="inline-flex w-12 h-12 bg-blue-600 rounded-xl items-center justify-center text-2xl font-black text-white shadow-md shadow-blue-600/30">
                     V
@@ -98,9 +106,8 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
                 </p>
             </div>
 
-            {/* Dynamic Status Error Alerts */}
             {error && (
-                <div>
+                <div role="alert">
                     {errorType === 'pending' ? (
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-medium space-y-1">
                             <div className="flex items-center gap-2 font-bold text-amber-900">
@@ -136,10 +143,7 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
                 </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-
-                {/* Email */}
                 <div>
                     <label
                         htmlFor="email"
@@ -150,16 +154,18 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
 
                     <input
                         id="email"
+                        name="email"
                         type="email"
+                        autoComplete="username"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="admin@v-sense.com"
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium disabled:opacity-60"
                     />
                 </div>
 
-                {/* Password */}
                 <div>
                     <div className="flex items-center justify-between mb-1.5">
                         <label
@@ -172,16 +178,18 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
 
                     <input
                         id="password"
+                        name="password"
                         type="password"
+                        autoComplete="current-password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium"
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:bg-white focus:border-blue-600 transition placeholder:text-slate-400 font-medium disabled:opacity-60"
                     />
                 </div>
 
-                {/* Submit Button */}
                 <button
                     type="submit"
                     disabled={loading}
@@ -192,6 +200,7 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
                             <svg
                                 className="animate-spin h-4 w-4 text-white"
                                 viewBox="0 0 24 24"
+                                aria-hidden="true"
                             >
                                 <circle
                                     className="opacity-25"
@@ -208,7 +217,6 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                 />
                             </svg>
-
                             <span>Signing In...</span>
                         </>
                     ) : (
@@ -217,7 +225,6 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
                 </button>
             </form>
 
-            {/* Register Link */}
             <div className="pt-4 border-t border-slate-200 text-center text-xs space-y-1.5 font-medium">
                 <p className="text-slate-500">
                     Are you a Garage or Service Center?
@@ -237,7 +244,6 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
         </div>
     );
 
-    {/* Modal */}
     if (isModal) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -250,7 +256,6 @@ export default function Login({ isOpen = true, onClose, isModal = false }) {
         );
     }
 
-    {/* Normal Login Page */}
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans">
             <div className="mb-6">
