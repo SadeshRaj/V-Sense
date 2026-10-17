@@ -32,7 +32,7 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
   String _errorMessage = '';
   String _aiInsight = '';
   String _rejectionReason = '';
-  String? _qrPayload; // New variable to safely hold backend-defined UI
+  String? _qrPayload;
   bool _isGeneratingPdf = false;
 
   static const Color navyDeep = Color(0xFF0A1930);
@@ -161,13 +161,10 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
           _aiInsight = data['aiInsight'];
         }
 
-        // Properly fetch the rejection reason to show to customer
         if (data['rejectionReason'] != null) {
           _rejectionReason = data['rejectionReason'];
         }
 
-        // Overwrite the dynamic internal generation with the pure backend payload
-        // to prevent redirecting to the .NET URL
         if (data['qrPayload'] != null) {
           _qrPayload = data['qrPayload'];
         }
@@ -668,10 +665,16 @@ class _DigitalCertsScreenState extends State<DigitalCertsScreen> {
         ),
       );
 
-      await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: 'VSense_Certificate_${vehicle['registrationNumber'] ?? _workflowId}.pdf',
+      // FIX: Sanitize the filename to prevent Android Intent crashes
+      // and use layoutPdf to trigger the native Print/Save dialog for reliable downloading.
+      final safeIdentifier = (vehicle['registrationNumber'] ?? _workflowId).toString().replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final fileName = 'VSense_Certificate_$safeIdentifier.pdf';
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: fileName,
       );
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
