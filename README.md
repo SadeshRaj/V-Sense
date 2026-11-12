@@ -1,3 +1,5 @@
+<img width="1149" height="201" alt="588500229-0f9deeac-923e-48ad-947c-fd080dbfc43b (1)" src="https://github.com/user-attachments/assets/ab168155-8195-4117-80c0-155a1cb430fe" />
+
 # V-Sense — Agentic Vehicle History & Fraud Detection System
 
 > SE3090 – Software Engineering Frameworks · Group 2026-SE-19 · SLIIT
@@ -15,6 +17,8 @@ V-Sense is an integrated vehicle history verification platform for the Sri Lanka
 
 ## Table of Contents
 - [Features](#features)
+- [Mobile App Screens](#features)
+- [Vehicle History Certificate](#features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Agentic AI Pipeline](#agentic-ai-pipeline)
@@ -46,6 +50,33 @@ V-Sense is an integrated vehicle history verification platform for the Sri Lanka
 - AI execution logs for auditing, support tickets and notifications
 
 **Risk-based approval:** clean reports are auto-approved and released immediately; reports with fraud indicators pause the workflow until an administrator approves or rejects them.
+
+## 📸 Mobile App Screens
+<img width="1004" height="511" alt="Screenshot 2026-11-12 at 22 56 02" src="https://github.com/user-attachments/assets/b73b9169-6967-40e0-ad11-f81cde899aa2" />
+
+---
+
+<img width="1004" height="511" alt="Screenshot 2026-11-12 at 22 56 54" src="https://github.com/user-attachments/assets/9303ee08-14a0-40d0-900d-a027f4419615" />
+
+---
+
+<img width="1004" height="511" alt="Screenshot 2026-11-12 at 22 57 17" src="https://github.com/user-attachments/assets/a2c45491-7400-4ada-a905-16ca12cb7e56" />
+
+---
+
+## 📸 Vehicle History Certificate
+
+[VSense_Certificate_WP_CBE-9154.PDF](https://github.com/user-attachments/files/34762678/VSense_Certificate_WP_CBE-9154.PDF)
+
+[VSense_Certificate_SP CAX-2176.pdf](https://github.com/user-attachments/files/34762689/VSense_Certificate_SP.CAX-2176.4.pdf)
+
+---
+
+<img width="1013" height="502" alt="Screenshot 2026-11-12 at 23 38 02" src="https://github.com/user-attachments/assets/4f14c989-131c-44b0-9538-21cefafb05e2" />
+
+
+
+
 
 ## Architecture
 
