@@ -15,19 +15,6 @@ V-Sense is an integrated vehicle history verification platform for the Sri Lanka
 | Mobile app (APK) | [Google Drive](https://drive.google.com/drive/folders/1B-AabLqU5zjJEkoLO4X4hdJraHSNrS7n?usp=sharing) |
 
 
-## Table of Contents
-- [Features](#features)
-- [Mobile App Screens](#features)
-- [Vehicle History Certificate](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Agentic AI Pipeline](#agentic-ai-pipeline)
-- [Repository Structure](#repository-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Team](#team)
 
 ## Features
 
@@ -75,9 +62,16 @@ V-Sense is an integrated vehicle history verification platform for the Sri Lanka
 <img width="1013" height="502" alt="Screenshot 2026-11-12 at 23 38 02" src="https://github.com/user-attachments/assets/4f14c989-131c-44b0-9538-21cefafb05e2" />
 
 
+## 📸 Admin Dashboard (Web)
+<img width="1094" height="239" alt="Screenshot 2026-11-15 at 13 43 57" src="https://github.com/user-attachments/assets/bb088419-7f40-48b1-b78a-bef79be8fc2c" />
 
+---
+<img width="1114" height="239" alt="Screenshot 2026-11-15 at 13 44 44" src="https://github.com/user-attachments/assets/63821a83-cd60-45d0-9486-ec6e58246ea3" />
 
+---
+<img width="1114" height="239" alt="Screenshot 2026-11-15 at 13 44 59" src="https://github.com/user-attachments/assets/39d87e25-82b9-4a6c-84f8-24d8de838216" />
 
+---
 ## Architecture
 
 Both clients talk only to the ASP.NET Core API. The API is the only component that touches PostgreSQL, third-party services and the AI service.
