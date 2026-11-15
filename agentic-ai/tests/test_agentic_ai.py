@@ -2,10 +2,12 @@ import pytest
 from unittest.mock import MagicMock, patch
 from tools.fraud_detection import check_mileage_consistency, check_record_consistency
 from tools.vehicle_data import get_vehicle_profile
+from tools.vehicle_history import get_vehicle_history
 from state.persistence import save_workflow_state
 from state.schema import WorkflowState
 from agents.coordinator import agent_1_coordinator
 from agents.history_analysis import agent_2_history_analysis
+from agents.fraud_detection import agent_3_fraud_detection
 from agents.valuation_validation import agent_4_validation
 from pydantic import TypeAdapter, ValidationError
 
@@ -212,16 +214,9 @@ def test_agent_1_coordinator_success(
 ):
     """
     Test Agent 1 Coordinator successful vehicle profile retrieval.
-
-    The ChatGoogleGenerativeAI object is mocked so LangChain does not
-    attempt to convert the MagicMock vehicle tool into a real tool schema.
     """
 
     state = get_base_state()
-
-    # --------------------------------------------------------
-    # Mock vehicle profile tool
-    # --------------------------------------------------------
 
     mock_tool.invoke.return_value = {
         "make": "Toyota",
@@ -229,57 +224,25 @@ def test_agent_1_coordinator_success(
         "police_records": []
     }
 
-    # --------------------------------------------------------
-    # Mock LLM
-    # --------------------------------------------------------
-
     mock_llm = MagicMock()
-
     mock_llm_response = MagicMock()
-    mock_llm_response.tool_calls = [
-        {
-            "args": {
-                "vehicle_id": "V-123"
-            }
-        }
-    ]
-
+    mock_llm_response.tool_calls = [{"args": {"vehicle_id": "V-123"}}]
     mock_llm_invoke.return_value = mock_llm_response
 
-    # bind_tools() must return an object that can be passed
-    # to safe_llm_invoke()
     mock_llm_with_tools = MagicMock()
     mock_chat_model.return_value = mock_llm
-
     mock_llm.bind_tools.return_value = mock_llm_with_tools
-
-    # --------------------------------------------------------
-    # Execute Agent 1
-    # --------------------------------------------------------
 
     new_state = agent_1_coordinator(state)
 
-    # --------------------------------------------------------
-    # Assertions
-    # --------------------------------------------------------
-
     assert new_state["status"] == "analyzing_history"
-
     assert new_state["vehicle_profile"]["make"] == "Toyota"
     assert new_state["vehicle_profile"]["model"] == "Corolla"
 
     mock_chat_model.assert_called_once()
-
-    mock_llm.bind_tools.assert_called_once_with(
-        [mock_tool]
-    )
-
+    mock_llm.bind_tools.assert_called_once_with([mock_tool])
     mock_llm_invoke.assert_called_once()
-
-    mock_tool.invoke.assert_called_once_with({
-        "vehicle_id": "V-123"
-    })
-
+    mock_tool.invoke.assert_called_once_with({"vehicle_id": "V-123"})
     mock_save.assert_called()
 
 
@@ -287,138 +250,188 @@ def test_agent_1_coordinator_success(
 # AGENT 2 - HISTORY ANALYSIS
 # ============================================================
 
+@patch("agents.history_analysis.ChatGoogleGenerativeAI")
 @patch("agents.history_analysis.get_vehicle_history")
-@patch("agents.history_analysis.ChatGoogleGenerativeAI.bind_tools")
 @patch("agents.history_analysis.save_workflow_state")
 def test_agent_2_history_analysis_success(
     mock_save,
-    mock_bind_tools,
-    mock_tool
+    mock_tool,
+    mock_chat_model
 ):
     """Test Agent 2 successfully analyzes vehicle history."""
 
     state = get_base_state()
 
     mock_llm = MagicMock()
+    mock_chat_model.return_value = mock_llm
+
+    mock_llm_with_tools = MagicMock()
+    mock_llm.bind_tools.return_value = mock_llm_with_tools
 
     mock_llm_response = MagicMock()
+    mock_llm_response.tool_calls = [{"args": {"vehicle_id": "V-123"}}]
+    mock_llm_with_tools.invoke.return_value = mock_llm_response
 
-    mock_llm_response.tool_calls = [
-        {
-            "args": {
-                "vehicle_id": "V-123"
-            }
-        }
-    ]
-
-    mock_llm.invoke.return_value = mock_llm_response
-
-    mock_bind_tools.return_value = mock_llm
-
-    mock_tool.invoke.return_value = {
-        "total_records": 3,
-        "service_records": []
-    }
+    mock_tool.invoke.return_value = {"total_records": 3, "service_records": []}
 
     new_state = agent_2_history_analysis(state)
 
     assert new_state["status"] == "checking_fraud"
-
     assert new_state["history_summary"]["total_records"] == 3
-
     mock_save.assert_called()
+
+
+# ============================================================
+# AGENT 3 - FRAUD DETECTION
+# ============================================================
+
+@patch("agents.fraud_detection.ChatGoogleGenerativeAI")
+@patch("agents.fraud_detection.save_workflow_state")
+def test_agent_3_fraud_detection_success(
+    mock_save,
+    mock_chat_model
+):
+    """Test Agent 3 successfully executes fraud detection and updates risk score."""
+    state = get_base_state()
+
+    mock_llm = MagicMock()
+    mock_chat_model.return_value = mock_llm
+
+    mock_llm_with_tools = MagicMock()
+    mock_llm.bind_tools.return_value = mock_llm_with_tools
+
+    mock_response = MagicMock()
+    mock_response.tool_calls = [{"args": {"vehicle_id": "V-123"}}]
+    mock_llm_with_tools.invoke.return_value = mock_response
+
+    new_state = agent_3_fraud_detection(state)
+
+    assert new_state["status"] == "validating"
+    assert "risk_score" in new_state
+    assert isinstance(new_state["fraud_flags"], list)
+
+    mock_chat_model.assert_called_once()
+    mock_save.assert_called()
+
+def test_agent_3_fraud_detection_early_exit():
+    """Cover the early return when workflow status is already 'failed'."""
+    state = get_base_state()
+    state["status"] = "failed"
+    new_state = agent_3_fraud_detection(state)
+    assert new_state["status"] == "failed"
+
+@patch("agents.fraud_detection.ChatGoogleGenerativeAI")
+@patch("agents.fraud_detection.save_workflow_state")
+def test_agent_3_fraud_detection_comprehensive_anomalies(mock_save, mock_chat_model):
+    """Cover all missing statements in the nested audit_vehicle_history tool."""
+    state = get_base_state()
+    state["vehicle_id"] = "V-123"
+
+    # Inject data to trigger ALL fraud branches simultaneously
+    state["vehicle_profile"] = {
+        "police_records": [
+            {"IncidentType": "Stolen", "Severity": "Critical", "IncidentDate": "2023-01-01"},
+            {"IncidentType": "Accident", "Severity": "Minor", "IncidentDate": "2022-01-01", "PoliceStation": "Central"}
+        ],
+        "ownership_history": [1, 2, 3, 4] # >3 triggers ownership anomaly
+    }
+    state["history_summary"] = {
+        "mileage_timeline": [
+            {"date": "2023-01-01T10:00:00", "mileage": 10000},
+            {"date": "2023-01-01T11:00:00", "mileage": 10600}, # Same day jump > 500
+            {"date": "2023-01-02T10:00:00", "mileage": 5000}   # Odometer rollback
+        ],
+        "service_records": [
+            {"garage_id": "G1", "date": "2023-01-01", "type": "Service", "garage_verified": False},
+            {"garage_id": "G1", "date": "2023-01-01", "type": "Service", "garage_verified": False} # Duplicate record
+        ]
+    }
+
+    # Mock the LLM to trigger the nested audit_vehicle_history tool
+    mock_llm = MagicMock()
+    mock_chat_model.return_value = mock_llm
+    mock_llm_with_tools = MagicMock()
+    mock_llm.bind_tools.return_value = mock_llm_with_tools
+
+    mock_response = MagicMock()
+    mock_response.tool_calls = [{"args": {"vehicle_id": "V-123"}}]
+    mock_llm_with_tools.invoke.return_value = mock_response
+
+    new_state = agent_3_fraud_detection(state)
+
+    # Assertions to ensure all branches executed properly
+    assert new_state["risk_score"] == 1.0 # Maxed out at 1.0 due to Stolen record flag
+
+    flag_types = [f["type"] for f in new_state["fraud_flags"]]
+    assert "police_alert" in flag_types
+    assert "police_record" in flag_types
+    assert "odometer_rollback" in flag_types
+    assert "date_anomaly" in flag_types
+    assert "unverified_garage" in flag_types
+    assert "duplicate_record" in flag_types
+    assert "ownership_anomaly" in flag_types
 
 
 # ============================================================
 # AGENT 4 - VALIDATION
 # ============================================================
 
-@patch("agents.valuation_validation.ChatGoogleGenerativeAI.bind_tools")
+@patch("agents.valuation_validation.ChatGoogleGenerativeAI")
 @patch("agents.valuation_validation.save_workflow_state")
 def test_agent_4_validation_auto_approval(
     mock_save,
-    mock_bind_tools
+    mock_chat_model
 ):
     """Test Agent 4 automatically approves a clean vehicle."""
 
     state = get_base_state()
-
     state["risk_score"] = 0.0
     state["fraud_flags"] = []
 
     mock_llm = MagicMock()
+    mock_chat_model.return_value = mock_llm
+
+    mock_llm_with_tools = MagicMock()
+    mock_llm.bind_tools.return_value = mock_llm_with_tools
 
     mock_response = MagicMock()
-
-    mock_response.tool_calls = [
-        {
-            "args": {
-                "ai_insight": "- Perfect condition"
-            }
-        }
-    ]
-
-    mock_llm.invoke.return_value = mock_response
-
-    mock_bind_tools.return_value = mock_llm
+    mock_response.tool_calls = [{"args": {"ai_insight": "- Perfect condition"}}]
+    mock_llm_with_tools.invoke.return_value = mock_response
 
     new_state = agent_4_validation(state)
 
     assert new_state["validation_result"]["passed"] is True
-
-    assert (
-        new_state["validation_result"]["requires_approval"]
-        is False
-    )
-
+    assert new_state["validation_result"]["requires_approval"] is False
     assert new_state["status"] == "completed"
 
 
-@patch("agents.valuation_validation.ChatGoogleGenerativeAI.bind_tools")
+@patch("agents.valuation_validation.ChatGoogleGenerativeAI")
 @patch("agents.valuation_validation.save_workflow_state")
 def test_agent_4_validation_hitl_confidence_threshold(
     mock_save,
-    mock_bind_tools
+    mock_chat_model
 ):
     """Test Agent 4 sends risky vehicles for manual approval."""
 
     state = get_base_state()
-
     state["risk_score"] = 0.25
-
-    state["fraud_flags"] = [
-        {
-            "type": "unverified_garage"
-        }
-    ]
+    state["fraud_flags"] = [{"type": "unverified_garage"}]
 
     mock_llm = MagicMock()
+    mock_chat_model.return_value = mock_llm
+
+    mock_llm_with_tools = MagicMock()
+    mock_llm.bind_tools.return_value = mock_llm_with_tools
 
     mock_response = MagicMock()
-
-    mock_response.tool_calls = [
-        {
-            "args": {
-                "ai_insight": "- Suspicious flags found"
-            }
-        }
-    ]
-
-    mock_llm.invoke.return_value = mock_response
-
-    mock_bind_tools.return_value = mock_llm
+    mock_response.tool_calls = [{"args": {"ai_insight": "- Suspicious flags found"}}]
+    mock_llm_with_tools.invoke.return_value = mock_response
 
     new_state = agent_4_validation(state)
 
     assert new_state["validation_result"]["passed"] is False
-
-    assert (
-        new_state["validation_result"]["requires_approval"]
-        is True
-    )
-
+    assert new_state["validation_result"]["requires_approval"] is True
     assert new_state["status"] == "pending_approval"
-
     assert new_state["approval"]["required"] is True
 
 
@@ -430,27 +443,87 @@ def test_pydantic_schema_validation_strict_enforcement():
     """Verify WorkflowState accepts valid data and rejects invalid data."""
 
     adapter = TypeAdapter(WorkflowState)
-
-    # --------------------------------------------------------
-    # Valid state
-    # --------------------------------------------------------
-
     valid_data = get_base_state()
 
     try:
         adapter.validate_python(valid_data)
     except ValidationError:
-        pytest.fail(
-            "Valid state failed Pydantic schema validation."
-        )
-
-    # --------------------------------------------------------
-    # Invalid state
-    # --------------------------------------------------------
+        pytest.fail("Valid state failed Pydantic schema validation.")
 
     invalid_data = get_base_state()
-
     invalid_data["current_step"] = "Not-an-integer"
 
     with pytest.raises(ValidationError):
         adapter.validate_python(invalid_data)
+
+
+# ============================================================
+# TOOLS - VEHICLE HISTORY
+# ============================================================
+
+def test_vehicle_history_missing_id():
+    """Cover validation failure when vehicle_id is missing."""
+    result = get_vehicle_history.invoke({"vehicle_id": ""})
+    assert "Validation failed" in result["error"]
+
+@patch("tools.vehicle_history.get_supabase_client")
+def test_vehicle_history_empty_records(mock_supabase):
+    """Cover DB returning no service records."""
+    mock_execute = MagicMock()
+    mock_execute.data = []
+    mock_supabase.return_value.table.return_value.select.return_value.eq.return_value.execute = MagicMock(return_value=mock_execute)
+
+    result = get_vehicle_history.invoke({"vehicle_id": "V-123"})
+    assert result["total_records"] == 0
+    assert result["service_records"] == []
+
+@patch("tools.vehicle_history.get_supabase_client")
+def test_vehicle_history_with_data_and_unverified_garage(mock_supabase):
+    """Cover full timeline mapping, sorting, and garage verification logic."""
+    mock_client = MagicMock()
+    mock_supabase.return_value = mock_client
+
+    # Mock ServiceRecords table response
+    mock_records = MagicMock()
+    mock_records.data = [
+        {"CreatedAt": "2023-01-02", "OdometerReading": 15000, "GarageId": "G1", "Title": "Oil Change", "PhotoUrls": "url1,url2"},
+        {"CreatedAt": "2023-01-01", "OdometerReading": 10000, "GarageId": "G2", "Title": "Tires", "PhotoUrls": ""}
+    ]
+
+    # Mock Organizations table response (G1 is Active, G2 is Inactive)
+    mock_orgs = MagicMock()
+    mock_orgs.data = [
+        {"id": "G1", "Status": "Active"},
+        {"id": "G2", "Status": "Inactive"}
+    ]
+
+    # Side effect to return different data based on the Supabase table name queried
+    def table_side_effect(table_name):
+        mock_table = MagicMock()
+        if table_name == "ServiceRecords":
+            mock_table.select.return_value.eq.return_value.execute.return_value = mock_records
+        elif table_name == "Organizations":
+            mock_table.select.return_value.in_.return_value.execute.return_value = mock_orgs
+        return mock_table
+
+    mock_client.table.side_effect = table_side_effect
+
+    result = get_vehicle_history.invoke({"vehicle_id": "V-123"})
+
+    assert result["total_records"] == 2
+    # Verify chronological sorting (2023-01-01 should be moved to index 0)
+    assert result["service_records"][0]["date"] == "2023-01-01"
+    # G2 was Inactive
+    assert result["service_records"][0]["garage_verified"] is False
+    # G1 was Active
+    assert result["service_records"][1]["garage_verified"] is True
+    # Verify image string splitting
+    assert len(result["service_records"][0]["images"]) == 0
+    assert len(result["service_records"][1]["images"]) == 2
+
+@patch("tools.vehicle_history.get_supabase_client")
+def test_vehicle_history_db_exception(mock_supabase):
+    """Cover DB execution failure branch."""
+    mock_supabase.return_value.table.side_effect = Exception("Connection lost")
+    result = get_vehicle_history.invoke({"vehicle_id": "V-123"})
+    assert "Database execution failure: Connection lost" in result["error"]

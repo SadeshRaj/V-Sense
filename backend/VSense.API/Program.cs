@@ -124,6 +124,24 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// NEW: Global Security Headers Middleware to satisfy OWASP ZAP
+app.Use(async (context, next) =>
+{
+    // Prevents MIME-sniffing
+    if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
+    {
+        context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    }
+
+    // Prevents cross-origin data leaks via side-channel attacks
+    if (!context.Response.Headers.ContainsKey("Cross-Origin-Resource-Policy"))
+    {
+        context.Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
+    }
+
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
